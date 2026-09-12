@@ -1,0 +1,50 @@
+.TH ALIENS-INVADERS 6 "10-SEP-2026" "@VERSION@" "Aliens Invaders Manual"
+.SH NAME
+aliens-invaders \- Modern arcade vertical space shooter powered by C++20 and SDL3
+.SH SYNOPSIS
+.B aliens-invaders
+.SH DESCRIPTION
+.B Aliens Invaders
+is an arcade vertical-scrolling space combat game engineered natively for
+.B Wayland
+and modern platforms using
+.BR SDL3 " and " C++20 .
+.PP
+The engine incorporates GPU-accelerated double buffering, tear-free frame pacing, lock-free procedural sound synthesis, compile-time embedded assets, tactical nuke weapons, and resolution-segregated leaderboards.
+.SH CONTROLS
+.TP
+.BI Space
+Fire plasma cannons.
+.TP
+.BI Left\ / \ Right\ Arrow
+Move vessel horizontally.
+.TP
+.BI t
+Toggle Ship Model (Cruiser vs Vanguard).
+.TP
+.BI f
+Toggle Fullscreen mode (native monitor resolution up to 4K UHD).
+.TP
+.BI 1,\ 2,\ 3
+Preset window sizes: 1280x720, 1600x900, 1920x1080.
+.TP
+.BI -\ / \ +
+Adjust Particle Density (0 OFF to 4 MAX).
+.TP
+.BI h
+Cycle Hall of Fame displays (Per-Resolution, Global Legends, and Help).
+.TP
+.BI p
+Pause / Resume active game.
+.TP
+.BI s
+Start a new game (from menu).
+.TP
+.BI q
+Quit current match or exit game.
+.TP
+.BI c
+Cheat mode (recovers shield, fire rate, and multi-cannons; disables leaderboard saving).
+.SH AUTHORS
+.B Claudio Fernandes de Souza Rodrigues
+(Engine Architecture, C++20 Native SDL3 Platform, Procedural Audio Synthesis, Aerodynamics & Gameplay).

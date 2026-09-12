@@ -1,0 +1,40 @@
+# ==============================================================================
+# Git Ignore Rules for Aliens Invaders (Modern C++20 + SDL3)
+# ==============================================================================
+
+# Build directories and final binaries
+build/
+aliens-invaders
+aliens-invaders.exe
+
+# Internal code generation tools
+tools/bake_assets
+tools/bake_assets.exe
+
+# Auto-generated embedded asset source
+src/platform/embedded_assets.cc
+
+# Intermediate object files and compiler dependencies
+*.o
+*.d
+*.a
+*.so
+*.dll
+*.dylib
+
+# Local arcade scores
+*.scores
+
+# Tooling and Language Server Protocol artifacts
+compile_commands.json
+.cache/
+.vscode/
+.idea/
+
+# Editor and OS transient files
+*~
+*.swp
+*.swo
+*.bak
+.DS_Store
+Thumbs.db
