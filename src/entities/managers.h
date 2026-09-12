@@ -9,6 +9,7 @@
 #include "constants.h"
 #include "embedded_assets.h"
 #include "explosion.h"
+#include "game_rules.h"
 #include "path.h"
 #include "sprites.h"
 
@@ -57,7 +58,7 @@ struct ProjectileSlot {
   bool turn_completed{false};
   int turn_trigger_y{0};
   int turn_timer{0};
-  float bomb_render_angle{0.0f};    // Nose locked to flight vector
+  float bomb_render_angle{0.0f};    // Nose locked strictly to flight vector
   float deflection_angle_deg{0.0f}; // Trajectory angle [-15°, +15°]
   float speed_magnitude{0.0f};
 
@@ -187,7 +188,6 @@ class AliensManager {
 
   void SpawnRandomWanderers();
   [[nodiscard]] bool AreAllAliensDocked() const noexcept;
-  [[nodiscard]] int GetMaxAttackWaitFrames() const noexcept;
   [[nodiscard]] Bonus::bonus_t RollSmartBonusType() const noexcept;
 
   using AliensCtn = std::vector<std::unique_ptr<Alien>>;
@@ -228,20 +228,12 @@ class Player : public Sprite {
   ExplosionsManager* const explosions_manager_;
   const int below_y_;
 
-  // Precise Upgrade Progression:
-  // - Max 8 lives (Shield drops only if lives <= 4)
-  // - Multi: max 3 simultaneous shots
-  // - Speed: +10% up to 120% max (2 levels)
-  // - Fire: +10% cyclic rate up to 120% max (2 levels)
+  // Pure domain-driven kinetics
   int shield_{3};
-  float base_speed_{5.0f};
-  int speed_level_{0}; // 0 to 2, each +10% (max 120%)
-
-  float base_fire_interval_{20.0f};
-  int fire_level_{0};  // 0 to 2, each +10% cyclic rate (max 120%)
+  int speed_level_{0}; // 0 to 2 (max 120%)
+  int fire_level_{0};  // 0 to 2 (max 120%)
   int fire_wait_{0};
-  int fire_interval_{20};
-
+  int fire_interval_{static_cast<int>(GameRules::kPlayerBaseFireInterval)};
   int multi_fire_{1};  // 1 to 3 simultaneous shots max
 
   int hit_timer_{0};
@@ -265,11 +257,11 @@ class Player : public Sprite {
   void ExtraSpeed() noexcept;
 
   // Smart Loot State Queries
-  [[nodiscard]] bool IsFireMaxed() const noexcept { return fire_level_ >= 2; }
-  [[nodiscard]] bool IsMultiMaxed() const noexcept { return multi_fire_ >= 3; }
-  [[nodiscard]] bool IsSpeedMaxed() const noexcept { return speed_level_ >= 2; }
-  [[nodiscard]] bool IsShieldGated() const noexcept { return shield_ > 4; } // Spawns ONLY if lives <= 4
-  [[nodiscard]] bool IsShieldMaxed() const noexcept { return shield_ >= 8; }
+  [[nodiscard]] bool IsFireMaxed() const noexcept { return fire_level_ >= GameRules::kPlayerMaxFireLevel; }
+  [[nodiscard]] bool IsMultiMaxed() const noexcept { return multi_fire_ >= GameRules::kPlayerMaxMultiShots; }
+  [[nodiscard]] bool IsSpeedMaxed() const noexcept { return speed_level_ >= GameRules::kPlayerMaxSpeedLevel; }
+  [[nodiscard]] bool IsShieldGated() const noexcept { return shield_ > GameRules::kPlayerShieldGateThreshold; }
+  [[nodiscard]] bool IsShieldMaxed() const noexcept { return shield_ >= GameRules::kPlayerMaxShield; }
 
  private:
   [[nodiscard]] int PosY() const;

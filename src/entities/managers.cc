@@ -10,6 +10,7 @@
 #include "audio.h"
 #include "config.h"
 #include "embedded_assets.h"
+#include "game_rules.h"
 #include "score.h"
 
 int ConvoyData::ConvoySize() const {
@@ -45,7 +46,6 @@ void ExhaustParticle::Draw() const {
 void ProjectileSlot::Move(std::array<ExhaustParticle, 128>& exhaust_pool) noexcept {
   if (!active) return;
 
-  // Mid-air vector redirection & rocket thruster emission
   if (is_turning_bomb) {
     if (!turn_completed && pos.y >= turn_trigger_y) {
       if (turn_timer > 0) {
@@ -62,29 +62,25 @@ void ProjectileSlot::Move(std::array<ExhaustParticle, 128>& exhaust_pool) noexce
         turn_completed = true;
         bomb_render_angle = -deflection_angle_deg;
 
-        // Establish velocity vector aligned with deflection_angle_deg [-15°, +15°]
+        // Vector aligned with deflection_angle_deg [-15°, +15°]
         const float rad = deflection_angle_deg * (3.14159265f / 180.0f);
         speed.x = static_cast<short>(std::round(std::sin(rad) * speed_magnitude));
         speed.y = std::max<short>(3, static_cast<short>(std::round(std::cos(rad) * speed_magnitude)));
       }
     }
 
-    // Rocket Thruster Ignition: DISPLAYED STRICTLY AFTER ANGLE SELECTION IS COMPLETED!
     if (turn_completed) {
       const float current_deflection_rad = -bomb_render_angle * (3.14159265f / 180.0f);
       const float h = pix ? static_cast<float>(pix->Height()) : 26.0f;
       const float rear_offset = h * 0.44f;
 
-      // Base nozzle coordinate at the rear fins
       float rear_x = static_cast<float>(pos.x) - std::sin(current_deflection_rad) * rear_offset;
       float rear_y = static_cast<float>(pos.y) - std::cos(current_deflection_rad) * rear_offset;
 
-      // Transverse jitter across nozzle width to achieve full double-thickness plume
       const float lateral_spread = (static_cast<float>(std::rand() % 100 - 50) / 50.0f) * (3.6f * Gfx::Inst().Scale());
       rear_x += std::cos(current_deflection_rad) * lateral_spread;
       rear_y -= std::sin(current_deflection_rad) * lateral_spread;
 
-      // Compact ejection velocity: 40% shorter exhaust reach
       const float exhaust_speed = 1.6f + static_cast<float>(std::rand() % 100) / 110.0f;
       const float spread_jitter = (static_cast<float>(std::rand() % 40 - 20) / 100.0f);
       const float jet_vx = -std::sin(current_deflection_rad + spread_jitter) * exhaust_speed;
@@ -130,12 +126,10 @@ bool ProjectileSlot::Collide(const Sprite& other) const noexcept {
 void ProjectileSlot::Draw() const {
   if (!active || !pix) return;
 
-  // Stage 14: Relativistic Singularity Bomb
   if (relativistic) {
     Gfx::Inst().DrawAura(pos, 18.0f * Gfx::Inst().Scale(), 0, 220, 255, 110);
   }
 
-  // Stage 4: Polonium-210 Radioactive Luminescence Bomb
   if (radioactive) {
     Gfx::Inst().DrawAura(pos, 20.0f * Gfx::Inst().Scale(), 50, 255, 90, 160);
   }
@@ -421,23 +415,6 @@ static int GetNbConvoys(const ConvoyData* convoys) {
   return static_cast<int>(p - convoys);
 }
 
-namespace {
-float ComputeDynamicSpeed(int level, int max_levels) noexcept {
-  const int cycle = (level - 1) / std::max(1, max_levels) + 1;
-  const int stage_in_cycle = (level - 1) % std::max(1, max_levels);
-  const float intra_progress = static_cast<float>(stage_in_cycle) / static_cast<float>(max_levels);
-
-  if (cycle == 1) {
-    return 4.8f + intra_progress * 1.8f; // Medium: 4.8 to 6.6
-  } else if (cycle == 2) {
-    return 7.0f + intra_progress * 2.2f; // Hard: 7.0 to 9.2
-  } else {
-    const float cycle_add = std::min(2.0f, static_cast<float>(cycle - 3) * 0.6f);
-    return std::min(12.5f, 9.5f + intra_progress * 2.5f + cycle_add); // Super Hard: 9.5 to 12.5
-  }
-}
-}  // namespace
-
 AliensManager::AliensManager(BulletsManager* bombs_manager,
                              BulletsManager* bullets_manager,
                              BonusManager* bonus_manager,
@@ -454,7 +431,7 @@ AliensManager::AliensManager(BulletsManager* bombs_manager,
       max_convoy_size_(GetMaxConvoySize()),
       convoy_idx_(0),
       convoy_alien_idx_(0),
-      speed_(ComputeDynamicSpeed(level_number, max_level)),
+      speed_(GameRules::ComputeAlienSpeed(level_number, max_level)),
       base_cruise_(0, g_alien_height),
       base_cruise_speed_(1),
       fleet_state_(spawning_convoys),
@@ -463,7 +440,7 @@ AliensManager::AliensManager(BulletsManager* bombs_manager,
       bonus_allowed_this_level_(std::rand() % 100 < 50), // Exactly 50% chance per stage
       bonus_spawned_this_level_(false),
       wanderers_allowed_cycle_(((level_number - 1) / 15 + 1) >= 2),
-      turning_bombs_remaining_(2 + (std::rand() % 9)), // Exactly 2 to 10 missiles per stage
+      turning_bombs_remaining_(GameRules::kMinVectorMissiles + (std::rand() % (GameRules::kMaxVectorMissiles - GameRules::kMinVectorMissiles + 1))),
       turning_spacing_cooldown_(0) {
   if (level_number_ < 1 || !convoys_ ||
       convoys_[0].sprite_id == SpriteId::None) {
@@ -477,14 +454,6 @@ AliensManager::AliensManager(BulletsManager* bombs_manager,
     max_convoy_size_ += kRandomWanderers;
     random_paths_.reserve(kRandomWanderers);
   }
-}
-
-int AliensManager::GetMaxAttackWaitFrames() const noexcept {
-  const int cycle = (level_number_ - 1) / 15 + 1;
-  if (cycle == 1) return 5 * 60; // 0 to 5 sec
-  if (cycle == 2) return 4 * 60; // 0 to 4 sec
-  if (cycle == 3) return 3 * 60; // 0 to 3 sec
-  return 2 * 60;                 // 0 to 2 sec for Cycle 4+
 }
 
 // Smart Loot Probability Engine: Dynamically removes maxed bonuses and redistributes weights
@@ -678,7 +647,7 @@ void AliensManager::Creation() {
       } else {
         if (AreAllAliensDocked()) {
           fleet_state_ = active_combat;
-          const int max_wait = GetMaxAttackWaitFrames();
+          const int max_wait = GameRules::GetMaxAttackWaitFrames(level_number_);
           for (auto& alien : aliens_) {
             alien->SetAttackTimer(std::rand() % (max_wait + 1));
           }
@@ -688,7 +657,7 @@ void AliensManager::Creation() {
     }
 
     case active_combat: {
-      const int max_wait = GetMaxAttackWaitFrames();
+      const int max_wait = GameRules::GetMaxAttackWaitFrames(level_number_);
       for (auto& alien : aliens_) {
         if (alien->Stage() == Trajectory::cruising) {
           alien->DecrementAttackTimer();
@@ -717,7 +686,7 @@ void AliensManager::Fire(Coord player_pos) const {
   const int fleet_size = std::max(1, static_cast<int>(aliens_.size()));
   const int fire_chance = std::max(20, (50 * fleet_size) / 25);
   const int player_y = Gfx::Inst().WindowHeight() - 86;
-  const int safe_corridor = static_cast<int>(76.0f * s * 1.55f);
+  const int safe_corridor = static_cast<int>(GameRules::kSafeCorridorBasePx * s);
   const int window_w = Gfx::Inst().WindowWidth();
 
   const int cycle = (level_number_ - 1) / 15 + 1;
@@ -737,7 +706,6 @@ void AliensManager::Fire(Coord player_pos) const {
         continue;
       }
 
-      // Unique randomized speed variance per bomb
       const float individual_variance = 0.84f + static_cast<float>(std::rand() % 35) / 100.0f;
       float base_spd = std::max(2.8f, (speed_ * 0.70f + 1.8f) * cycle_bomb_mult * individual_variance * s);
 
@@ -757,7 +725,6 @@ void AliensManager::Fire(Coord player_pos) const {
         }
       }
 
-      // 2 to 10 vector-redirect missiles randomly spaced and distributed across the stage
       bool is_turning = false;
       int trigger_y = 0;
       float target_deflection_deg = 0.0f;
@@ -766,7 +733,6 @@ void AliensManager::Fire(Coord player_pos) const {
       if (turning_bombs_remaining_ > 0 && turning_spacing_cooldown_ <= 0 && (std::rand() % 3 == 0)) {
         is_turning = true;
         --turning_bombs_remaining_;
-        // Stochastic spacing: prevents bunched volleys, distributing missiles naturally
         turning_spacing_cooldown_ = 35 + (std::rand() % 45);
 
         const float vector_speed_variance = 0.88f + static_cast<float>(std::rand() % 30) / 100.0f;
@@ -779,9 +745,12 @@ void AliensManager::Fire(Coord player_pos) const {
           const float dx = static_cast<float>(player_pos.x - cannon_pos.x);
           const float dy = static_cast<float>(player_y - cannon_pos.y);
           const float ideal_angle = std::atan2(dx, dy) * (180.0f / 3.14159265f);
-          target_deflection_deg = std::clamp(ideal_angle + static_cast<float>(std::rand() % 5 - 2), -15.0f, 15.0f);
+          target_deflection_deg = std::clamp(ideal_angle + static_cast<float>(std::rand() % 5 - 2),
+                                             -GameRules::kMaxDeflectionAngleDeg,
+                                             GameRules::kMaxDeflectionAngleDeg);
         } else {
-          target_deflection_deg = -15.0f + static_cast<float>(std::rand() % 3001) / 100.0f;
+          target_deflection_deg = -GameRules::kMaxDeflectionAngleDeg +
+                                  static_cast<float>(std::rand() % 3001) / 100.0f;
         }
 
         const int engine_type = std::rand() % 4;
@@ -864,7 +833,7 @@ void AliensManager::CreateBonusMaybe(Coord pos) {
 }
 
 // ==============================================================================
-// Player Implementation (120% Speed & Fire Rate Caps, Max 8 Lives, Multi <= 3)
+// Player Implementation (Speed & Fire Rate Tuned via GameRules)
 // ==============================================================================
 
 Player::Player(BulletsManager* bullets_manager, BulletsManager* bombs_manager,
@@ -894,9 +863,9 @@ void Player::Move(int direction) {
   if (hit_timer_ > 0) --hit_timer_;
 
   const float s = Gfx::Inst().Scale();
-  // Speed Boost: +10% per level up to 120% max (level 0=100%, 1=110%, 2=120%)
-  const float current_speed = base_speed_ * (1.0f + 0.10f * static_cast<float>(speed_level_));
-  const int move_delta = std::max(3, static_cast<int>(std::round(current_speed * s)));
+  // Player lateral movement speed: 30% reduction base (3.5f), up to 120% max (4.2f)
+  const float current_speed = GameRules::ComputePlayerSpeed(speed_level_);
+  const int move_delta = std::max(2, static_cast<int>(std::round(current_speed * s)));
 
   Coord pos(Position());
   pos.x += direction * move_delta;
@@ -920,9 +889,9 @@ void Player::Fire() {
   SoundManager::Instance().Play(SoundManager::SFX_PLAYER_FIRE, pan * 0.65f);
 
   const float s = Gfx::Inst().Scale();
-  const int b_speed_y = std::min(-8, static_cast<int>(std::round(-16.0f * s)));
+  // Player bullet speed: 50% reduction (-8.0f instead of -16.0f)
+  const int b_speed_y = std::min(-4, static_cast<int>(std::round(GameRules::kPlayerBaseBulletSpeed * s)));
 
-  // Multi-shot firing solutions: exactly 1, 2, or 3 shots max
   for (int i = 0; i < multi_fire_; ++i) {
     Coord speed(static_cast<short>(std::round((i - multi_fire_ / 2) * s)),
                 static_cast<short>(b_speed_y));
@@ -1029,32 +998,27 @@ int Player::PosY() const {
   return Gfx::Inst().WindowHeight() - 48 - Height() / 2;
 }
 
-// Rapid Fire: +10% cyclic fire rate per upgrade up to 120% max (2 upgrades)
 void Player::ExtraFire() noexcept {
-  if (fire_level_ < 2) {
+  if (fire_level_ < GameRules::kPlayerMaxFireLevel) {
     ++fire_level_;
-    const float rate_mult = 1.0f + 0.10f * static_cast<float>(fire_level_);
-    fire_interval_ = std::max(8, static_cast<int>(std::round(base_fire_interval_ / rate_mult)));
+    fire_interval_ = GameRules::ComputeFireInterval(fire_level_);
   }
 }
 
-// Multi-Cannon: +1 simultaneous shot per upgrade up to 3 shots max
 void Player::ExtraMulti() noexcept {
-  if (multi_fire_ < 3) {
+  if (multi_fire_ < GameRules::kPlayerMaxMultiShots) {
     ++multi_fire_;
   }
 }
 
-// Shield Matrix: Spawns ONLY if lives <= 4, hard ceiling at 8 lives max
 void Player::ExtraShield() noexcept {
-  if (shield_ < 8) {
+  if (shield_ < GameRules::kPlayerMaxShield) {
     ++shield_;
   }
 }
 
-// Speed Boost: +10% agility per upgrade up to 120% max (2 upgrades)
 void Player::ExtraSpeed() noexcept {
-  if (speed_level_ < 2) {
+  if (speed_level_ < GameRules::kPlayerMaxSpeedLevel) {
     ++speed_level_;
   }
 }
