@@ -11,6 +11,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(ENABLE_SANITIZERS "Compile with AddressSanitizer and UBSan" OFF)
+option(ENABLE_TSAN "Compile with ThreadSanitizer (mutually exclusive with ENABLE_SANITIZERS)" OFF)
+option(ENABLE_LTO "Enable link-time / interprocedural optimization for Release builds" OFF)
+option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors (-Werror)" OFF)
 option(BUILD_TESTS "Build headless C++20 automated test suite" ON)
 
 find_package(SDL3 CONFIG QUIET)
@@ -25,13 +28,23 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         -Wall -Wextra -pedantic -Wshadow -Wcast-align
         -Woverloaded-virtual -Wnon-virtual-dtor -Wformat=2
         -Wformat-security -Wconversion -Wsign-conversion -Wnull-dereference
+        -Wundef -Wdouble-promotion -Wimplicit-fallthrough
     )
+    if(WARNINGS_AS_ERRORS)
+        add_compile_options(-Werror)
+    endif()
     if(ENABLE_SANITIZERS)
         add_compile_options(-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer)
         add_link_options(-fsanitize=address,undefined)
+    elseif(ENABLE_TSAN)
+        add_compile_options(-O1 -g -fsanitize=thread -fno-omit-frame-pointer)
+        add_link_options(-fsanitize=thread)
     else()
         add_compile_options(-O2 -fomit-frame-pointer -fstack-protector-strong)
         add_compile_definitions(_FORTIFY_SOURCE=2 NDEBUG)
+        if(ENABLE_LTO)
+            set_property(GLOBAL PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+        endif()
     endif()
 elseif(MSVC)
     add_compile_options(/W4 /permissive- /utf-8 /O2)
