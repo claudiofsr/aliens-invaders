@@ -56,13 +56,15 @@ const AlienIntel kAliensIntel[15] = {
      "Tactical analysis: Flight path is erratic due to the pilot constantly "
      "checking interstellar notifications."},
 
-    {SpriteId::Alien2, "ENVOY 'AMBASSADOR VEX'", "Light Strike Diplomat",
+    {SpriteId::Alien2, "ENVOY 'AMBASSADOR VEX'", "Pyramid Architect",
      "Moderate",
-     "Dispatched to deliver Earth's official eviction notice. Swiftly "
-     "concluded that firing high-velocity plasma salvos was 400% more "
-     "efficient than learning 6,000 human languages.",
+     "The original engineer-architect of the pyramids of Egypt and the Maya in Mexico: "
+     "his master intercontinental portfolio from before humanity invented building permits. "
+     "Claims the Maya as his sole legitimate descendants and holders of the original blueprint warranty. "
+     "Objective: preserve only blueprint-literate peoples after the invasion and dominion; "
+     "all others receive a polite but definitive planetary eviction notice.",
      "Tactical analysis: Crosses the airspace in synchronized pairs solely to "
-     "look intimidating for high command."},
+     "admire his own ancient construction sites from above."},     
 
     {SpriteId::Alien3, "ASSESSOR 'KLAATU-42'", "Resource Harvester", "Moderate",
      "Hypothesized that humanity's gold and platinum were valuable, but "
