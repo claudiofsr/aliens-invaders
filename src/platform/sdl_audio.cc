@@ -804,8 +804,7 @@ void SoundManager::Clear() {
   if (stream_) SDL_ClearAudioStream(stream_);
 }
 
-SoundManager::SoundInfo SoundManager::PlayLevelClear(int level) {
-  Clear();
+SoundManager::SoundInfo SoundManager::PlayStageFanfare(int level) {
   int stage = (level - 1) % 15;
   if (stage < 0) stage = 0;
   return Play(static_cast<SoundEffect>(SFX_LEVEL_CLEAR_1 + stage));

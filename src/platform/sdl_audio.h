@@ -70,7 +70,7 @@ class SoundManager {
   bool Init();
   void Quit();
   SoundManager::SoundInfo Play(SoundEffect sfx, float pan = 0.0f);
-  SoundManager::SoundInfo PlayLevelClear(int level);
+  SoundManager::SoundInfo PlayStageFanfare(int level);
   [[nodiscard]] SoundInfo GetInfo(SoundEffect sfx) const noexcept;
   [[nodiscard]] float DurationSeconds(SoundEffect sfx) const noexcept;
   [[nodiscard]] float LevelClearDurationSeconds(int level) const noexcept;

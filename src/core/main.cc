@@ -250,7 +250,7 @@ class CombatSession {
     if (!phase_transition_started_ && aliens_->Finished()) {
       const int completed_level = ctx_.score.Level();
       const SoundManager::SoundInfo fanfare =
-          ctx_.audio.PlayLevelClear(completed_level);
+          ctx_.audio.PlayStageFanfare(completed_level);
 
       constexpr float kPhaseTransitionMinimumSeconds = GameRules::Progression::kPhaseTransitionMinDurationSec;
       const float hold_seconds =
