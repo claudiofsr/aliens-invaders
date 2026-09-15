@@ -85,6 +85,27 @@ endif
 OBJS := $(patsubst $(srcdir)/%.cc, $(builddir)/%.o, $(SRCS))
 DEPS := $(OBJS:.o=.d)
 
+# --- helpers para evitar repeticao ---
+define INSTALL_FILE
+install -c -m $(1) "$(2)" "$(3)"; \
+bsz=$$(wc -c < "$(3)"); \
+hsz=$$(awk -v s="$$bsz" 'BEGIN { if (s >= 1048576) printf "%.2f MiB", s/1048576; else if (s >= 1024) printf "%.2f KiB", s/1024; else printf "%d B", s; }'); \
+pmod=$$(stat -c '%a' "$(3)"); pmod=$$(printf "%04d" "$$pmod"); \
+printf "%b==> [INST]%b %-62s %b[%s] [%10s]%b\n" "$(COLOR_STEP)" "$(COLOR_RESET)" "$(3)" "$(COLOR_OK)" "$$pmod" "$$hsz" "$(COLOR_RESET)"
+endef
+
+define UNINSTALL_FILE
+if [ -f "$(1)" ]; then \
+	bsz=$$(wc -c < "$(1)" 2>/dev/null || echo 0); \
+	hsz=$$(awk -v s="$$bsz" 'BEGIN { if (s >= 1048576) printf "%.2f MiB", s/1048576; else if (s >= 1024) printf "%.2f KiB", s/1024; else printf "%d B", s; }'); \
+	pmod=$$(stat -c '%a' "$(1)" 2>/dev/null); pmod=$$(printf "%04d" "$$pmod" 2>/dev/null || echo "----"); \
+	printf "%b==> [UNIN]%b %-62s %b[%s] [%10s]%b\n" "$(COLOR_WARN)" "$(COLOR_RESET)" "$(1)" "$(COLOR_ERR)" "$$pmod" "$$hsz" "$(COLOR_RESET)"; \
+fi; \
+rm -f "$(1)"
+endef
+
+ICON_SIZES := 48x48 96x96 128x128 256x256
+
 .DEFAULT_GOAL := all
 .DELETE_ON_ERROR:
 
@@ -178,36 +199,17 @@ install: all
 	@printf "%b==============================================================================%b\n" "$(COLOR_BOLD)" "$(COLOR_RESET)"
 	@printf "%b INSTALLING ALIENS INVADERS v%s ON SYSTEM %b\n" "$(COLOR_INFO)" "$(VERSION)" "$(COLOR_RESET)"
 	@printf "%b==============================================================================%b\n" "$(COLOR_BOLD)" "$(COLOR_RESET)"
-	@install -d -m 0755 "$(DESTDIR)$(bindir)"
-	@install -d -m 0755 "$(DESTDIR)$(mandir)"
-	@install -d -m 0755 "$(DESTDIR)$(datadir)/pixmaps"
-	@install -d -m 0755 "$(DESTDIR)$(datadir)/applications"
-	@for d in 48x48 96x96 128x128 256x256; do install -d -m 0755 "$(DESTDIR)$(datadir)/icons/hicolor/$$d/apps"; done
-	@install -c -m 0755 "$(builddir)/$(EXE)" "$(DESTDIR)$(bindir)/$(EXE)"; \
-	bsz=$$(wc -c < "$(DESTDIR)$(bindir)/$(EXE)"); \
-	hsz=$$(awk -v s="$$bsz" 'BEGIN { if (s >= 1048576) printf "%.2f MiB", s/1048576; else if (s >= 1024) printf "%.2f KiB", s/1024; else printf "%d B", s; }'); \
-	pmod=$$(stat -c '%a' "$(DESTDIR)$(bindir)/$(EXE)"); pmod=$$(printf "%04d" "$$pmod"); \
-	printf "%b==> [INST]%b %-62s %b[%s] [%10s]%b\n" "$(COLOR_STEP)" "$(COLOR_RESET)" "$(DESTDIR)$(bindir)/$(EXE)" "$(COLOR_OK)" "$$pmod" "$$hsz" "$(COLOR_RESET)"
-	@install -c -m 0644 "$(assets)/desktop/aliens-invaders.desktop" "$(DESTDIR)$(datadir)/applications/aliens-invaders.desktop"; \
-	bsz=$$(wc -c < "$(DESTDIR)$(datadir)/applications/aliens-invaders.desktop"); \
-	hsz=$$(awk -v s="$$bsz" 'BEGIN { if (s >= 1048576) printf "%.2f MiB", s/1048576; else if (s >= 1024) printf "%.2f KiB", s/1024; else printf "%d B", s; }'); \
-	pmod=$$(stat -c '%a' "$(DESTDIR)$(datadir)/applications/aliens-invaders.desktop"); pmod=$$(printf "%04d" "$$pmod"); \
-	printf "%b==> [INST]%b %-62s %b[%s] [%10s]%b\n" "$(COLOR_STEP)" "$(COLOR_RESET)" "$(DESTDIR)$(datadir)/applications/aliens-invaders.desktop" "$(COLOR_OK)" "$$pmod" "$$hsz" "$(COLOR_RESET)"
-	@for icon in 48x48 96x96 128x128 256x256; do \
-		install -c -m 0644 "$(assets)/icons/hicolor/$$icon/apps/aliens-invaders.png" "$(DESTDIR)$(datadir)/icons/hicolor/$$icon/apps/aliens-invaders.png"; \
-		bsz=$$(wc -c < "$(DESTDIR)$(datadir)/icons/hicolor/$$icon/apps/aliens-invaders.png"); \
-		hsz=$$(awk -v s="$$bsz" 'BEGIN { if (s >= 1048576) printf "%.2f MiB", s/1048576; else if (s >= 1024) printf "%.2f KiB", s/1024; else printf "%d B", s; }'); \
-		pmod=$$(stat -c '%a' "$(DESTDIR)$(datadir)/icons/hicolor/$$icon/apps/aliens-invaders.png"); pmod=$$(printf "%04d" "$$pmod"); \
-		printf "%b==> [INST]%b %-62s %b[%s] [%10s]%b\n" "$(COLOR_STEP)" "$(COLOR_RESET)" "$(DESTDIR)$(datadir)/icons/hicolor/$$icon/apps/aliens-invaders.png" "$(COLOR_OK)" "$$pmod" "$$hsz" "$(COLOR_RESET)"; \
+	@install -d -m 0755 "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mandir)" "$(DESTDIR)$(datadir)/pixmaps" "$(DESTDIR)$(datadir)/applications"
+	@for d in $(ICON_SIZES); do install -d -m 0755 "$(DESTDIR)$(datadir)/icons/hicolor/$$d/apps"; done
+	@$(call INSTALL_FILE,0755,$(builddir)/$(EXE),$(DESTDIR)$(bindir)/$(EXE))
+	@$(call INSTALL_FILE,0644,$(assets)/desktop/aliens-invaders.desktop,$(DESTDIR)$(datadir)/applications/aliens-invaders.desktop)
+	@for s in $(ICON_SIZES); do \
+		$(call INSTALL_FILE,0644,$(assets)/icons/hicolor/$$s/apps/aliens-invaders.png,$(DESTDIR)$(datadir)/icons/hicolor/$$s/apps/aliens-invaders.png); \
 	done
-	@install -c -m 0644 "$(assets)/icons/hicolor/96x96/apps/aliens-invaders.png" "$(DESTDIR)$(datadir)/pixmaps/aliens-invaders.png"; \
-	bsz=$$(wc -c < "$(DESTDIR)$(datadir)/pixmaps/aliens-invaders.png"); \
-	hsz=$$(awk -v s="$$bsz" 'BEGIN { if (s >= 1048576) printf "%.2f MiB", s/1048576; else if (s >= 1024) printf "%.2f KiB", s/1024; else printf "%d B", s; }'); \
-	pmod=$$(stat -c '%a' "$(DESTDIR)$(datadir)/pixmaps/aliens-invaders.png"); pmod=$$(printf "%04d" "$$pmod"); \
-	printf "%b==> [INST]%b %-62s %b[%s] [%10s]%b\n" "$(COLOR_STEP)" "$(COLOR_RESET)" "$(DESTDIR)$(datadir)/pixmaps/aliens-invaders.png" "$(COLOR_OK)" "$$pmod" "$$hsz" "$(COLOR_RESET)"
-	@sed 's/@VERSION@/$(VERSION)/g' "$(assets)/desktop/aliens-invaders.6x" > "$(DESTDIR)$(mandir)/aliens-invaders.6"; \
-	chmod 0644 "$(DESTDIR)$(mandir)/aliens-invaders.6"; \
-	bsz=$$(wc -c < "$(DESTDIR)$(mandir)/aliens-invaders.6"); \
+	@$(call INSTALL_FILE,0644,$(assets)/icons/hicolor/96x96/apps/aliens-invaders.png,$(DESTDIR)$(datadir)/pixmaps/aliens-invaders.png)
+	@sed 's/@VERSION@/$(VERSION)/g' "$(assets)/desktop/aliens-invaders.6x" > "$(DESTDIR)$(mandir)/aliens-invaders.6"
+	@chmod 0644 "$(DESTDIR)$(mandir)/aliens-invaders.6"
+	@bsz=$$(wc -c < "$(DESTDIR)$(mandir)/aliens-invaders.6"); \
 	hsz=$$(awk -v s="$$bsz" 'BEGIN { if (s >= 1048576) printf "%.2f MiB", s/1048576; else if (s >= 1024) printf "%.2f KiB", s/1024; else printf "%d B", s; }'); \
 	pmod=$$(stat -c '%a' "$(DESTDIR)$(mandir)/aliens-invaders.6"); pmod=$$(printf "%04d" "$$pmod"); \
 	printf "%b==> [INST]%b %-62s %b[%s] [%10s]%b\n" "$(COLOR_STEP)" "$(COLOR_RESET)" "$(DESTDIR)$(mandir)/aliens-invaders.6" "$(COLOR_OK)" "$$pmod" "$$hsz" "$(COLOR_RESET)"
@@ -221,43 +223,11 @@ uninstall:
 	@printf "%b==============================================================================%b\n" "$(COLOR_BOLD)" "$(COLOR_RESET)"
 	@printf "%b UNINSTALLING ALIENS INVADERS v%s FROM SYSTEM %b\n" "$(COLOR_WARN)" "$(VERSION)" "$(COLOR_RESET)"
 	@printf "%b==============================================================================%b\n" "$(COLOR_BOLD)" "$(COLOR_RESET)"
-	@if [ -f "$(DESTDIR)$(bindir)/$(EXE)" ]; then \
-		bsz=$$(wc -c < "$(DESTDIR)$(bindir)/$(EXE)" 2>/dev/null || echo 0); \
-		hsz=$$(awk -v s="$$bsz" 'BEGIN { if (s >= 1048576) printf "%.2f MiB", s/1048576; else if (s >= 1024) printf "%.2f KiB", s/1024; else printf "%d B", s; }'); \
-		pmod=$$(stat -c '%a' "$(DESTDIR)$(bindir)/$(EXE)" 2>/dev/null); pmod=$$(printf "%04d" "$$pmod" 2>/dev/null || echo "----"); \
-		printf "%b==> [UNIN]%b %-62s %b[%s] [%10s]%b\n" "$(COLOR_WARN)" "$(COLOR_RESET)" "$(DESTDIR)$(bindir)/$(EXE)" "$(COLOR_ERR)" "$$pmod" "$$hsz" "$(COLOR_RESET)"; \
-	fi
-	@rm -f "$(DESTDIR)$(bindir)/$(EXE)"
-	@if [ -f "$(DESTDIR)$(datadir)/applications/aliens-invaders.desktop" ]; then \
-		bsz=$$(wc -c < "$(DESTDIR)$(datadir)/applications/aliens-invaders.desktop"); \
-		hsz=$$(awk -v s="$$bsz" 'BEGIN { if (s >= 1048576) printf "%.2f MiB", s/1048576; else if (s >= 1024) printf "%.2f KiB", s/1024; else printf "%d B", s; }'); \
-		pmod=$$(stat -c '%a' "$(DESTDIR)$(datadir)/applications/aliens-invaders.desktop"); pmod=$$(printf "%04d" "$$pmod"); \
-		printf "%b==> [UNIN]%b %-62s %b[%s] [%10s]%b\n" "$(COLOR_WARN)" "$(COLOR_RESET)" "$(DESTDIR)$(datadir)/applications/aliens-invaders.desktop" "$(COLOR_ERR)" "$$pmod" "$$hsz" "$(COLOR_RESET)"; \
-	fi
-	@rm -f "$(DESTDIR)$(datadir)/applications/aliens-invaders.desktop"
-	@for icon in 48x48 96x96 128x128 256x256; do \
-		if [ -f "$(DESTDIR)$(datadir)/icons/hicolor/$$icon/apps/aliens-invaders.png" ]; then \
-			bsz=$$(wc -c < "$(DESTDIR)$(datadir)/icons/hicolor/$$icon/apps/aliens-invaders.png"); \
-			hsz=$$(awk -v s="$$bsz" 'BEGIN { if (s >= 1048576) printf "%.2f MiB", s/1048576; else if (s >= 1024) printf "%.2f KiB", s/1024; else printf "%d B", s; }'); \
-			pmod=$$(stat -c '%a' "$(DESTDIR)$(datadir)/icons/hicolor/$$icon/apps/aliens-invaders.png"); pmod=$$(printf "%04d" "$$pmod"); \
-			printf "%b==> [UNIN]%b %-62s %b[%s] [%10s]%b\n" "$(COLOR_WARN)" "$(COLOR_RESET)" "$(DESTDIR)$(datadir)/icons/hicolor/$$icon/apps/aliens-invaders.png" "$(COLOR_ERR)" "$$pmod" "$$hsz" "$(COLOR_RESET)"; \
-		fi; \
-		rm -f "$(DESTDIR)$(datadir)/icons/hicolor/$$icon/apps/aliens-invaders.png"; \
-	done
-	@if [ -f "$(DESTDIR)$(datadir)/pixmaps/aliens-invaders.png" ]; then \
-		bsz=$$(wc -c < "$(DESTDIR)$(datadir)/pixmaps/aliens-invaders.png"); \
-		hsz=$$(awk -v s="$$bsz" 'BEGIN { if (s >= 1048576) printf "%.2f MiB", s/1048576; else if (s >= 1024) printf "%.2f KiB", s/1024; else printf "%d B", s; }'); \
-		pmod=$$(stat -c '%a' "$(DESTDIR)$(datadir)/pixmaps/aliens-invaders.png"); pmod=$$(printf "%04d" "$$pmod"); \
-		printf "%b==> [UNIN]%b %-62s %b[%s] [%10s]%b\n" "$(COLOR_WARN)" "$(COLOR_RESET)" "$(DESTDIR)$(datadir)/pixmaps/aliens-invaders.png" "$(COLOR_ERR)" "$$pmod" "$$hsz" "$(COLOR_RESET)"; \
-	fi
-	@rm -f "$(DESTDIR)$(datadir)/pixmaps/aliens-invaders.png"
-	@if [ -f "$(DESTDIR)$(mandir)/aliens-invaders.6" ]; then \
-		bsz=$$(wc -c < "$(DESTDIR)$(mandir)/aliens-invaders.6"); \
-		hsz=$$(awk -v s="$$bsz" 'BEGIN { if (s >= 1048576) printf "%.2f MiB", s/1048576; else if (s >= 1024) printf "%.2f KiB", s/1024; else printf "%d B", s; }'); \
-		pmod=$$(stat -c '%a' "$(DESTDIR)$(mandir)/aliens-invaders.6"); pmod=$$(printf "%04d" "$$pmod"); \
-		printf "%b==> [UNIN]%b %-62s %b[%s] [%10s]%b\n" "$(COLOR_WARN)" "$(COLOR_RESET)" "$(DESTDIR)$(mandir)/aliens-invaders.6" "$(COLOR_ERR)" "$$pmod" "$$hsz" "$(COLOR_RESET)"; \
-	fi
-	@rm -f "$(DESTDIR)$(mandir)/aliens-invaders.6"
+	@$(call UNINSTALL_FILE,$(DESTDIR)$(bindir)/$(EXE))
+	@$(call UNINSTALL_FILE,$(DESTDIR)$(datadir)/applications/aliens-invaders.desktop)
+	@for s in $(ICON_SIZES); do $(call UNINSTALL_FILE,$(DESTDIR)$(datadir)/icons/hicolor/$$s/apps/aliens-invaders.png); done
+	@$(call UNINSTALL_FILE,$(DESTDIR)$(datadir)/pixmaps/aliens-invaders.png)
+	@$(call UNINSTALL_FILE,$(DESTDIR)$(mandir)/aliens-invaders.6)
 	@printf "\n%b[OK] Aliens Invaders has been uninstalled from system.%b\n\n" "$(COLOR_OK)" "$(COLOR_RESET)"
 
 help:
