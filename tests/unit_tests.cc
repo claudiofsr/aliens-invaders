@@ -187,7 +187,7 @@ TEST_CASE(TestGameRulesSSOTInvariants) {
   ASSERT_EQ(GameRules::Progression::kStageFanfareDurationSec, 5.0f);
   ASSERT_EQ(GameRules::Player::kInitialShieldLives, 3);
   ASSERT_EQ(GameRules::Player::kMaxShieldLives, 8);
-  ASSERT_EQ(GameRules::Visuals::kFloatingTextHitFontSize, 22.0f);
+  ASSERT_EQ(GameRules::Visuals::kFloatingTextHitFontSize, 24.0f);
   ASSERT_EQ(GameRules::Fleet::kAlienBaseWidthPixels, 84.0f);
   ASSERT_EQ(GameRules::Combat::kScorePerAlienHit, 10ULL);
 }
