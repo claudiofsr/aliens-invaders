@@ -67,7 +67,7 @@ class CombatSession {
   CombatSession(GameContext& ctx)
       : ctx_(ctx),
         player_(&bullets_, &bombs_, &bonuses_, &explosions_, ctx.score.Height() + 1),
-        pacer_(Config::Instance().RefreshRate(), Gfx::Inst().IsVSyncEnabled()) {
+        pacer_(ctx_.config.RefreshRate(), Gfx::Inst().IsVSyncEnabled()) {
     ctx_.score.ReInit();
     aliens_ = SpawnLevelArmada();
     aliens_->SetPlayer(&player_);
@@ -90,14 +90,14 @@ class CombatSession {
       HandleResize();
 
       if (input_.Details() != 0) {
-        Config::Instance().AddDetailsLevel(input_.Details());
-        details_osd_timer_ = static_cast<int>(Config::Instance().RefreshRate() * 1.5);
+        ctx_.config.AddDetailsLevel(input_.Details());
+        details_osd_timer_ = static_cast<int>(ctx_.config.RefreshRate() * 1.5);
       }
 
       if (input_.ToggleShip()) {
-        Config::Instance().ToggleShipModel();
+        ctx_.config.ToggleShipModel();
         Gfx::Inst().AddFloatingText(player_.Position(),
-                                    Config::Instance().UseAltShip()
+                                    ctx_.config.UseAltShip()
                                         ? "VANGUARD (APEX INTERCEPTOR)"
                                         : "CRUISER (STANDARD)",
                                     0, 255, 240, GameRules::Visuals::kFloatingTextNoticeFontSize, 80);
@@ -141,7 +141,7 @@ class CombatSession {
     score_committed_ = true;
 
     if (!cheated_ && ctx_.score.Value() > 0) {
-      ctx_.highscores.Add(ctx_.score.Value(), max_session_size_, Config::Instance().RefreshRate());
+      ctx_.highscores.Add(ctx_.score.Value(), max_session_size_, ctx_.config.RefreshRate());
       ctx_.highscores.Update();
     } else {
       ctx_.highscores.CancelPending();
@@ -170,7 +170,7 @@ class CombatSession {
         if (Gfx::Inst().WindowWidth() > max_session_size_.x) {
           max_session_size_ = Coord(Gfx::Inst().WindowWidth(), Gfx::Inst().WindowHeight());
         }
-        pacer_.Configure(Config::Instance().RefreshRate(), Gfx::Inst().IsVSyncEnabled());
+        pacer_.Configure(ctx_.config.RefreshRate(), Gfx::Inst().IsVSyncEnabled());
       }
     };
 
@@ -302,7 +302,7 @@ class CombatSession {
   }
 
   void ExecuteKamikazeSupernova() {
-    const int nova_frames = static_cast<int>(Config::Instance().RefreshRate() * 3.0);
+    const int nova_frames = static_cast<int>(ctx_.config.RefreshRate() * 3.0);
     double nova_time = CurrentMicroSecond();
 
     for (int f = 0; f < nova_frames; ++f) {
@@ -323,7 +323,7 @@ class CombatSession {
 
       ctx_.score.Draw();
       Gfx::Inst().Present();
-      nova_time = FramePacer(nova_time, 1.0 / Config::Instance().RefreshRate(), Gfx::Inst().IsVSyncEnabled());
+      nova_time = FramePacer(nova_time, 1.0 / ctx_.config.RefreshRate(), Gfx::Inst().IsVSyncEnabled());
     }
   }
 
@@ -335,7 +335,7 @@ class CombatSession {
     explosions_.Add(player_.Position(), Coord(0, -1), 255, 255, 230, 70);
     explosions_.Add(player_.Position(), Coord(0, 1), 255, 210, 50, 65);
 
-    const int death_frames = static_cast<int>(Config::Instance().RefreshRate() * 1.35);
+    const int death_frames = static_cast<int>(ctx_.config.RefreshRate() * 1.35);
     double death_time = CurrentMicroSecond();
 
     for (int d = 0; d < death_frames; ++d) {
@@ -359,7 +359,7 @@ class CombatSession {
       ctx_.telemetry.UpdateAndDraw();
       Gfx::Inst().Present();
 
-      death_time = FramePacer(death_time, 1.0 / Config::Instance().RefreshRate(), Gfx::Inst().IsVSyncEnabled());
+      death_time = FramePacer(death_time, 1.0 / ctx_.config.RefreshRate(), Gfx::Inst().IsVSyncEnabled());
     }
   }
 
@@ -390,8 +390,8 @@ class CombatSession {
     Gfx::Inst().DrawCenteredText(title_y + 40.0f * s, "Tactical Standby & System Reconfiguration", 0, 230, 255, Typography::Subtitle(s));
 
     struct PauseItem { std::string key; std::string label; uint8_t r, g, b; };
-    const std::string ship_str = Config::Instance().UseAltShip() ? "VANGUARD APEX INTERCEPTOR" : "CRUISER STANDARD";
-    const std::string part_str = "PARTICLE DENSITY: " + std::to_string(Config::Instance().DetailsLevel()) + "/" + std::to_string(Config::Instance().MaxDetails());
+    const std::string ship_str = ctx_.config.UseAltShip() ? "VANGUARD APEX INTERCEPTOR" : "CRUISER STANDARD";
+    const std::string part_str = "PARTICLE DENSITY: " + std::to_string(ctx_.config.DetailsLevel()) + "/" + std::to_string(ctx_.config.MaxDetails());
 
     const PauseItem pause_rows[5] = {
         {"P / START", "Resume Active Defense Combat", 100, 255, 140},
@@ -424,7 +424,7 @@ class CombatSession {
     Gfx::Inst().DrawCenteredText(win_h - 36.0f * s, "(C) 2026 Claudio Fernandes de Souza Rodrigues. All Rights Reserved.", 0, 255, 210, 18.0f * s);
     ctx_.telemetry.UpdateAndDraw();
     Gfx::Inst().Present();
-    current_time = FramePacer(current_time, 1.0 / Config::Instance().RefreshRate(), Gfx::Inst().IsVSyncEnabled());
+    current_time = FramePacer(current_time, 1.0 / ctx_.config.RefreshRate(), Gfx::Inst().IsVSyncEnabled());
     return true;
   }
 
@@ -435,7 +435,7 @@ class CombatSession {
     CommitFinalScore();
 
     const bool new_record = (!cheated_ && ctx_.score.Value() > 0);
-    const int game_over_frames = static_cast<int>(Config::Instance().RefreshRate() * 6.0);
+    const int game_over_frames = static_cast<int>(ctx_.config.RefreshRate() * 6.0);
     double go_time = CurrentMicroSecond();
 
     const std::string status_str = cheated_ ? "CHEAT ACTIVE - SCORE DISQUALIFIED"
@@ -449,7 +449,7 @@ class CombatSession {
     std::vector<TelemetryPlate> plates;
     plates.reserve(5);
 
-    plates.emplace_back("PILOT CALLSIGN:", Config::Instance().GetPlayerName(), 255, 215, 0)
+    plates.emplace_back("PILOT CALLSIGN:", ctx_.config.GetPlayerName(), 255, 215, 0)
         .SetLabelColor(220, 230, 245)
         .SetValueColor(255, 230, 100);
 
@@ -461,7 +461,7 @@ class CombatSession {
         .SetLabelColor(220, 230, 245)
         .SetValueColor(240, 245, 255);
 
-    plates.emplace_back("COMBAT VESSEL:", Config::Instance().UseAltShip() ? "VANGUARD APEX INTERCEPTOR" : "CRUISER STANDARD", 140, 200, 255)
+    plates.emplace_back("COMBAT VESSEL:", ctx_.config.UseAltShip() ? "VANGUARD APEX INTERCEPTOR" : "CRUISER STANDARD", 140, 200, 255)
         .SetLabelColor(220, 230, 245)
         .SetValueColor(180, 215, 255);
 
@@ -511,7 +511,7 @@ class CombatSession {
 
       Gfx::Inst().DrawCenteredText(win_h - 44.0f * s, "PRESS [SPACE] OR [START] TO RETURN TO BASE", 0, 255, 210, 18.0f * s);
       Gfx::Inst().Present();
-      go_time = FramePacer(go_time, 1.0 / Config::Instance().RefreshRate(), Gfx::Inst().IsVSyncEnabled());
+      go_time = FramePacer(go_time, 1.0 / ctx_.config.RefreshRate(), Gfx::Inst().IsVSyncEnabled());
     }
   }
 
@@ -545,7 +545,7 @@ class CombatSession {
 
     if (details_osd_timer_ > 0) {
       const float s = Gfx::Inst().Scale();
-      const std::string osd_msg = "PARTICLE DETAILS: " + std::to_string(Config::Instance().DetailsLevel()) + "/" + std::to_string(Config::Instance().MaxDetails());
+      const std::string osd_msg = "PARTICLE DETAILS: " + std::to_string(ctx_.config.DetailsLevel()) + "/" + std::to_string(ctx_.config.MaxDetails());
       Gfx::Inst().DrawCenteredText(static_cast<float>(Gfx::Inst().WindowHeight()) * 0.18f, osd_msg, 0, 255, 220, 24.0f * s);
     }
 
