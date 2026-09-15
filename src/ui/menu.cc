@@ -136,13 +136,12 @@ const AlienIntel kAliensIntel[15] = {
      "Tactical analysis: Flies in twin-phase sinusoidal harmonic formations "
      "that scramble targeting telemetry."},
 
-    {SpriteId::Alien12, "BULWARK 'AEGIS PRIME'", "Heavy Armor Escort",
-     "Critical",
-     "Reinforced armored hull designed to protect luxury command shuttles. "
-     "Pilot constantly complains that space dogfights scratch the pearlescent "
-     "finish.",
-     "Tactical analysis: Flanked by persistent bomb shields and heavy kinetic "
-     "escort craft."},
+    {SpriteId::Alien12, "DARWIN'S 'AEGIS PRIME'", "Natural Selection Escort",
+    "Critical",
+    "Alien armor evolved to protect luxury command shuttles. "
+    "Pilot calls every battle 'a useful evolutionary experiment.'",
+    "Tactical analysis: Evolution favors the survivors. "
+    "Alien natural selection will prevail!"},   
 
     {SpriteId::Alien13, "VANGUARD 'IMPERATOR XYLOX'", "Elite Armada Spearhead",
      "Critical",
