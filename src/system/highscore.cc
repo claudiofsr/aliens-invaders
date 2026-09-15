@@ -41,11 +41,16 @@ void HighScores::SaveAsync(const std::string& score_path, const std::string& con
 void HighScores::Update() {
   const std::string score_path = Config::Instance().GetScoreFileName();
 
-  {
+  // Read the score file at most once. Re-reading it every frame (the
+  // previous behaviour) put synchronous filesystem I/O in the render/
+  // update hot path; a running process's own async SaveAsync() call is
+  // the only thing that can change the table after the first load.
+  if (!loaded_) {
     std::ifstream file(score_path);
     if (file.is_open()) {
       table_.Deserialize(file);
     }
+    loaded_ = true;
   }
 
   if (has_pending_score_ && last_score_ > 0) {

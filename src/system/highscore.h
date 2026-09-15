@@ -12,6 +12,7 @@
 class HighScores {
   HighScoreTable table_{};
   bool has_pending_score_{false};
+  bool loaded_{false};  // true once the score file has been read from disk
   uint64_t last_score_{0};
   Coord last_size_{1280, 720};
   int last_rate_{60};
