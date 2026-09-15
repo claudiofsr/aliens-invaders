@@ -57,6 +57,23 @@ class RandomStream final {
     return UniformInt(1, denominator) <= numerator;
   }
 
+  // Satisfies UniformRandomBitGenerator, so RandomStream can be used
+  // directly with <random> distributions (std::uniform_int_distribution,
+  // std::bernoulli_distribution, std::shuffle) without ever exposing a
+  // std::mt19937 or a std::random_device anywhere in gameplay code.
+  using result_type = std::uint32_t;
+  [[nodiscard]] static constexpr result_type min() noexcept { return 0u; }
+  [[nodiscard]] static constexpr result_type max() noexcept {
+    return std::numeric_limits<std::uint32_t>::max();
+  }
+  [[nodiscard]] result_type operator()() noexcept { return NextU32(); }
+
+  [[nodiscard]] bool Bernoulli(float probability) noexcept {
+    if (probability <= 0.0f) return false;
+    if (probability >= 1.0f) return true;
+    return UniformFloat(0.0f, 1.0f) < probability;
+  }
+
   [[nodiscard]] float Cauchy(float median, float scale) noexcept {
     constexpr float kPi = 3.14159265358979323846f;
     const float u = UniformFloat(0.0001f, 0.9999f);

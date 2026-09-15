@@ -83,11 +83,12 @@ class BulletsManager {
 
   std::array<ProjectileSlot, MAX_BULLETS> pool_{};
   std::array<ExhaustParticle, MAX_EXHAUST> exhaust_pool_{};
-  std::mt19937 rng_{std::random_device{}()};
+  RandomStream rng_{static_cast<std::uint32_t>(std::random_device{}())};
 
  public:
   BulletsManager() = default;
   ~BulletsManager() = default;
+  void SeedRandom(std::uint32_t seed) noexcept { rng_.Seed(seed); }
 
   void Move();
   void Draw(float alpha = 1.0f) const;
@@ -142,7 +143,7 @@ class AliensManager {
   BonusManager* const bonus_manager_;
   ExplosionsManager* const explosions_manager_;
   const int level_number_;
-  mutable std::mt19937 rng_{std::random_device{}()};
+  mutable RandomStream rng_{static_cast<std::uint32_t>(std::random_device{}())};
   const ConvoyData* const convoys_;
   const int nconvoys_;
   int max_convoy_size_;
