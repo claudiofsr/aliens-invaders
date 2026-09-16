@@ -252,7 +252,7 @@ namespace Audio {
 
   static constexpr float kLaserDurationSec = 0.50f;
   static constexpr float kAlienPopLightDurationSec = 0.50f;
-  static constexpr float kAlienPopMediumDurationSec = 0.34f;
+  static constexpr float kAlienPopMediumDurationSec = 0.40f;
   static constexpr float kAlienPopHeavyDurationSec = 0.70f;
   static constexpr float kKamikazeAlertDurationSec = 0.30f;
   static constexpr float kKamikazeExplosionDurationSec = 0.88f;
