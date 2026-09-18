@@ -27,6 +27,12 @@ class Score {
   mutable float last_drawn_scale_{-1.0f};
   mutable bool last_drawn_cheated_{false};
 
+  // Step 18: DrawLevel() banner text only changes when the wave/stage
+  // advances, not every frame of the multi-second transition animation.
+  mutable int         cached_level_strings_for_{-1};
+  mutable std::string cached_wave_title_;
+  mutable std::string cached_stage_sub_;
+
  public:
   Score();
   ~Score() = default;

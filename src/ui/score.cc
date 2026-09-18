@@ -85,16 +85,22 @@ void Score::DrawLevel(float alpha) const {
   const float cy = win_h * 0.5f - 6.0f * s;
 
   const float title_y = cy - (alien_sz * 0.5f) - 58.0f * s;
-  const int stage_num = Cycle();
-  std::string wave_title = "ENTERING WAVE " + std::to_string(level_);
-  std::string stage_sub = "STAGE " + std::to_string(stage_num) + " INVASION SECTOR";
+
+  // Rebuild only when the wave number changes; the banner is redrawn every
+  // frame for several seconds while these strings stay constant.
+  if (level_ != cached_level_strings_for_) {
+    const int stage_num = Cycle();
+    cached_wave_title_ = "ENTERING WAVE " + std::to_string(level_);
+    cached_stage_sub_ = "STAGE " + std::to_string(stage_num) + " INVASION SECTOR";
+    cached_level_strings_for_ = level_;
+  }
 
   auto ScaleRGB = [clamped_alpha](uint8_t c) noexcept -> uint8_t {
     return static_cast<uint8_t>(std::round(static_cast<float>(c) * clamped_alpha));
   };
 
-  Gfx::Inst().DrawCenteredText(title_y, wave_title, ScaleRGB(255), ScaleRGB(225), 0, 42.0f * s);
-  Gfx::Inst().DrawCenteredText(title_y + 40.0f * s, stage_sub, 0, ScaleRGB(230), ScaleRGB(255), 19.0f * s);
+  Gfx::Inst().DrawCenteredText(title_y, cached_wave_title_, ScaleRGB(255), ScaleRGB(225), 0, 42.0f * s);
+  Gfx::Inst().DrawCenteredText(title_y + 40.0f * s, cached_stage_sub_, 0, ScaleRGB(230), ScaleRGB(255), 19.0f * s);
 
   const auto* convoy = LevelData::GetConvoyData(static_cast<size_t>(std::max(1, level_)));
   if (convoy && convoy[0].texture_id != TextureId::None) {
