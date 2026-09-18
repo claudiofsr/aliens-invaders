@@ -51,6 +51,12 @@ class CombatSession {
   int details_osd_timer_{0};
   float lethal_prox_{105.0f};
 
+  // Step 19: PARTICLE DETAILS OSD text only changes when the details level
+  // itself changes, not every one of the ~90 frames it stays on screen.
+  int osd_cached_cur_{-1};
+  int osd_cached_max_{-1};
+  std::string osd_cached_msg_;
+
   FramePacingEngine pacer_;
 
   // Cache de textura acelerado por GPU para pausa (zero CPU redundante)
@@ -664,9 +670,13 @@ class CombatSession {
       const float s = Gfx::Inst().Scale();
       const int cur = ctx_.config.DetailsLevel();
       const int max = ctx_.config.MaxDetails();
-      std::string suffix = (cur == 0 ? " (OFF)" : cur == max ? " (MAX)" : "");
-      const std::string osd_msg = "PARTICLE DETAILS: " + std::to_string(cur) + "/" + std::to_string(max) + suffix;
-      Gfx::Inst().DrawCenteredText(static_cast<float>(Gfx::Inst().WindowHeight()) * 0.18f, osd_msg, 0, 255, 220, 24.0f * s);
+      if (cur != osd_cached_cur_ || max != osd_cached_max_) {
+        const std::string suffix = (cur == 0 ? " (OFF)" : cur == max ? " (MAX)" : "");
+        osd_cached_msg_ = "PARTICLE DETAILS: " + std::to_string(cur) + "/" + std::to_string(max) + suffix;
+        osd_cached_cur_ = cur;
+        osd_cached_max_ = max;
+      }
+      Gfx::Inst().DrawCenteredText(static_cast<float>(Gfx::Inst().WindowHeight()) * 0.18f, osd_cached_msg_, 0, 255, 220, 24.0f * s);
     }
 
     Gfx::Inst().Present();

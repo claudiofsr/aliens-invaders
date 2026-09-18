@@ -24,6 +24,15 @@ jobs:
             libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev \
             libxss-dev libwayland-dev libxkbcommon-dev
           if [ "${{ matrix.compiler }}" = "clang" ]; then sudo apt-get install -y clang; fi
+      - name: Select compiler for this matrix leg
+        run: |
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            echo "CC=clang" >> "$GITHUB_ENV"
+            echo "CXX=clang++" >> "$GITHUB_ENV"
+          else
+            echo "CC=gcc" >> "$GITHUB_ENV"
+            echo "CXX=g++" >> "$GITHUB_ENV"
+          fi
       - name: Build SDL3
         run: |
           git clone https://github.com/libsdl-org/SDL.git --branch release-3.2.20 --depth 1 /tmp/SDL
