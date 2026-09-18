@@ -1,0 +1,32 @@
+# Maintainer: Claudio Fernandes de Souza Rodrigues <https://github.com/claudiofsr>
+pkgname=aliens-invaders
+pkgver=0.10.0
+pkgrel=1
+pkgdesc="Modern vertical arcade space shooter powered by C++20 and SDL3"
+arch=('x86_64' 'aarch64')
+url="https://github.com/claudiofsr/aliens-invaders"
+license=('MIT')
+depends=('sdl3')
+makedepends=('cmake' 'ninja' 'gcc' 'pkgconf')
+source=("${pkgname}-${pkgver}.tar.gz::https://github.com/claudiofsr/${pkgname}/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "${srcdir}/${pkgname}-${pkgver}"
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DENABLE_SANITIZERS=OFF
+    cmake --build build
+}
+
+check() {
+    cd "${srcdir}/${pkgname}-${pkgver}"
+    ctest --test-dir build --output-on-failure
+}
+
+package() {
+    cd "${srcdir}/${pkgname}-${pkgver}"
+    DESTDIR="${pkgdir}" cmake --install build
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
