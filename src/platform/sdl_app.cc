@@ -4,9 +4,19 @@
 
 #include <iostream>
 
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__) || \
-    (defined(__has_feature) && __has_feature(address_sanitizer)) || \
-    (defined(__has_feature) && __has_feature(thread_sanitizer))
+#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
+#define ALIENS_LSAN_SUPPRESSIONS_ACTIVE 1
+#elif defined(__has_feature)
+// __has_feature is a Clang-only preprocessor builtin, not a macro GCC ever
+// defines. Nesting it inside its own #if means GCC's preprocessor never has
+// to parse "__has_feature(...)" at all (a skipped #if group is never
+// evaluated), instead of failing to substitute it on a combined line.
+#  if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer)
+#    define ALIENS_LSAN_SUPPRESSIONS_ACTIVE 1
+#  endif
+#endif
+
+#if defined(ALIENS_LSAN_SUPPRESSIONS_ACTIVE)
 extern "C" {
 __attribute__((used, visibility("default"))) const char*
 __lsan_default_suppressions() {

@@ -35,7 +35,7 @@ jobs:
           fi
       - name: Build SDL3
         run: |
-          git clone https://github.com/libsdl-org/SDL.git --branch release-3.2.20 --depth 1 /tmp/SDL
+          git clone https://github.com/libsdl-org/SDL.git --branch release-3.4.16 --depth 1 /tmp/SDL
           cmake -S /tmp/SDL -B /tmp/SDL/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSDL_TESTS=OFF
           cmake --build /tmp/SDL/build --parallel
           sudo cmake --install /tmp/SDL/build && sudo ldconfig
@@ -48,7 +48,14 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - run: brew update && brew install sdl3 cmake ninja pkg-config
+      - run: brew update && brew install sdl3 gcc cmake ninja pkg-config
+      - name: Use Homebrew GCC (Apple Clang's libc++ has no std::jthread/std::stop_token)
+        run: |
+          GCC_BIN="$(brew --prefix gcc)/bin"
+          CXX_NAME="$(ls "$GCC_BIN" | grep -E '^g\+\+-[0-9]+$' | sort -V | tail -n1)"
+          CC_NAME="$(ls "$GCC_BIN" | grep -E '^gcc-[0-9]+$' | sort -V | tail -n1)"
+          echo "CC=$GCC_BIN/$CC_NAME" >> "$GITHUB_ENV"
+          echo "CXX=$GCC_BIN/$CXX_NAME" >> "$GITHUB_ENV"
       - run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
       - run: cmake --build build --parallel
       - run: ./build/unit_tests

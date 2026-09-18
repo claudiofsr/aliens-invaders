@@ -84,7 +84,7 @@ set_source_files_properties(
     src/platform/sdl_renderer.cc
     src/platform/embedded_assets.cc
     PROPERTIES
-    COMPILE_OPTIONS "-Wno-double-promotion;-Wno-conversion;-Wno-sign-conversion;-Wno-float-conversion;-Wno-implicit-float-conversion;-Wno-cast-align;-Wno-shadow"
+    COMPILE_OPTIONS "-Wno-double-promotion;-Wno-conversion;-Wno-sign-conversion;-Wno-float-conversion;-Wno-cast-align;-Wno-shadow"
 )
 target_include_directories(aliens-invaders PRIVATE ${PROJECT_INCLUDES})
 target_compile_definitions(aliens-invaders PRIVATE VERSION_STRING="${PROJECT_VERSION}")
