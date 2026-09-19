@@ -596,26 +596,38 @@ ScoreVector BuildPiece(int stage) {
     }
 
     case 15: default: {
-      // 15. Sibelius: Finlandia Hymn (Op. 26)
-      // The serene, profound hymn of freedom and peace
-      s.push_back({Instrument::Clarinete, 0.00f, 0.70f, 68, 0.85f}); // Ab4
-      s.push_back({Instrument::Clarinete, 0.70f, 0.50f, 70, 0.85f}); // Bb4
-      s.push_back({Instrument::Clarinete, 1.20f, 0.70f, 68, 0.85f}); // Ab4
-      s.push_back({Instrument::Clarinete, 1.90f, 0.80f, 65, 0.90f}); // F4
-      s.push_back({Instrument::Trompa, 2.70f, 0.90f, 63, 0.92f});    // Eb4
+      // 15. Antonio Vivaldi: The Four Seasons - Spring (La Primavera in E major, RV 269)
+      // Lyrical, radiant springtime bird-song cantabile with lush string polyphony
+      s.push_back({Instrument::Flauta, 0.00f, 0.60f, 76, 0.88f});  // E5
+      s.push_back({Instrument::Flauta, 0.60f, 0.45f, 80, 0.85f});  // G#5
+      s.push_back({Instrument::Flauta, 1.05f, 0.45f, 80, 0.85f});
+      s.push_back({Instrument::Flauta, 1.50f, 0.45f, 80, 0.85f});
+      s.push_back({Instrument::Flauta, 1.95f, 0.45f, 78, 0.82f});  // F#5
+      s.push_back({Instrument::Flauta, 2.40f, 0.45f, 76, 0.85f});  // E5
+      s.push_back({Instrument::Flauta, 2.85f, 0.75f, 83, 0.90f});  // B5
 
-      // Full Strings & Brass Chorale Expansion
-      s.push_back({Instrument::Violino, 3.60f, 0.55f, 72, 0.95f}); // C5
-      s.push_back({Instrument::Violino, 4.15f, 0.65f, 73, 0.95f}); // Db5
-      s.push_back({Instrument::Trompete, 3.60f, 1.20f, 68, 0.95f});
+      // Violins provide sweet third harmony in legato
+      s.push_back({Instrument::Violino, 0.00f, 0.60f, 68, 0.85f}); // G#4
+      s.push_back({Instrument::Violino, 0.60f, 1.35f, 71, 0.82f}); // B4
+      s.push_back({Instrument::Violino, 1.95f, 0.90f, 68, 0.80f}); // G#4
+      s.push_back({Instrument::Violino, 2.85f, 0.75f, 76, 0.88f}); // E5
 
-      for (float t = 0.0f; t < 3.2f; t += 0.80f) {
-        s.push_back({Instrument::Fagote, t, 0.75f, 44, 0.70f});
-        s.push_back({Instrument::Violoncelo, t, 0.75f, 44, 0.75f});
-        s.push_back({Instrument::Contrabaixo, t, 0.75f, 32, 0.80f});
+      // Harp arpeggios and Celli/Bassoon support
+      for (float t = 0.0f; t < 3.2f; t += 0.65f) {
+        s.push_back({Instrument::Harpa, t, 0.55f, 64, 0.60f});
+        s.push_back({Instrument::Violoncelo, t, 0.65f, 40, 0.70f});
       }
-      s.push_back({Instrument::Timpanos, 4.45f, 0.35f, 44, 0.90f});
-      AddTuttiChord15(s, 4.85f, 1.10f, 44, 48, 51, 56, 1.0f); // Ab major triumph
+
+      // Full Baroque Tutti Swell (3.3s - 4.8s)
+      s.push_back({Instrument::Violino, 3.30f, 0.45f, 80, 0.95f}); // G#5
+      s.push_back({Instrument::Violino, 3.75f, 0.45f, 83, 0.95f}); // B5
+      s.push_back({Instrument::Violino, 4.20f, 0.60f, 88, 0.98f}); // E6
+      s.push_back({Instrument::Trompete, 3.30f, 1.50f, 64, 0.90f});
+      s.push_back({Instrument::Trompa, 3.30f, 1.50f, 52, 0.85f});
+      s.push_back({Instrument::Contrabaixo, 3.30f, 1.50f, 28, 0.92f});
+      s.push_back({Instrument::Timpanos, 4.45f, 0.35f, 40, 0.88f});
+
+      AddTuttiChord15(s, 4.80f, 1.15f, 40, 44, 47, 52, 1.0f); // E major resolution
       break;
     }
   }
@@ -684,9 +696,9 @@ const std::array<PieceMetadata, kPieceCount>& AllMetadata() noexcept {
        "Suite Bergamasque", "L. 75", "Clair de Lune",
        "Inspired by Paul Verlaine's poem describing souls wandering under the sad and beautiful moonlight."},
 
-      {"Jean Sibelius", "Finnish", "1865-1957",
-       "Finlandia", "Op. 26", "The Finlandia Hymn",
-       "To evade imperial Russian censorship in 1899, it had to be performed under covert poetic titles."}
+      {"Antonio Vivaldi", "Italian", "1678-1741",
+       "The Four Seasons: Spring", "RV 269", "I. Allegro (Springtime Bird-Song)",
+       "Nicknamed 'The Red Priest' for his red hair, Vivaldi published original descriptive sonnets alongside the score."}
   }};
   return table;
 }
