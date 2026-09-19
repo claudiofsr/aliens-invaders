@@ -2,10 +2,11 @@
 
 #include <algorithm>
 #include <cmath>
-#include <ctime>
+// #include <ctime>
+#include <cstdio>
 #include <iomanip>
+// #include <string>
 #include <sstream>
-#include <string>
 #include <vector>
 
 #include "application.h"
@@ -613,8 +614,8 @@ void StartMenu::PrintTacticalRulesPage1() {
   cards.reserve(2);
 
   const int wavesPerStage = GameRules::Progression::kWavesPerStage;
-  auto fmt1 = [](float v) { std::ostringstream oss; oss << std::fixed << std::setprecision(1) << v; return oss.str(); };
-  auto fmtSpeed = [](float v) { std::ostringstream oss; oss << std::fixed << std::setprecision(1) << v << " pixels/frame"; return oss.str(); };
+  auto fmt1 = [](float v) { char b[32]; std::snprintf(b, sizeof(b), "%.1f", v); return std::string(b); };
+  auto fmtSpeed = [](float v) { char b[64]; std::snprintf(b, sizeof(b), "%.1f pixels/frame", v); return std::string(b); };
 
   {
     std::string s1 = "Slow: " + fmtSpeed(GameRules::Fleet::kStage1MinSpeed) + " to " + fmtSpeed(GameRules::Fleet::kStage1MaxSpeed) + " | Dive wait 0-" + std::to_string(GameRules::Fleet::GetMaxAttackWaitFrames(1)/60) + "s - easy to learn";
@@ -667,7 +668,7 @@ void StartMenu::PrintTacticalRulesPage2() {
   cards.reserve(3);
 
   const int wavesPerStage = GameRules::Progression::kWavesPerStage;
-  auto fmt1 = [](float v) { std::ostringstream oss; oss << std::fixed << std::setprecision(1) << v; return oss.str(); };
+  auto fmt1 = [](float v) { char b[32]; std::snprintf(b, sizeof(b), "%.1f", v); return std::string(b); };
 
   {
     int firePer = static_cast<int>(GameRules::Player::kFireRateBoostPercent * 100);
