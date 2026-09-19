@@ -439,7 +439,7 @@ void StartMenu::PrintGamepadLayout() {
     }
   };
 
-  const std::vector<Vec2f> chassis_knots = {
+  static const std::vector<Vec2f> chassis_knots = {
       {0.0f, -78.0f},    {42.0f, -78.0f},   {88.0f, -74.0f},  {132.0f, -62.0f},
       {158.0f, -32.0f},  {174.0f, 10.0f},   {178.0f, 55.0f},  {164.0f, 98.0f},
       {138.0f, 120.0f},  {116.0f, 118.0f},  {98.0f, 102.0f},  {78.0f, 52.0f},
@@ -909,7 +909,7 @@ void StartMenu::PrintBonusShowcase() {
     uint8_t r, g, b;
   };
 
-  const BonusItem bonuses[5] = {
+  static const BonusItem bonuses[5] = {
       {TextureId::BonusSpeed, "SPEED BOOST", "Agility +10% per boost up to 120% MAX (2 levels)", "Allows instantaneous lateral drift through dense cross-fire corridors.", 100, 220, 255},
       {TextureId::BonusFire, "RAPID FIRE", "Fire rate +10% per upgrade up to 120% MAX (2 levels)", "Overclocks heatsinks to maximize plasma volume per engagement window.", 255, 110, 110},
       {TextureId::BonusMulti, "MULTI-CANNON", "Increases simultaneous shots (+1) up to 3 SHOTS MAX", "Enables wide orbital interception solutions against split dive formations.", 200, 130, 255},
@@ -974,13 +974,15 @@ void StartMenu::PrintShipShowcase(bool is_vanguard) {
   const float footer_reserved = 48.0f * s;
   const float max_text_w = std::min(win_w * 0.90f, 1040.0f * s);
 
-  std::string desc =
-      (!is_vanguard) ? "The Cruiser has defended Earth's thermosphere through successive galactic incursions. "
-                       "Forged from reinforced titanium-carbide composites with dual forward plasma dissipation rails, "
-                       "it delivers balanced lateral drift, resilient recoil damping, and maximum pilot survivability."
-                     : "Engineered inside subterranean Area 51 hangars as humanity's premier apex fighter. "
-                       "Stripped of luxury cushions and heavy bulkheads in favor of dual swept-wing ion thrusters, "
-                       "delivering razor-sharp lateral maneuvering for aces capable of withstanding extreme gravitational load.";
+    static const std::string desc_cruiser =
+    "The Cruiser has defended Earth's thermosphere through successive galactic incursions. "
+    "Forged from reinforced titanium-carbide composites with dual forward plasma dissipation rails, "
+    "it delivers balanced lateral drift, resilient recoil damping, and maximum pilot survivability.";
+  static const std::string desc_vanguard =
+    "Engineered inside subterranean Area 51 hangars as humanity's premier apex fighter. "
+    "Stripped of luxury cushions and heavy bulkheads in favor of dual swept-wing ion thrusters, "
+    "delivering razor-sharp lateral maneuvering for aces capable of withstanding extreme gravitational load.";
+  const std::string& desc = is_vanguard ? desc_vanguard : desc_cruiser;
 
   const float status_font = Typography::SectionHeader(s);
   const float desc_font = Typography::Body(s);
@@ -1040,7 +1042,7 @@ void StartMenu::PrintStoryPrologue() {
   const float font_size = Typography::Body(s);
   const float line_step = 30.0f * s;
 
-  const std::string paragraphs[4] = {
+  static const std::string paragraphs[4] = {
       "While humanity was passionately arguing on social media, perfecting coffee foam artistry, "
       "and debating whether pineapple belongs on pizza, a massive alien armada descended "
       "upon our solar system without checking in with planetary air traffic control.",
@@ -1057,12 +1059,26 @@ void StartMenu::PrintStoryPrologue() {
       "Interceptor Pilot. Climb into the cockpit, blast through their dive formations, grab tactical nukes, "
       "and remind these extraterrestrial tourists why they should have taken that left turn at Alpha Centauri!"};
 
-  std::vector<std::vector<std::string>> wrapped_paragraphs(4);
-  std::vector<float> p_heights(4);
-  for (size_t i = 0; i < 4; ++i) {
-    wrapped_paragraphs[i] = WordWrap(paragraphs[i], max_text_w, font_size);
-    p_heights[i] = static_cast<float>(wrapped_paragraphs[i].size()) * line_step;
+    // Static cache: WordWrap measures every word (expensive). The wrapped
+  // lines only change when layout scale changes, so cache until then.
+  static float s_cached_prologue_w = -1.0f;
+  static float s_cached_prologue_font = -1.0f;
+  static std::vector<std::vector<std::string>> s_cached_prologue_lines;
+  static std::vector<float> s_cached_prologue_heights;
+  if (s_cached_prologue_w != max_text_w || s_cached_prologue_font != font_size ||
+    s_cached_prologue_lines.empty()) {
+    s_cached_prologue_w = max_text_w;
+    s_cached_prologue_font = font_size;
+    s_cached_prologue_lines.clear();
+    s_cached_prologue_heights.clear();
+    for (size_t i = 0; i < 4; ++i) {
+      auto lines = WordWrap(paragraphs[i], max_text_w, font_size);
+      s_cached_prologue_heights.push_back(static_cast<float>(lines.size()) * line_step);
+      s_cached_prologue_lines.push_back(std::move(lines));
+    }
   }
+  const auto& wrapped_paragraphs = s_cached_prologue_lines;
+  const auto& p_heights = s_cached_prologue_heights;
 
   ListLayout layout(win_w, win_h, s, 12.0f, 88.0f, 48.0f);
   layout.SetupDynamic(p_heights);
