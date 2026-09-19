@@ -65,10 +65,11 @@ class Trajectory {
   std::vector<Vec2f> attack_;
   RandomStream rng_;
   size_t attack_idx_;
+  int stage_cycle_{1};
 
  public:
   Trajectory(const FlightPath* arrival, bool mirrored, const Coord& base_cruise,
-             int grid_col, int grid_row, std::uint32_t random_seed = 0x9E3779B9u);
+             int grid_col, int grid_row, std::uint32_t random_seed = 0x9E3779B9u, int stage_cycle = 1);
   [[nodiscard]] stage_t Stage() const noexcept { return stage_; }
   void NextPositionF(float from_x, float from_y, float velocity, float& out_x, float& out_y);
   [[nodiscard]] Coord InitPosition() const;

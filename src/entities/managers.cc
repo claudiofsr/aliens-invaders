@@ -442,7 +442,7 @@ AliensManager::AliensManager(BulletsManager* bombs_manager,
       convoy_idx_(0),
       convoy_alien_idx_(0),
       speed_(GameRules::Fleet::ComputeSpeed(level_number, max_level)),
-      base_cruise_(0, GameRules::Fleet::Height()),
+      base_cruise_(GameRules::Fleet::Width() + 20, GameRules::Fleet::BaseCruiseY()),
       base_cruise_speed_(1),
       fleet_state_(spawning_convoys),
       next_creation_wait_(convoys_data ? convoys_data[0].wait : 0),
@@ -520,9 +520,11 @@ void AliensManager::SpawnRandomWanderers() {
     TextureId rnd_sprite = static_cast<TextureId>(
         static_cast<int>(TextureId::Alien1) + std::uniform_int_distribution<int>(0, 14)(rng_));
 
+    const int stage_cycle = GameRules::Progression::WaveToStage(level_number_);
     auto alien = std::make_unique<Alien>(
         PixKeeper::Instance().Get(rnd_sprite),
-        Trajectory(&random_paths_.back(), false, base_cruise_, col_idx, top_row, static_cast<uint32_t>(rng_())),
+        Trajectory(&random_paths_.back(), false, base_cruise_, col_idx, top_row,
+                   static_cast<uint32_t>(rng_()), stage_cycle),
         speed_, rnd_sprite);
 
     alien->SetWanderer(true);
@@ -553,10 +555,11 @@ void AliensManager::OnResize(float rx, float ry) {
   base_cruise_.x = static_cast<int>(std::round(static_cast<float>(base_cruise_.x) * rx));
   base_cruise_.y = GameRules::Fleet::BaseCruiseY();
 
-  const int min_x = GameRules::Fleet::Width() / 2;
+  const int min_x = GameRules::Fleet::Width() / 2 + 14;
   const int max_x =
-      std::max(min_x + 1, new_w - GameRules::Fleet::Width() / 2 -
-                              (max_convoy_size_ - 1) * GameRules::Fleet::HSpacing());
+      std::max(min_x + 1, new_w - GameRules::Fleet::Width() / 2 - 14 -
+                              (max_convoy_size_ - 1) * GameRules::Fleet::HSpacing() -
+                              GameRules::Fleet::HSpacing() / 2);
   base_cruise_.x =
       static_cast<int>(std::clamp<int>(base_cruise_.x, min_x, max_x));
 
@@ -568,10 +571,11 @@ void AliensManager::OnResize(float rx, float ry) {
 void AliensManager::Move() {
   base_cruise_.x += base_cruise_speed_;
 
-  const int min_x = GameRules::Fleet::Width() / 2;
+  const int min_x = GameRules::Fleet::Width() / 2 + 14;
   const int max_x =
-      std::max(min_x + 1, Gfx::Inst().WindowWidth() - GameRules::Fleet::Width() / 2 -
-                              (max_convoy_size_ - 1) * GameRules::Fleet::HSpacing());
+      std::max(min_x + 1, Gfx::Inst().WindowWidth() - GameRules::Fleet::Width() / 2 - 14 -
+                              (max_convoy_size_ - 1) * GameRules::Fleet::HSpacing() -
+                              GameRules::Fleet::HSpacing() / 2);
 
   if (base_cruise_.x <= min_x) {
     base_cruise_.x = min_x;
@@ -627,10 +631,11 @@ void AliensManager::Creation() {
         const bool mirrored =
             convoy->x_mirror ^ (convoy->split && convoy_alien_idx_ % 2 == 0);
         if (aliens_.size() < 256) {
+          const int stage_cycle = GameRules::Progression::WaveToStage(level_number_);
           auto spawned_alien = std::make_unique<Alien>(
               PixKeeper::Instance().Get(convoy->texture_id),
               Trajectory(convoy->arrival, mirrored, base_cruise_, col_idx,
-                         row_idx, static_cast<uint32_t>(rng_())),
+                         row_idx, static_cast<uint32_t>(rng_()), stage_cycle),
               speed_, convoy->texture_id);
           if (convoy->texture_id == TextureId::Alien4 && GameRules::SpecialEntities::kAlien4AlternateElectrosphere) {
             const bool has_orbit = (alien4_spawn_count_++ % 2 == 0);

@@ -52,7 +52,8 @@ bool Bonus::Out() const noexcept {
 }
 
 Trajectory::Trajectory(const FlightPath* arrival, bool mirrored,
-                       const Coord& base_cruise, int grid_col, int grid_row, std::uint32_t random_seed)
+                       const Coord& base_cruise, int grid_col, int grid_row,
+                       std::uint32_t random_seed, int stage_cycle)
     : stage_(arriving),
       arrival_path_(arrival),
       arrival_idx_(0),
@@ -61,15 +62,49 @@ Trajectory::Trajectory(const FlightPath* arrival, bool mirrored,
       grid_col_(grid_col),
       grid_row_(grid_row),
       rng_(random_seed),
-      attack_idx_(0) {
+      attack_idx_(0),
+      stage_cycle_(stage_cycle) {
   if (!arrival_path_ || arrival_path_->Empty()) {
     throw std::invalid_argument("Empty arrival trajectory supplied");
   }
 }
 
 Coord Trajectory::CruiseTarget() const noexcept {
-  const int tx = base_cruise_.x + (grid_col_ * GameRules::Fleet::HSpacing());
-  const int ty = GameRules::Fleet::BaseCruiseY() + (grid_row_ * GameRules::Fleet::VSpacing());
+  const int h_spacing = GameRules::Fleet::HSpacing();
+  const int v_spacing = GameRules::Fleet::VSpacing();
+  const int half_w = GameRules::Fleet::Width() / 2;
+  const int half_h = GameRules::Fleet::Height() / 2;
+
+  // 1. Honeycomb staggered alignment: breaks straight vertical columns completely
+  const int stagger_x = (grid_row_ % 2 != 0) ? (h_spacing / 2) : 0;
+
+  // 2. Stage-based organic formation curvature:
+  // Uses strictly non-negative downward offsets so no alien ever clips past the top of the screen!
+  int offset_y = 0;
+  const int rel_col = grid_col_ - 4;
+
+  if (stage_cycle_ == 2) {
+    // Stage 2: Parabolic Crescent - center dips forward/downward, wings stay anchored safely at BaseCruiseY
+    offset_y = std::min(v_spacing, (std::max(0, 4 - std::abs(rel_col)) * v_spacing) / 3);
+  } else if (stage_cycle_ >= 3) {
+    // Stage 3+: Dual-Flank W-Wing - gentle downward ripple
+    const int wave_dip = (std::abs(rel_col) % 2 == 1) ? (v_spacing / 4) : 0;
+    offset_y = wave_dip + std::min(v_spacing, (std::abs(rel_col) * v_spacing) / 6);
+  }
+
+  int tx = base_cruise_.x + (grid_col_ * h_spacing) + stagger_x;
+  int ty = GameRules::Fleet::BaseCruiseY() + (grid_row_ * v_spacing) + offset_y;
+
+  // 3. Guaranteed Safe Screen Enclosure: prevents any alien from being cut off on left, right or top
+  const int win_w = Gfx::Inst().WindowWidth();
+  const int win_h = Gfx::Inst().WindowHeight();
+  const int margin_x = half_w + 14;
+  const int min_y = half_h + 16;
+  const int max_y = win_h - half_h - 180;
+
+  tx = std::clamp(tx, margin_x, win_w - margin_x);
+  ty = std::clamp(ty, min_y, max_y);
+
   return Coord(tx, ty);
 }
 

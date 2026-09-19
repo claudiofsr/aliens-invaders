@@ -114,6 +114,17 @@ const FlightPath sine_right({
 const FlightPath cascade_left({{180, -30}, {220, 200}, {160, 400}, {240, 620}});
 const FlightPath cascade_right({{844, -30}, {804, 200}, {864, 400}, {784, 620}});
 
+// Relativistic Gravitational Slingshot Geodesics (Wide Perimeter Sweeps for Wave 14)
+const FlightPath geodesic_slingshot_left({
+    {-40, 80},  {140, 260}, {240, 500}, {180, 720},
+    {70, 660},  {50, 440},  {150, 300}, {270, 240}
+});
+
+const FlightPath geodesic_slingshot_right({
+    {1064, 80}, {884, 260}, {784, 500}, {844, 720},
+    {954, 660}, {974, 440}, {874, 300}, {754, 240}
+});
+
 // ==============================================================================
 // Theatrical Armada Stages: Anti-Camping & Choreographed Ballet Formations
 // ==============================================================================
@@ -263,13 +274,13 @@ const ConvoyData cd13[] = {
     {0, TextureId::None, 0, nullptr, false, false}
 };
 
-// STAGE 14: Albert Alienstein's Relativistic Geodesic Curves
+// STAGE 14: Albert Alienstein's Relativistic Geodesic Curves (Anti-Center-Funnel Perimeter Choreography)
 const ConvoyData cd14[] = {
-    {0,   TextureId::Alien14, 45, &helix_left,      false, false},
-    {50,  TextureId::Alien14, 45, &helix_right,     false, false},
-    {80,  TextureId::Alien1,  50, &acrobatic_right, false, false},
-    {90,  TextureId::Alien12, 50, &cobra,           false, true},
-    {80,  TextureId::Alien14, 50, &valkyrie,        false, true},  // Wings enter both flanks simultaneously!
+    {0,   TextureId::Alien14, 45, &geodesic_slingshot_left,  false, false},
+    {40,  TextureId::Alien14, 45, &geodesic_slingshot_right, false, false},
+    {60,  TextureId::Alien14, 40, &scythe_left,              false, true},  // Dual diagonal relativistic cross
+    {75,  TextureId::Alien12, 45, &acrobatic_left,           false, false},
+    {60,  TextureId::Alien14, 40, &scythe_left,              true,  true},  // Inverted mirror cross slice
     {0, TextureId::None, 0, nullptr, false, false}
 };
 
@@ -283,20 +294,148 @@ const ConvoyData cd15[] = {
     {0, TextureId::None, 0, nullptr, false, false}
 };
 
-const ConvoyData* const levels[] = {
+const ConvoyData* const levels_stage1[] = {
     cd1, cd2,  cd3,  cd4,  cd5,  cd6,  cd7, cd8,
     cd9, cd10, cd11, cd12, cd13, cd14, cd15
 };
 
 }  // namespace
 
+
+// ==============================================================================
+// STAGE 2 (WAVES 16-30): Inverted Flank Incursions & Scissor Ballets (Anti-Center-Funnel)
+// ==============================================================================
+const ConvoyData cd1_s2[] = {
+    {0,   TextureId::Alien1,  45, &acrobatic_left,   false, false},
+    {75,  TextureId::Alien1,  45, &acrobatic_right,  false, false},
+    {75,  TextureId::Alien1,  50, &scythe_left,      false, true},
+    {70,  TextureId::Alien13, 25, &geodesic_slingshot_left, false, false},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd2_s2[] = {
+    {160, TextureId::Alien2,  50, &butterfly_left,   false, false},
+    {110, TextureId::Alien2,  50, &butterfly_right,  false, false},
+    {90,  TextureId::Alien2,  45, &scythe_left,      true,  true},
+    {80,  TextureId::Alien13, 20, &acrobatic_left,   false, true},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd3_s2[] = {
+    {170, TextureId::Alien3, 45, &cloverleaf_left,  false, false},
+    {110, TextureId::Alien3, 45, &cloverleaf_right, false, false},
+    {90,  TextureId::Alien3, 45, &sine_left,        false, true},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd4_s2[] = {
+    {150, TextureId::Alien4,  45, &geodesic_slingshot_left,  false, false},
+    {90,  TextureId::Alien4,  45, &geodesic_slingshot_right, false, false},
+    {80,  TextureId::Alien4,  45, &acrobatic_left,           false, true},
+    {70,  TextureId::Alien13, 20, &butterfly_right,          false, true},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd5_s2[] = {
+    {160, TextureId::Alien5, 45, &scythe_left,      false, true},
+    {90,  TextureId::Alien5, 45, &scythe_left,      true,  true},
+    {80,  TextureId::Alien5, 45, &loop_left,        false, false},
+    {70,  TextureId::Alien5, 45, &loop_right,       false, false},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd6_s2[] = {
+    {150, TextureId::Alien6,  45, &cloverleaf_right, false, false},
+    {90,  TextureId::Alien6,  45, &cloverleaf_left,  false, false},
+    {80,  TextureId::Alien6,  40, &valkyrie,         false, true},
+    {70,  TextureId::Alien13, 20, &acrobatic_left,   false, false},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd7_s2[] = {
+    {150, TextureId::Alien7, 45, &acrobatic_left,   false, false},
+    {90,  TextureId::Alien7, 45, &acrobatic_right,  false, false},
+    {80,  TextureId::Alien7, 45, &cobra,            false, true},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd8_s2[] = {
+    {150, TextureId::Alien8, 45, &butterfly_left,   false, true},
+    {80,  TextureId::Alien8, 45, &butterfly_right,  false, true},
+    {70,  TextureId::Alien8, 30, &scythe_left,      false, true},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd9_s2[] = {
+    {140, TextureId::Alien9, 45, &geodesic_slingshot_left,  false, false},
+    {75,  TextureId::Alien9, 45, &geodesic_slingshot_right, false, false},
+    {70,  TextureId::Alien9, 40, &cloverleaf_left,          false, true},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd10_s2[] = {
+    {150, TextureId::Alien10, 45, &scythe_left,     false, true},
+    {75,  TextureId::Alien10, 45, &scythe_left,     true,  true},
+    {70,  TextureId::Alien10, 40, &butterfly_left,  false, false},
+    {70,  TextureId::Alien10, 40, &butterfly_right, false, false},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd11_s2[] = {
+    {150, TextureId::Alien11, 45, &cloverleaf_left,  false, true},
+    {75,  TextureId::Alien11, 45, &cloverleaf_right, false, true},
+    {70,  TextureId::Alien11, 45, &acrobatic_left,   false, false},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd12_s2[] = {
+    {150, TextureId::Alien12, 35, &scythe_left,      false, true},
+    {60,  TextureId::Alien12, 35, &scythe_left,      true,  true},
+    {50,  TextureId::Alien13, 30, &acrobatic_right,  false, false},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd13_s2[] = {
+    {80,  TextureId::Alien13, 45, &geodesic_slingshot_left,  false, true},
+    {60,  TextureId::Alien13, 45, &geodesic_slingshot_right, false, true},
+    {60,  TextureId::Alien14, 45, &scythe_left,              false, true},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd14_s2[] = {
+    {0,   TextureId::Alien14, 45, &geodesic_slingshot_left,  false, false},
+    {35,  TextureId::Alien14, 45, &geodesic_slingshot_right, false, false},
+    {50,  TextureId::Alien14, 45, &scythe_left,              false, true},
+    {50,  TextureId::Alien12, 45, &butterfly_left,           false, false},
+    {50,  TextureId::Alien14, 45, &scythe_left,              true,  true},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData cd15_s2[] = {
+    {140, TextureId::Alien15, 45, &geodesic_slingshot_left,  false, true},
+    {70,  TextureId::Alien14, 45, &geodesic_slingshot_right, false, true},
+    {60,  TextureId::Alien13, 40, &scythe_left,              false, true},
+    {60,  TextureId::Alien15, 40, &butterfly_left,           false, true},
+    {0, TextureId::None, 0, nullptr, false, false}
+};
+
+const ConvoyData* const levels_stage2[] = {
+    cd1_s2, cd2_s2, cd3_s2, cd4_s2, cd5_s2, cd6_s2, cd7_s2, cd8_s2,
+    cd9_s2, cd10_s2, cd11_s2, cd12_s2, cd13_s2, cd14_s2, cd15_s2
+};
+
 const ConvoyData* GetConvoyData(size_t level_number) {
-  const size_t nb_levels = sizeof(levels) / sizeof(levels[0]);
+  const size_t nb_levels = 15;
   if (level_number == 0) level_number = 1;
   const size_t idx = (level_number - 1) % nb_levels;
-  return levels[idx];
+  const int stage = GameRules::Progression::WaveToStage(static_cast<int>(level_number));
+
+  if (stage >= 2) {
+    return levels_stage2[idx];
+  }
+  return levels_stage1[idx];
 }
 
-size_t GetTotalLevels() { return sizeof(levels) / sizeof(levels[0]); }
+size_t GetTotalLevels() { return sizeof(levels_stage1) / sizeof(levels_stage1[0]); }
 
 }  // namespace LevelData

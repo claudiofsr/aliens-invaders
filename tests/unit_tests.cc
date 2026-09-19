@@ -320,7 +320,7 @@ TEST_CASE(TestCollisionEdgeCases) {
 
 TEST_CASE(TestSpecialEntitiesRules) {
   ASSERT_EQ(GameRules::SpecialEntities::kAlien4ElectronCount, 2);
-  ASSERT_NEAR(GameRules::SpecialEntities::kAlien4ElectronAngularSpeed, 0.80f, 1e-4f);
+  ASSERT_NEAR(GameRules::SpecialEntities::kAlien4ElectronAngularSpeed, 3.0f, 1e-4f);
   ASSERT_EQ(GameRules::SpecialEntities::kAlien4ElectronRadiusPixels, 2.5f);
   ASSERT_EQ(GameRules::SpecialEntities::kAlien4ElectronAuraRadiusPixels, 8.0f);
   ASSERT_TRUE(GameRules::SpecialEntities::kAlien4AlternateElectrosphere);
