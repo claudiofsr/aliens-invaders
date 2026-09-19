@@ -276,6 +276,82 @@ namespace Combat {
   static constexpr int     kBonusWeightNuke           = 10;
   static constexpr int     kTotalBonusWeight =
       kBonusWeightFire + kBonusWeightMulti + kBonusWeightSpeed + kBonusWeightShield + kBonusWeightNuke;
+// Bomb turn progress total frames
+static constexpr int     kBombTurnProgressFrames                 = 18;
+// Turning bomb rear offset ratio relative to height
+static constexpr float   kTurningBombRearOffsetRatio             = 0.44f;
+// Exhaust particle lateral spread range
+static constexpr int     kExhaustLateralSpreadRange              = 50;
+// Turning bomb lateral spread scale
+static constexpr float   kTurningBombLateralSpreadScale          = 3.6f;
+// Exhaust particle speed base
+static constexpr float   kExhaustSpeedBase                       = 1.6f;
+// Exhaust particle speed variance range
+static constexpr int     kExhaustSpeedVarianceRange              = 99;
+// Exhaust particle spread jitter range
+static constexpr int     kExhaustSpreadJitterRange               = 20;
+// Relativistic bomb oscillation amplitude
+static constexpr float   kRelativisticBombOscAmplitude           = 2.2f;
+// Relativistic bomb oscillation frequency
+static constexpr float   kRelativisticBombOscFrequency           = 0.18f;
+// Wave phase maximum degrees for relativistic bomb
+static constexpr int     kWavePhaseMaxDegrees                    = 360;
+// Turning bomb turn timer initial frames
+static constexpr int     kTurningBombTurnTimerFrames             = 20;
+// Maximum bombs active on screen per stage
+static constexpr int     kMaxBombsPerStage                       = 8;
+// Baseline bombs per stage before level scaling
+static constexpr int     kBaseBombsPerStage                      = 3;
+// Level divisor for bomb count scaling
+static constexpr int     kBombsPerStageLevelDivisor              = 3;
+// Fire chance minimum percentage
+static constexpr int     kFireChanceMin                          = 20;
+// Fire chance fleet-size scaling factor
+static constexpr int     kFireChanceFleetFactor                  = 50;
+// Fire chance fleet-size divisor
+static constexpr int     kFireChanceFleetDivisor                 = 25;
+// Player Y position offset from bottom of window
+static constexpr int     kPlayerYOffsetPixels                    = 86;
+// Cycle bomb multiplier maximum
+static constexpr float   kCycleBombMultMax                       = 1.65f;
+// Cycle bomb multiplier base
+static constexpr float   kCycleBombMultBase                      = 1.40f;
+// Cycle bomb multiplier increment per cycle
+static constexpr float   kCycleBombMultIncrement                 = 0.08f;
+// Minimum distance between bombs for spawn proximity
+static constexpr float   kBombNearDistancePixels                 = 68.0f;
+// Bomb speed individual variance base
+static constexpr float   kBombSpeedIndividualVarianceBase        = 0.84f;
+// Bomb speed individual variance range
+static constexpr int     kBombSpeedIndividualVarianceRange       = 34;
+// Bomb minimum speed (pixels per frame)
+static constexpr float   kBombMinSpeed                           = 2.8f;
+// Bomb speed base multiplier
+static constexpr float   kBombSpeedBaseMultiplier                = 0.70f;
+// Bomb speed base offset
+static constexpr float   kBombSpeedBaseOffset                    = 1.8f;
+// Bomb maximum horizontal speed ratio
+static constexpr float   kBombMaxHorizontalSpeedRatio            = 0.32f;
+// Bomb horizontal speed multiplier
+static constexpr float   kBombHorizontalSpeedMultiplier          = 0.40f;
+// Bomb speed vector variance base
+static constexpr float   kBombSpeedVectorVarianceBase            = 0.88f;
+// Bomb speed vector variance range
+static constexpr int     kBombSpeedVectorVarianceRange           = 29;
+// Turning bomb trigger Y min percent
+static constexpr int     kTurningTriggerYMinPercent              = 38;
+// Turning bomb trigger Y max percent
+static constexpr int     kTurningTriggerYMaxPercent              = 69;
+// Deflection angle jitter in degrees
+static constexpr int     kDeflectionJitterDeg                    = 2;
+// Number of distinct engine exhaust color types
+static constexpr int     kEngineTypeCount                        = 4;
+// Exhaust particle min lifetime in frames
+static constexpr int     kExhaustLifeMinFrames                   = 7;
+// Exhaust particle max lifetime in frames
+static constexpr int     kExhaustLifeMaxFrames                   = 10;
+// Max random deflection range in degrees
+static constexpr float  kDeflectionRandomRangeDeg               = 30.0f;
 // Bonus supply pod initial spawn delay in frames after convoy elimination
 static constexpr int     kBonusInitialWaitMinFrames  = 5;
 static constexpr int     kBonusInitialWaitMaxFrames  = 10;

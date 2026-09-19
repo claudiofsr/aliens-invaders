@@ -41,7 +41,7 @@ void ProjectileSlot::Move(std::array<ExhaustParticle, 128>& exhaust_pool,
     if (!turn_completed && pos.y >= turn_trigger_y) {
       if (turn_timer > 0) {
         --turn_timer;
-        const float kTurnTotalFrames = static_cast<float>(GameRules::Combat::kTurnTotalFrames);
+        const float kTurnTotalFrames = static_cast<float>(GameRules::Combat::kBombTurnProgressFrames);
         const float progress = 1.0f - (static_cast<float>(turn_timer) / kTurnTotalFrames);
 
         const float final_render_angle = -deflection_angle_deg;
@@ -62,17 +62,17 @@ void ProjectileSlot::Move(std::array<ExhaustParticle, 128>& exhaust_pool,
     if (turn_completed && active_exhaust_count < 128) {
       const float current_deflection_rad = -bomb_render_angle * (3.14159265f / 180.0f);
       const float h = pix ? static_cast<float>(pix->Height()) : 26.0f;
-      const float rear_offset = h * 0.44f;
+      const float rear_offset = h * GameRules::Combat::kTurningBombRearOffsetRatio;
 
       float rear_x = fx - std::sin(current_deflection_rad) * rear_offset;
       float rear_y = fy - std::cos(current_deflection_rad) * rear_offset;
 
-      const float lateral_spread = (static_cast<float>(rng_.UniformInt(-50, 49)) / 50.0f) * (3.6f * Gfx::Inst().Scale());
+      const float lateral_spread = (static_cast<float>(rng_.UniformInt(-GameRules::Combat::kExhaustLateralSpreadRange, GameRules::Combat::kExhaustLateralSpreadRange - 1)) / static_cast<float>(GameRules::Combat::kExhaustLateralSpreadRange)) * (GameRules::Combat::kTurningBombLateralSpreadScale * Gfx::Inst().Scale());
       rear_x += std::cos(current_deflection_rad) * lateral_spread;
       rear_y -= std::sin(current_deflection_rad) * lateral_spread;
 
-      const float exhaust_speed = 1.6f + static_cast<float>(rng_.UniformInt(0, 99)) / 110.0f;
-      const float spread_jitter = (static_cast<float>(rng_.UniformInt(-20, 19)) / 100.0f);
+      const float exhaust_speed = GameRules::Combat::kExhaustSpeedBase + static_cast<float>(rng_.UniformInt(0, GameRules::Combat::kExhaustSpeedVarianceRange)) / 110.0f;
+      const float spread_jitter = (static_cast<float>(rng_.UniformInt(-GameRules::Combat::kExhaustSpreadJitterRange, GameRules::Combat::kExhaustSpreadJitterRange - 1)) / 100.0f);
       const float jet_vx = -std::sin(current_deflection_rad + spread_jitter) * exhaust_speed;
       const float jet_vy = -std::cos(current_deflection_rad + spread_jitter) * exhaust_speed;
 
@@ -84,7 +84,7 @@ void ProjectileSlot::Move(std::array<ExhaustParticle, 128>& exhaust_pool,
           ep.r = engine_r;
           ep.g = engine_g;
           ep.b = engine_b;
-          ep.life = ep.max_life = rng_.UniformInt(7, 10);
+          ep.life = ep.max_life = rng_.UniformInt(GameRules::Combat::kExhaustLifeMinFrames, GameRules::Combat::kExhaustLifeMaxFrames);
           ep.active = true;
           active_exhaust[static_cast<size_t>(active_exhaust_count++)] = static_cast<uint16_t>(ep_idx);
           break;
@@ -174,7 +174,7 @@ void BulletsManager::Move() {
     b.Move(exhaust_pool_, active_exhaust_ids_, active_exhaust_count_);
     if (b.relativistic) {
       ++b.wave_phase;
-      b.fx += static_cast<float>(std::sin(static_cast<float>(b.wave_phase) * 0.18f) * 2.2f);
+      b.fx += static_cast<float>(std::sin(static_cast<float>(b.wave_phase) * GameRules::Combat::kRelativisticBombOscFrequency) * GameRules::Combat::kRelativisticBombOscAmplitude);
       b.pos.x = static_cast<int>(std::round(b.fx));
     }
     if (b.Out()) {
@@ -214,12 +214,12 @@ void BulletsManager::Add(const Pix* pix, Coord pos, Coord speed,
       b.active = true;
       b.relativistic = relativistic;
       b.radioactive = radioactive;
-      b.wave_phase = std::uniform_int_distribution<int>(0, 359)(rng_);
+      b.wave_phase = std::uniform_int_distribution<int>(0, GameRules::Combat::kWavePhaseMaxDegrees - 1)(rng_);
 
       b.is_turning_bomb = is_turning;
       b.turn_completed = false;
       b.turn_trigger_y = trigger_y;
-      b.turn_timer = 20;
+      b.turn_timer = GameRules::Combat::kTurningBombTurnTimerFrames;
       b.bomb_render_angle = 0.0f;
       b.deflection_angle_deg = deflection_deg;
       b.speed_magnitude =
@@ -721,11 +721,11 @@ void AliensManager::Fire(Coord player_pos) const {
     --turning_spacing_cooldown_;
   }
 
-  const int max_bombs = std::min(8, 3 + level_number_ / 3);
+  const int max_bombs = std::min(GameRules::Combat::kMaxBombsPerStage, GameRules::Combat::kBaseBombsPerStage + level_number_ / GameRules::Combat::kBombsPerStageLevelDivisor);
   const float s = Gfx::Inst().Scale();
   const int fleet_size = std::max(1, static_cast<int>(aliens_.size()));
-  const int fire_chance = std::max(20, (50 * fleet_size) / 25);
-  const int player_y = Gfx::Inst().WindowHeight() - 86;
+  const int fire_chance = std::max(GameRules::Combat::kFireChanceMin, (GameRules::Combat::kFireChanceFleetFactor * fleet_size) / GameRules::Combat::kFireChanceFleetDivisor);
+  const int player_y = Gfx::Inst().WindowHeight() - GameRules::Combat::kPlayerYOffsetPixels;
   const int safe_corridor = static_cast<int>(GameRules::Fleet::kSafeEvasionCorridorPixels * s);
   const int window_w = Gfx::Inst().WindowWidth();
 
@@ -733,7 +733,7 @@ void AliensManager::Fire(Coord player_pos) const {
   float cycle_bomb_mult = 1.0f;
   if (cycle == 1) cycle_bomb_mult = 1.0f;
   else if (cycle == 2) cycle_bomb_mult = 1.25f;
-  else cycle_bomb_mult = std::min(1.65f, 1.40f + static_cast<float>(cycle - 3) * 0.08f);
+  else cycle_bomb_mult = std::min(GameRules::Combat::kCycleBombMultMax, GameRules::Combat::kCycleBombMultBase + static_cast<float>(cycle - 3) * GameRules::Combat::kCycleBombMultIncrement);
 
   for (const auto& alien : aliens_) {
     if (bombs_manager_->Nb() >= max_bombs) break;
@@ -742,18 +742,18 @@ void AliensManager::Fire(Coord player_pos) const {
         alien->Stage() != Trajectory::joining &&
         std::uniform_int_distribution<int>(0, fire_chance - 1)(rng_) < static_cast<int>(std::lround(static_cast<double>(speed_)))) {
       Coord cannon_pos = alien->CannonPosition();
-      if (bombs_manager_->HasBombNear(cannon_pos, static_cast<int>(68.0f * s))) {
+      if (bombs_manager_->HasBombNear(cannon_pos, static_cast<int>(GameRules::Combat::kBombNearDistancePixels * s))) {
         continue;
       }
 
-      const float individual_variance = 0.84f + static_cast<float>(std::uniform_int_distribution<int>(0, 34)(rng_)) / 100.0f;
-      float base_spd = std::max(2.8f, (speed_ * 0.70f + 1.8f) * cycle_bomb_mult * individual_variance * s);
+      const float individual_variance = GameRules::Combat::kBombSpeedIndividualVarianceBase + static_cast<float>(std::uniform_int_distribution<int>(0, GameRules::Combat::kBombSpeedIndividualVarianceRange)(rng_)) / 100.0f;
+      float base_spd = std::max(GameRules::Combat::kBombMinSpeed, (speed_ * GameRules::Combat::kBombSpeedBaseMultiplier + GameRules::Combat::kBombSpeedBaseOffset) * cycle_bomb_mult * individual_variance * s);
 
       float rad = (alien->Angle() + 90.0f) * (3.14159265f / 180.0f);
       int vy = std::max(2, static_cast<int>(std::round(std::sin(rad) * base_spd)));
-      int max_vx = std::max(1, static_cast<int>(std::round(static_cast<float>(vy) * 0.32f)));
+      int max_vx = std::max(1, static_cast<int>(std::round(static_cast<float>(vy) * GameRules::Combat::kBombMaxHorizontalSpeedRatio)));
       int vx = std::clamp(
-          static_cast<int>(std::round(std::cos(rad) * base_spd * 0.40f)),
+          static_cast<int>(std::round(std::cos(rad) * base_spd * GameRules::Combat::kBombHorizontalSpeedMultiplier)),
           -max_vx, max_vx);
 
       if (bombs_manager_->WouldTrapPlayer(cannon_pos, Coord(vx, vy), player_y,
@@ -775,25 +775,25 @@ void AliensManager::Fire(Coord player_pos) const {
         --turning_bombs_remaining_;
         turning_spacing_cooldown_ = std::uniform_int_distribution<int>(GameRules::Combat::kTurningSpacingCooldownMinFrames, GameRules::Combat::kTurningSpacingCooldownMaxFrames)(rng_);
 
-        const float vector_speed_variance = 0.88f + static_cast<float>(std::uniform_int_distribution<int>(0, 29)(rng_)) / 100.0f;
+        const float vector_speed_variance = GameRules::Combat::kBombSpeedVectorVarianceBase + static_cast<float>(std::uniform_int_distribution<int>(0, GameRules::Combat::kBombSpeedVectorVarianceRange)(rng_)) / 100.0f;
         vy = std::max(3, static_cast<int>(std::round(static_cast<float>(vy) * vector_speed_variance)));
 
         const int mid_delta = (player_y - cannon_pos.y);
-        trigger_y = cannon_pos.y + mid_delta * (std::uniform_int_distribution<int>(38, 69)(rng_)) / 100;
+        trigger_y = cannon_pos.y + mid_delta * (std::uniform_int_distribution<int>(GameRules::Combat::kTurningTriggerYMinPercent, GameRules::Combat::kTurningTriggerYMaxPercent)(rng_)) / 100;
 
         if (player_pos.x >= 0) {
           const float dx = static_cast<float>(player_pos.x - cannon_pos.x);
           const float dy = static_cast<float>(player_y - cannon_pos.y);
           const float ideal_angle = std::atan2(dx, dy) * (180.0f / 3.14159265f);
-          target_deflection_deg = std::clamp(ideal_angle + static_cast<float>(std::uniform_int_distribution<int>(-2, 2)(rng_)),
+          target_deflection_deg = std::clamp(ideal_angle + static_cast<float>(std::uniform_int_distribution<int>(-GameRules::Combat::kDeflectionJitterDeg, GameRules::Combat::kDeflectionJitterDeg)(rng_)),
                                              -GameRules::Fleet::kMaxDeflectionAngleDeg,
                                              GameRules::Fleet::kMaxDeflectionAngleDeg);
         } else {
           target_deflection_deg = -GameRules::Fleet::kMaxDeflectionAngleDeg +
-                                  static_cast<float>(std::uniform_int_distribution<int>(0, 3000)(rng_)) / 100.0f;
+static_cast<float>(std::uniform_int_distribution<int>(0, static_cast<int>(GameRules::Combat::kDeflectionRandomRangeDeg * 100.0f))(rng_)) / 100.0f;
         }
 
-        const int engine_type = std::uniform_int_distribution<int>(0, 3)(rng_);
+        const int engine_type = std::uniform_int_distribution<int>(0, GameRules::Combat::kEngineTypeCount - 1)(rng_);
         if (engine_type == 0) {
           eng_r = 210; eng_g = 60; eng_b = 255;
         } else if (engine_type == 1) {
