@@ -265,12 +265,11 @@ const ConvoyData cd13[] = {
 
 // STAGE 14: Albert Alienstein's Relativistic Geodesic Curves
 const ConvoyData cd14[] = {
-    {90,  TextureId::Alien14, 45, &helix_left,      false, false},
-    {80,  TextureId::Alien14, 45, &helix_right,     false, false},
-    {80,  TextureId::Alien1,  30, &acrobatic_left,  false, false},
-    {80,  TextureId::Alien1,  30, &acrobatic_right, false, false},
-    {50,  TextureId::Alien12, 30, &cobra,           false, true},
-    {75,  TextureId::Alien14, 60, &cobra,           false, true},
+    {0,   TextureId::Alien14, 45, &helix_left,      false, false},
+    {50,  TextureId::Alien14, 45, &helix_right,     false, false},
+    {80,  TextureId::Alien1,  50, &acrobatic_right, false, false},
+    {90,  TextureId::Alien12, 50, &cobra,           false, true},
+    {80,  TextureId::Alien14, 50, &valkyrie,        false, true},  // Wings enter both flanks simultaneously!
     {0, TextureId::None, 0, nullptr, false, false}
 };
 
