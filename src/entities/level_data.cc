@@ -267,7 +267,6 @@ const ConvoyData cd13[] = {
 const ConvoyData cd14[] = {
     {90,  TextureId::Alien14, 45, &helix_left,      false, false},
     {80,  TextureId::Alien14, 45, &helix_right,     false, false},
-    {85,  TextureId::Alien14, 45, &scythe_left,     false, true},
     {80,  TextureId::Alien1,  30, &acrobatic_left,  false, false},
     {80,  TextureId::Alien1,  30, &acrobatic_right, false, false},
     {50,  TextureId::Alien12, 30, &cobra,           false, true},
