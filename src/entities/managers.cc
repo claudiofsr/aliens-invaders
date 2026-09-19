@@ -253,7 +253,7 @@ int BulletsManager::DoCollisions(const simulation::GameObject& other, int max) {
 
 bool BulletsManager::WouldTrapPlayer(Coord spawn_pos, Coord speed, int player_y,
                                      int safe_corridor, int player_x, int window_w) const {
-  if (speed.y <= 0 || active_count_ <= 0) return false;
+  if (speed.y <= 0 || active_count_ <= 0 || player_y <= spawn_pos.y) return false;
   const int t_new = (player_y - spawn_pos.y) / speed.y;
   const int x_new = spawn_pos.x + speed.x * t_new;
 

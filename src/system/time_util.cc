@@ -31,8 +31,9 @@ double FramePacer(double frame_start_time, double target_interval,
   const std::uint64_t interval_ns = SecondsToNs(target_interval);
   std::uint64_t now_ns = NowNs();
 
-  // Se o VSync bloqueou e consumiu o intervalo completo do frame, retorna imediatamente
-  if (vsync_active && now_ns >= start_ns + interval_ns) {
+  // Se o VSync está ativo e o intervalo já está na margem de tolerância do vblank (1.5ms),
+  // retornar imediatamente para evitar que o escalonador do kernel durma além do próximo vblank.
+  if (vsync_active && (now_ns + 1'500'000ULL >= start_ns + interval_ns)) {
     return static_cast<double>(now_ns) * 1e-9;
   }
 

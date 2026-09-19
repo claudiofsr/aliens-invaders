@@ -149,11 +149,15 @@ class FontEngine {
 
   void Init(SDL_Renderer* renderer) {
     LoadAllFonts();
-    const int prebake_sizes[] = {
-        12, 14, 16, 18, 20, 21, 22, 24, 26, 27, 28, 30, 32, 34, 36, 39, 40,
-        42, 44, 48, 50, 52, 54, 60, 64, 72, 80, 84, 96, 108
-    };
-    for (int sz : prebake_sizes) {
+    // Pré-aquecimento denso (12 a 52): Elimina 100% de alocações dinâmicas de texturas de fontes no meio do jogo
+    for (int sz = 12; sz <= 52; ++sz) {
+      for (char c = 32; c <= 126; ++c) {
+        GetOrCreateGlyph(renderer, c, sz, false);
+        GetOrCreateGlyph(renderer, c, sz, true);
+      }
+    }
+    const int large_sizes[] = {54, 60, 64, 72, 80, 84, 96, 108};
+    for (int sz : large_sizes) {
       for (char c = 32; c <= 126; ++c) {
         GetOrCreateGlyph(renderer, c, sz, false);
         GetOrCreateGlyph(renderer, c, sz, true);

@@ -402,20 +402,19 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
         const float tilts[2] = {tilt0, -tilt0};
         const auto& knots = GetOrbitKnots();
 
+        SDL_FPoint ring_pts[37];
         for (int ring = 0; ring < 2; ++ring) {
           const float tilt = tilts[ring];
           const float cos_t = std::cos(tilt);
           const float sin_t = std::sin(tilt);
           for (size_t i = 0; i < 36; ++i) {
-            const size_t next_i = (i + 1 == 36) ? 0 : (i + 1);
-            const float x1 = rx * knots[i].c, y1 = ry * knots[i].s;
-            const float x2 = rx * knots[next_i].c, y2 = ry * knots[next_i].s;
-            const float rx1 = x1 * cos_t - y1 * sin_t + static_cast<float>(render_pos.x);
-            const float ry1 = x1 * sin_t + y1 * cos_t + static_cast<float>(render_pos.y);
-            const float rx2 = x2 * cos_t - y2 * sin_t + static_cast<float>(render_pos.x);
-            const float ry2 = x2 * sin_t + y2 * cos_t + static_cast<float>(render_pos.y);
-            SDL_RenderLine(rend, rx1, ry1, rx2, ry2);
+            const float x = rx * knots[i].c;
+            const float y = ry * knots[i].s;
+            ring_pts[i].x = x * cos_t - y * sin_t + static_cast<float>(render_pos.x);
+            ring_pts[i].y = x * sin_t + y * cos_t + static_cast<float>(render_pos.y);
           }
+          ring_pts[36] = ring_pts[0]; // Fecha o anel perfeitamente
+          SDL_RenderLines(rend, ring_pts, 37);
         }
 
         const float speed = GameRules::SpecialEntities::kAlien4ElectronAngularSpeed;
