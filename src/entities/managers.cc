@@ -813,16 +813,23 @@ void AliensManager::Fire(Coord player_pos) const {
         }
       }
 
-      const bool is_stage_14 = (level_number_ % 15 == 14);
-      const bool is_stage_4 = (level_number_ % 15 == 4);
+      // Alien 14 (Albert Alienstein): Sempre dispara sua bomba geodésica relativística com rastro ciano
+      const bool is_alien_14 = (alien->GetTextureId() == TextureId::Alien14);
+      const bool is_relativistic = is_alien_14 || (level_number_ % 15 == 14);
 
-      if (is_stage_4 && is_turning) {
-        eng_r = 50; eng_g = 255; eng_b = 100;
+      // Alien 4 (Marie Curielien): Dispara projéteis com emissão gama verde-rádio
+      const bool is_alien_4 = (alien->GetTextureId() == TextureId::Alien4);
+      const bool is_radioactive = is_alien_4 || (level_number_ % 15 == 4);
+
+      if (is_alien_14) {
+        eng_r = 0; eng_g = 220; eng_b = 255;  // Propulsão relativística do contínuo espaço-tempo
+      } else if (is_alien_4 && is_turning) {
+        eng_r = 50; eng_g = 255; eng_b = 100; // Emissão de rádio
       }
 
       bombs_manager_->Add(PixKeeper::Instance().Get(TextureId::Bomb), cannon_pos,
-                          Coord(vx, vy), is_stage_14, is_turning, trigger_y,
-                          target_deflection_deg, is_stage_4, eng_r, eng_g, eng_b);
+                          Coord(vx, vy), is_relativistic, is_turning, trigger_y,
+                          target_deflection_deg, is_radioactive, eng_r, eng_g, eng_b);
       fire_cooldown_ = GameRules::Combat::kAlienFireCooldown;
     }
   }

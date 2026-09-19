@@ -83,8 +83,8 @@ void Score::DrawLevel(float alpha) const {
   const float alien_sz = GetShowcaseTextureSize(win_h, Gfx::Inst().IsFullscreen(), reserved_h);
 
   const float cx = win_w * 0.5f;
-  // Centro vertical deslocado suavemente para cima (0.43) para dar respiro ao topo e ao rodape
-  const float cy = win_h * 0.43f;
+  // Center point placed at 0.42 to allow balanced breathing room across the entire composition
+  const float cy = win_h * 0.42f;
   const float alien_half_h = alien_sz * 0.5f;
 
   if (level_ != cached_level_strings_for_) {
@@ -98,12 +98,12 @@ void Score::DrawLevel(float alpha) const {
     return static_cast<uint8_t>(std::round(static_cast<float>(c) * clamped_alpha));
   };
 
-  // 1. Mensagens Superiores: espacamento ampliado com 36px de distancia do topo do alien
+  // 1. Header (Above Alien) with generous breathing space
   const float title_y = cy - alien_half_h - 78.0f * s;
   Gfx::Inst().DrawCenteredText(title_y, cached_wave_title_, ScaleRGB(255), ScaleRGB(225), 0, 38.0f * s);
   Gfx::Inst().DrawCenteredText(title_y + 38.0f * s, cached_stage_sub_, 0, ScaleRGB(230), ScaleRGB(255), 18.0f * s);
 
-  // 2. Nave Alienigena Centralizada com Aura
+  // 2. Central Alien Vessel Showcase
   const auto* convoy = LevelData::GetConvoyData(static_cast<size_t>(std::max(1, level_)));
   if (convoy && convoy[0].texture_id != TextureId::None) {
     const auto* pix = PixKeeper::Instance().Get(convoy[0].texture_id);
@@ -117,24 +117,41 @@ void Score::DrawLevel(float alpha) const {
     }
   }
 
-  // 3. Mensagens Inferiores: espacamento ampliado com 28px de distancia da base do alien
+  // 3. Armada Warning (Below Alien)
   const float warn_y = cy + alien_half_h + 28.0f * s;
   Gfx::Inst().DrawCenteredText(warn_y, "HOSTILE ARMADA INCOMING",
                                ScaleRGB(255), ScaleRGB(220), ScaleRGB(90), 20.0f * s);
-  Gfx::Inst().DrawCenteredText(warn_y + 24.0f * s, "PREPARE FOR ATMOSPHERIC INTERCEPTION",
-                               ScaleRGB(220), ScaleRGB(235), ScaleRGB(255), 16.0f * s);
+  const float prep_y = warn_y + 24.0f * s;
+  const float prep_font_size = 16.0f * s;
+  Gfx::Inst().DrawCenteredText(prep_y, "PREPARE FOR ATMOSPHERIC INTERCEPTION",
+                               ScaleRGB(220), ScaleRGB(235), ScaleRGB(255), prep_font_size);
 
-  // 4. Rodape da Fanfarra Sinfonica: Referencia da obra, compositor, nacionalidade, datas e curiosidade
+  // 4. Symphonic Fanfare Info: positioned equidistantly between "Prepare..." and the top of the Player ship
   const int fanfare_stage = (level_ > 1) ? (((level_ - 2) % 15) + 1) : 1;
   const auto& meta = StageFanfare::GetMetadata(fanfare_stage);
 
-  const float footer_y = win_h - 58.0f * s;
-  const std::string track_line = std::string("FANFARE: ") + meta.title + " (" + meta.opus_catalog + ") — " +
+  // Upper boundary: bottom of "PREPARE FOR ATMOSPHERIC INTERCEPTION"
+  const float bottom_prep_y = prep_y + prep_font_size + 2.0f * s;
+
+  // Lower boundary: top edge of the Earth interceptor vessel (Player)
+  const auto* player_pix = PixKeeper::Instance().Get(TextureId::Player);
+  const float player_h = player_pix ? static_cast<float>(player_pix->Height()) : (76.0f * Gfx::Inst().Scale());
+  const float player_top_y = win_h - 48.0f - player_h;
+
+  // Equidistant vertical positioning: centers the 2-line block precisely in the available gap
+  const float available_gap = player_top_y - bottom_prep_y;
+  const float line_spacing = 22.0f * s;
+  const float line2_font_size = 14.5f * s;
+  const float block_h = line_spacing + line2_font_size;
+  const float info_y1 = bottom_prep_y + std::max(0.0f, (available_gap - block_h) * 0.5f);
+  const float info_y2 = info_y1 + line_spacing;
+
+  const std::string track_line = std::string(meta.title) + " (" + meta.opus_catalog + ") — " +
                                  meta.composer + " (" + meta.nationality + ", " + meta.life_dates + ")";
   const std::string curiosity_line = std::string("“") + meta.historical_curiosity + "”";
 
-  Gfx::Inst().DrawCenteredText(footer_y, track_line,
+  Gfx::Inst().DrawCenteredText(info_y1, track_line,
                                ScaleRGB(255), ScaleRGB(215), ScaleRGB(120), 16.0f * s);
-  Gfx::Inst().DrawCenteredText(footer_y + 22.0f * s, curiosity_line,
-                               ScaleRGB(160), ScaleRGB(225), ScaleRGB(235), 14.5f * s);
+  Gfx::Inst().DrawCenteredText(info_y2, curiosity_line,
+                               ScaleRGB(160), ScaleRGB(225), ScaleRGB(235), line2_font_size);
 }

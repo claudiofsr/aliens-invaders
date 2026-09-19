@@ -277,6 +277,11 @@ Alien::Alien(const Pix* pix, const Trajectory& trajectory, float speed, TextureI
   object_.renderable.pix = pix;
   object_.transform.position = trajectory.InitPosition();
   UpdateAABB();
+  // Alien 4 (Marie Curielien): Sorteia pontos iniciais distintos para cada elétron na órbita
+  if (texture_id_ == TextureId::Alien4) {
+    electron_offset0_ = trajectory_.UniformFloat(0.0f, 6.2831853f);
+    electron_offset1_ = electron_offset0_ + trajectory_.UniformFloat(1.5707963f, 4.7123889f);
+  }
 }
 
 void Alien::ForceCruise(Coord target) {
@@ -420,8 +425,9 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
         }
 
         const float speed = GameRules::SpecialEntities::kAlien4ElectronAngularSpeed;
-        const float theta0 = electron_phase_ * speed;
-        const float theta1 = -electron_phase_ * speed + 3.14159265f;
+        // Rotação em sentidos opostos com posições iniciais assíncronas (sem espelhamento estático)
+        const float theta0 = electron_phase_ * speed + electron_offset0_;
+        const float theta1 = -electron_phase_ * speed + electron_offset1_;
 
         const float cos_t0 = std::cos(tilts[0]);
         const float sin_t0 = std::sin(tilts[0]);

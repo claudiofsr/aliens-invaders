@@ -378,7 +378,7 @@ namespace SpecialEntities {
   // Number of quantum particles orbiting inside the electrosphere
   static constexpr int    kAlien4ElectronCount            = 2;
   // Angular velocity of electron orbit in radians per second
-  static constexpr float  kAlien4ElectronAngularSpeed     = 0.80f;
+  static constexpr float  kAlien4ElectronAngularSpeed     = 3.0f;
   // Orbital major axis ellipse scale relative to vessel aura
   static constexpr float  kAlien4ElectronRadiusScale      = 0.90f;
   // Orbital minor axis ellipse scale (inclined perspective projection)

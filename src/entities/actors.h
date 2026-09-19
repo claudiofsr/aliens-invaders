@@ -76,6 +76,7 @@ class Trajectory {
   void BuildAttack(Coord from);
   void BuildKamikazeDive(Coord from, Coord target_player);
   [[nodiscard]] int UniformInt(int min_value, int max_value) noexcept { return rng_.UniformInt(min_value, max_value); }
+  [[nodiscard]] float UniformFloat(float min_value, float max_value) noexcept { return rng_.UniformFloat(min_value, max_value); }
   [[nodiscard]] bool Chance(int numerator, int denominator) noexcept { return rng_.Chance(numerator, denominator); }
   void ForceCruise() noexcept {
     stage_ = cruising;
@@ -107,6 +108,9 @@ class Alien {
   bool has_electrosphere_{true};
   float kamikaze_phase_{0.0f};
   float electron_phase_{0.0f};
+  // Independent orbital starting offsets for asynchronous quantum electron rotation
+  float electron_offset0_{0.0f};
+  float electron_offset1_{0.0f};
 
  public:
   Alien(const Pix* pix, const Trajectory& trajectory, float speed, TextureId texture_id = TextureId::None);
