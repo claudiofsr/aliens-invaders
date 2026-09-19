@@ -46,7 +46,7 @@ namespace Progression {
   // Total combat waves composing a single stage cycle before difficulty re-tiering
   static constexpr int   kWavesPerStage                 = 15;
   // Duration in seconds for the stage-cleared musical fanfare display
-  static constexpr float kStageFanfareDurationSeconds   = 5.0f;
+  static constexpr float kStageFanfareDurationSeconds   = 10.0f;
   // Duration in seconds of the relativistic hyperspace star-streaming transition
   static constexpr float kHyperspaceWarpDurationSec     = 6.0f;
   // Parallax velocity multiplier applied to background stars during hyperspace travel

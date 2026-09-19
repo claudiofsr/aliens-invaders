@@ -8,6 +8,7 @@
 #include <numbers>
 
 #include "constants.h"
+#include "stage_fanfare.h"
 
 namespace {
 size_t SamplesForSecondsImpl(int sample_rate, float seconds) noexcept {
@@ -570,163 +571,9 @@ SoundManager::SoundAsset SoundManager::GenerateGameOverJingle() {
 }
 
 SoundManager::SoundAsset SoundManager::GenerateStageFanfare(int stage) {
-  struct NoteDef {
-    float start;
-    float freq;
-    float dur;
-  };
-
-  struct StageDef {
-    const char* piece_title;
-    const char* composer;
-    std::vector<NoteDef> melody;
-    float sub_freq;
-    float sparkle_mult;
-    float alien_mod_depth;
-  };
-
-  const StageDef defs[15] = {
-      // 1. Beethoven: Symphony No. 9 "Ode to Joy"
-      {"Symphony No. 9 'Ode to Joy' Op.125 - Main Anthem", "Ludwig van Beethoven",
-       {{0.00f, 329.63f, 0.38f}, {0.38f, 329.63f, 0.38f}, {0.76f, 349.23f, 0.38f}, {1.14f, 392.00f, 0.42f},
-        {1.56f, 392.00f, 0.38f}, {1.94f, 349.23f, 0.38f}, {2.32f, 329.63f, 0.38f}, {2.70f, 293.66f, 0.42f},
-        {3.12f, 261.63f, 0.38f}, {3.50f, 261.63f, 0.38f}, {3.88f, 293.66f, 0.38f}, {4.26f, 329.63f, 0.65f}},
-       65.41f, 2.0f, 0.15f},
-
-      // 2. R. Strauss: Also sprach Zarathustra "Sunrise"
-      {"Also sprach Zarathustra 'Sunrise - 2001 Space Odyssey'", "Richard Strauss",
-       {{0.00f, 130.81f, 0.85f}, {0.85f, 196.00f, 0.85f}, {1.70f, 261.63f, 1.10f}, {2.80f, 329.63f, 0.50f},
-        {3.30f, 392.00f, 0.50f}, {3.80f, 523.25f, 1.18f}},
-       65.41f, 3.0f, 0.25f},
-
-      // 3. Vivaldi: The Four Seasons - Spring "La Primavera"
-      {"The Four Seasons 'Spring' RV 269 Allegro - Ritornello", "Antonio Vivaldi",
-       {{0.00f, 659.25f, 0.40f}, {0.40f, 830.61f, 0.25f}, {0.65f, 830.61f, 0.25f}, {0.90f, 830.61f, 0.25f},
-        {1.15f, 739.99f, 0.30f}, {1.45f, 659.25f, 0.35f}, {1.80f, 987.77f, 0.65f}, {2.45f, 830.61f, 0.45f},
-        {2.90f, 1174.66f, 0.55f}, {3.45f, 1318.51f, 1.50f}},
-       82.41f, 2.0f, 0.20f},
-
-      // 4. Holst: The Planets - Jupiter "Thaxted Hymn"
-      {"The Planets 'Jupiter - Big Tune - Thaxted'", "Gustav Holst",
-       {{0.00f, 523.25f, 0.45f}, {0.45f, 587.33f, 0.45f}, {0.90f, 659.25f, 0.45f}, {1.35f, 783.99f, 0.55f},
-        {1.90f, 659.25f, 0.40f}, {2.30f, 587.33f, 0.40f}, {2.70f, 523.25f, 0.45f}, {3.15f, 659.25f, 0.45f},
-        {3.60f, 1046.50f, 1.38f}},
-       65.41f, 4.0f, 0.30f},
-
-      // 5. Rossini: William Tell Overture "Finale Gallop"
-      {"William Tell Overture 'Finale Gallop - Lone Ranger'", "Gioachino Rossini",
-       {{0.00f, 659.25f, 0.22f}, {0.22f, 659.25f, 0.22f}, {0.44f, 659.25f, 0.22f}, {0.66f, 830.61f, 0.35f},
-        {1.01f, 987.77f, 0.35f}, {1.36f, 659.25f, 0.22f}, {1.58f, 659.25f, 0.22f}, {1.80f, 659.25f, 0.22f},
-        {2.02f, 830.61f, 0.35f}, {2.37f, 987.77f, 0.35f}, {2.72f, 1318.51f, 0.55f}, {3.27f, 987.77f, 0.40f},
-        {3.67f, 1318.51f, 1.30f}},
-       82.41f, 2.0f, 0.18f},
-
-      // 6. Tchaikovsky: 1812 Overture Final Anthem
-      {"1812 Overture Op.49 'Triumphal Anthem - Cannon Finale'", "Pyotr Ilyich Tchaikovsky",
-       {{0.00f, 466.16f, 0.45f}, {0.45f, 587.33f, 0.45f}, {0.90f, 698.46f, 0.45f}, {1.35f, 830.61f, 0.50f},
-        {1.85f, 932.33f, 0.50f}, {2.35f, 1174.66f, 0.60f}, {2.95f, 1396.91f, 0.65f}, {3.60f, 1864.66f, 1.38f}},
-       58.27f, 3.0f, 0.22f},
-
-      // 7. Dvorak: Symphony No. 9 "From the New World - Going Home"
-      {"Symphony No. 9 'From the New World - Going Home'", "Antonin Dvorak",
-       {{0.00f, 329.63f, 0.50f}, {0.50f, 392.00f, 0.50f}, {1.00f, 493.88f, 0.55f}, {1.55f, 659.25f, 0.65f},
-        {2.20f, 587.33f, 0.40f}, {2.60f, 493.88f, 0.40f}, {3.00f, 392.00f, 0.45f}, {3.45f, 830.61f, 1.50f}},
-       55.00f, 2.0f, 0.20f},
-
-      // 8. Mozart: Eine kleine Nachtmusik "Mozart Rocket"
-      {"Eine kleine Nachtmusik K.525 'Mozart Rocket'", "Wolfgang Amadeus Mozart",
-       {{0.00f, 783.99f, 0.35f}, {0.35f, 587.33f, 0.35f}, {0.70f, 783.99f, 0.35f}, {1.05f, 587.33f, 0.35f},
-        {1.40f, 783.99f, 0.30f}, {1.70f, 987.77f, 0.30f}, {2.00f, 1174.66f, 0.55f}, {2.55f, 880.00f, 0.40f},
-        {2.95f, 1174.66f, 0.45f}, {3.40f, 1567.98f, 1.55f}},
-       65.41f, 3.0f, 0.16f},
-
-      // 9. Bach: Toccata in D minor "Galactic Cathedral"
-      {"Toccata in D minor BWV 565 'Galactic Cathedral - Dracula'", "Johann Sebastian Bach",
-       {{0.00f, 880.00f, 0.40f}, {0.40f, 783.99f, 0.20f}, {0.60f, 880.00f, 0.65f}, {1.25f, 698.46f, 0.30f},
-        {1.55f, 659.25f, 0.30f}, {1.85f, 587.33f, 0.30f}, {2.15f, 554.37f, 0.30f}, {2.45f, 587.33f, 0.70f},
-        {3.15f, 739.99f, 0.45f}, {3.60f, 1174.66f, 1.38f}},
-       73.42f, 2.0f, 0.28f},
-
-      // 10. Wagner: Ride of the Valkyries
-      {"Ride of the Valkyries WWV 86B 'Superman Helicopter Attack'", "Richard Wagner",
-       {{0.00f, 493.88f, 0.35f}, {0.35f, 587.33f, 0.35f}, {0.70f, 739.99f, 0.35f}, {1.05f, 987.77f, 0.85f},
-        {1.95f, 493.88f, 0.35f}, {2.30f, 587.33f, 0.35f}, {2.65f, 739.99f, 0.35f}, {3.00f, 987.77f, 1.85f}},
-       61.74f, 3.0f, 0.24f},
-
-      // 11. Grieg: Peer Gynt "In the Hall of the Mountain King"
-      {"Peer Gynt Op.23 'In the Hall of the Mountain King - Accelerando'", "Edvard Grieg",
-       {{0.00f, 493.88f, 0.32f}, {0.32f, 554.37f, 0.32f}, {0.64f, 587.33f, 0.32f}, {0.96f, 659.25f, 0.32f},
-        {1.28f, 739.99f, 0.35f}, {1.63f, 587.33f, 0.35f}, {1.98f, 739.99f, 0.40f}, {2.38f, 659.25f, 0.35f},
-        {2.73f, 587.33f, 0.35f}, {3.08f, 739.99f, 0.40f}, {3.48f, 987.77f, 1.50f}},
-       61.74f, 2.0f, 0.22f},
-
-      // 12. Handel: Water Music "Alla Hornpipe"
-      {"Water Music HWV 349 'Alla Hornpipe - Royal Fanfare'", "George Frideric Handel",
-       {{0.00f, 587.33f, 0.38f}, {0.38f, 739.99f, 0.38f}, {0.76f, 880.00f, 0.38f}, {1.14f, 1174.66f, 0.55f},
-        {1.69f, 880.00f, 0.38f}, {2.07f, 739.99f, 0.38f}, {2.45f, 587.33f, 0.45f}, {2.90f, 880.00f, 0.45f},
-        {3.35f, 1174.66f, 1.62f}},
-       73.42f, 2.0f, 0.18f},
-
-      // 13. Brahms: Hungarian Dance No. 5 in F-sharp minor
-      {"Hungarian Dance No. 5 WoO 1 'Gypsy Fire - Snap Dance'", "Johannes Brahms",
-       {{0.00f, 739.99f, 0.35f}, {0.35f, 880.00f, 0.35f}, {0.70f, 1174.66f, 0.50f}, {1.20f, 1108.73f, 0.35f},
-        {1.55f, 987.77f, 0.35f}, {1.90f, 880.00f, 0.40f}, {2.30f, 783.99f, 0.35f}, {2.65f, 739.99f, 0.35f},
-        {3.00f, 880.00f, 0.45f}, {3.45f, 1479.98f, 1.52f}},
-       73.42f, 2.0f, 0.20f},
-
-      // 14. Villa-Lobos: Trenzinho Caipira (Bachianas Brasileiras No. 2)
-      {"Bachianas Brasileiras No.2 'O Trenzinho Caipira - Little Train of Caipira - Train Whistle'", "Heitor Villa-Lobos",
-       {{0.00f, 880.00f, 0.30f}, {0.30f, 1318.51f, 0.55f}, {1.00f, 392.00f, 0.35f}, {1.35f, 440.00f, 0.35f},
-        {1.70f, 493.88f, 0.35f}, {2.05f, 523.25f, 0.75f}, {2.90f, 493.88f, 0.35f}, {3.25f, 440.00f, 0.35f},
-        {3.60f, 392.00f, 0.35f}, {3.95f, 349.23f, 0.55f}, {4.60f, 659.25f, 0.35f}},
-       58.27f, 5.0f, 0.38f},
-
-      // 15. Beethoven: Symphony No. 5 "Fate"
-      {"Symphony No. 5 Op.67 'Fate - Victory Over Fate - da-da-da-DAAA'", "Ludwig van Beethoven",
-       {{0.00f, 392.00f, 0.22f}, {0.22f, 392.00f, 0.22f}, {0.44f, 392.00f, 0.22f}, {0.66f, 311.13f, 0.85f},
-        {1.60f, 349.23f, 0.22f}, {1.82f, 349.23f, 0.22f}, {2.04f, 349.23f, 0.22f}, {2.26f, 293.66f, 0.85f},
-        {3.20f, 392.00f, 0.22f}, {3.42f, 392.00f, 0.22f}, {3.64f, 392.00f, 0.22f}, {3.86f, 311.13f, 1.10f}},
-       65.41f, 3.0f, 0.25f}
-  };
-
-  const int idx = std::clamp(stage - 1, 0, 14);
-  const auto& d = defs[idx];
-
-  const float kTotalDuration = kStageFanfareDurationSeconds;
-  const size_t total = SamplesForSeconds(kTotalDuration);
-  SoundAsset asset{std::vector<float>(total, 0.0f), std::vector<float>(total, 0.0f)};
-  const float inv_sr = 2.0f * kPi / static_cast<float>(sample_rate_);
-
-  for (const auto& note : d.melody) {
-    const size_t offset = SampleOffset(note.start);
-    if (offset >= total) break;
-    const size_t max_avail = total - offset;
-    const size_t note_len = std::min(max_avail, SamplesForSeconds(note.dur));
-    float phase = 0.0f;
-    float sub_phase = 0.0f;
-    float lfo_phase = 0.0f;
-
-    for (size_t i = 0; i < note_len; ++i) {
-      const float t = static_cast<float>(i) / static_cast<float>(note_len);
-      const float attack = (t < 0.035f) ? (t / 0.035f) : 1.0f;
-      const float decay = std::pow(1.0f - t, 1.4f);
-      const float env = attack * decay;
-
-      const float lfo = std::sin(lfo_phase) * d.alien_mod_depth;
-      const float sat = (std::sin(phase + lfo) * 0.68f +
-                         std::sin(phase * d.sparkle_mult) * 0.22f +
-                         std::sin(phase * (d.sparkle_mult + 1.0f)) * 0.10f) * env * 0.44f;
-      const float sub = std::sin(sub_phase) * env * 0.36f;
-
-      asset.satellite[offset + i] += sat;
-      asset.subwoofer[offset + i] += sub;
-
-      phase += note.freq * inv_sr;
-      sub_phase += d.sub_freq * inv_sr;
-      lfo_phase += 5.5f * inv_sr;
-    }
-  }
-  return asset;
+  StageFanfare::Asset fanfare =
+      StageFanfare::Generate(stage, sample_rate_, kStageFanfareDurationSeconds);
+  return SoundAsset{std::move(fanfare.satellite), std::move(fanfare.subwoofer)};
 }
 
 void SoundManager::SynthesizeSfx() {

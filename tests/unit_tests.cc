@@ -145,7 +145,7 @@ TEST_CASE(TestScoreProgressionInvariants) {
 TEST_CASE(TestGameRulesSSOTInvariants) {
   ASSERT_EQ(GameRules::Simulation::kSimulationFrequencyHz, 60.0f);
   ASSERT_EQ(GameRules::Progression::kWavesPerStage, 15);
-  ASSERT_EQ(GameRules::Progression::kStageFanfareDurationSeconds, 5.0f);
+  ASSERT_EQ(GameRules::Progression::kStageFanfareDurationSeconds, 10.0f);
   ASSERT_EQ(GameRules::Player::kInitialShieldLives, 3);
   ASSERT_EQ(GameRules::Player::kPlayerMaxShield, 8);
   ASSERT_EQ(GameRules::Visuals::kFloatingTextHitFontSize, 24.0f);
