@@ -276,6 +276,14 @@ namespace Combat {
   static constexpr int     kBonusWeightNuke           = 10;
   static constexpr int     kTotalBonusWeight =
       kBonusWeightFire + kBonusWeightMulti + kBonusWeightSpeed + kBonusWeightShield + kBonusWeightNuke;
+// Bonus supply pod initial spawn delay in frames after convoy elimination
+static constexpr int     kBonusInitialWaitMinFrames  = 5;
+static constexpr int     kBonusInitialWaitMaxFrames  = 10;
+// Total number of alien textures available for random wanderer assignment
+static constexpr int     kAlienTextureCount          = 15;
+// Cooldown frames between consecutive smart turning bomb deployments
+static constexpr int     kTurningSpacingCooldownMinFrames = 35;
+static constexpr int     kTurningSpacingCooldownMaxFrames = 79;
 }
 
 // =============================================================================

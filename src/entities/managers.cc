@@ -433,7 +433,7 @@ AliensManager::AliensManager(BulletsManager* bombs_manager,
       base_cruise_speed_(1),
       fleet_state_(spawning_convoys),
       next_creation_wait_(convoys_data ? convoys_data[0].wait : 0),
-      bonus_wait_(std::uniform_int_distribution<int>(5, 10)(rng_)),
+      bonus_wait_(std::uniform_int_distribution<int>(GameRules::Combat::kBonusInitialWaitMinFrames, GameRules::Combat::kBonusInitialWaitMaxFrames)(rng_)),
       bonus_allowed_this_level_(rng_.Bernoulli(static_cast<float>(GameRules::Combat::kBonusWaveDropProbability))),
       bonus_spawned_this_level_(false),
       wanderers_allowed_cycle_(((level_number - 1) / 15 + 1) >= 2),
@@ -505,7 +505,7 @@ void AliensManager::SpawnRandomWanderers() {
     random_paths_.push_back(std::move(immediate));
 
     TextureId rnd_sprite = static_cast<TextureId>(
-        static_cast<int>(TextureId::Alien1) + std::uniform_int_distribution<int>(0, 14)(rng_));
+        static_cast<int>(TextureId::Alien1) + std::uniform_int_distribution<int>(0, GameRules::Combat::kAlienTextureCount - 1)(rng_));
 
     const int stage_cycle = GameRules::Progression::WaveToStage(level_number_);
     auto alien = std::make_unique<Alien>(
@@ -773,7 +773,7 @@ void AliensManager::Fire(Coord player_pos) const {
       if (turning_bombs_remaining_ > 0 && turning_spacing_cooldown_ <= 0 && (std::uniform_int_distribution<int>(0, 2)(rng_) == 0)) {
         is_turning = true;
         --turning_bombs_remaining_;
-        turning_spacing_cooldown_ = std::uniform_int_distribution<int>(35, 79)(rng_);
+        turning_spacing_cooldown_ = std::uniform_int_distribution<int>(GameRules::Combat::kTurningSpacingCooldownMinFrames, GameRules::Combat::kTurningSpacingCooldownMaxFrames)(rng_);
 
         const float vector_speed_variance = 0.88f + static_cast<float>(std::uniform_int_distribution<int>(0, 29)(rng_)) / 100.0f;
         vy = std::max(3, static_cast<int>(std::round(static_cast<float>(vy) * vector_speed_variance)));

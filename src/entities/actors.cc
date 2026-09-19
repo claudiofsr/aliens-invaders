@@ -406,13 +406,14 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
   const Vec2f interp = transform_.InterpolatedPosition(alpha);
   const Coord render_pos(interp);
 
+  const float w = static_cast<float>(Width());
   if (is_kamikaze_) {
     constexpr float kPulseMid =
       (GameRules::Visuals::kPulseAmplitudeMax + GameRules::Visuals::kPulseAmplitudeMin) * 0.5f;
     constexpr float kPulseAmp =
       (GameRules::Visuals::kPulseAmplitudeMax - GameRules::Visuals::kPulseAmplitudeMin) * 0.5f;
     const float pulse = kPulseMid + kPulseAmp * std::sin(kamikaze_phase_ * GameRules::Visuals::kKamikazePulseFrequency);
-    const float aura_rad = static_cast<float>(Width()) * (GameRules::Visuals::kKamikazeAuraRadiusScale * pulse + GameRules::Visuals::kKamikazeAuraRadiusBias);
+    const float aura_rad = w * (GameRules::Visuals::kKamikazeAuraRadiusScale * pulse + GameRules::Visuals::kKamikazeAuraRadiusBias);
 
     Gfx::Inst().DrawAura(render_pos, aura_rad * GameRules::Visuals::kKamikazeAuraOuterScale, 255, 30, 40, 150);
     Gfx::Inst().DrawAura(render_pos, aura_rad * GameRules::Visuals::kKamikazeAuraMidScale, 255, 140, 0, 190);
@@ -421,7 +422,7 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
 
   if (texture_id_ == TextureId::Alien4) {
     if (has_electrosphere_) {
-      const float aura_rad = static_cast<float>(Width()) * GameRules::SpecialEntities::kAlien4AuraRadiusScale;
+      const float aura_rad = w * GameRules::SpecialEntities::kAlien4AuraRadiusScale;
       const float pulse = GameRules::SpecialEntities::kAlien4AuraPulseMid + GameRules::SpecialEntities::kAlien4AuraPulseAmplitude * std::sin(electron_phase_ * GameRules::SpecialEntities::kAlien4AuraPulseFrequency);
 
       Gfx::Inst().DrawAura(render_pos, aura_rad * pulse, 45, 255, 85, 115);
@@ -497,7 +498,7 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
   }
 
   if (texture_id_ == TextureId::Alien14) {
-    const float aura_rad = static_cast<float>(Width()) * GameRules::Visuals::kAlien14AuraRadiusScale;
+    const float aura_rad = w * GameRules::Visuals::kAlien14AuraRadiusScale;
     Gfx::Inst().DrawAura(render_pos, aura_rad, 0, 200, 255, 80);
   }
 
