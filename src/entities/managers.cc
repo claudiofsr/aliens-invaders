@@ -312,16 +312,6 @@ void BulletsManager::OnResize(float rx, float ry) {
 // ==============================================================================
 
 namespace {
-TextureId GetBonusTextureId(Bonus::bonus_t type) noexcept {
-  switch (type) {
-    case Bonus::extra_speed:  return TextureId::BonusSpeed;
-    case Bonus::extra_fire:   return TextureId::BonusFire;
-    case Bonus::extra_shield: return TextureId::BonusShield;
-    case Bonus::extra_multi:  return TextureId::BonusMulti;
-    case Bonus::extra_nuke:   return TextureId::BonusNuke;
-    default:                  return TextureId::None;
-  }
-}
 }  // namespace
 
 bool BonusSlot::Out() const noexcept {

@@ -11,17 +11,6 @@
 #include "sdl_window.h"
 
 namespace {
-TextureId GetBonusTextureId(Bonus::bonus_t type) noexcept {
-  switch (type) {
-    case Bonus::extra_speed:  return TextureId::BonusSpeed;
-    case Bonus::extra_fire:   return TextureId::BonusFire;
-    case Bonus::extra_shield: return TextureId::BonusShield;
-    case Bonus::extra_multi:  return TextureId::BonusMulti;
-    case Bonus::extra_nuke:   return TextureId::BonusNuke;
-    default:                  return TextureId::None;
-  }
-}
-
 struct OrbitKnot { float c; float s; };
 inline const std::array<OrbitKnot, 36>& GetOrbitKnots() noexcept {
   static const auto tbl = []() {
@@ -402,7 +391,7 @@ void Alien::Move() {
     kamikaze_phase_ += GameRules::Visuals::kKamikazePulsePhaseStep;
   }
   if (texture_id_ == TextureId::Alien4 && has_electrosphere_) {
-    electron_phase_ += 0.020f;
+    electron_phase_ += GameRules::SpecialEntities::kAlien4ElectronPhaseStep;
   }
 }
 
@@ -423,20 +412,20 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
     constexpr float kPulseAmp =
       (GameRules::Visuals::kPulseAmplitudeMax - GameRules::Visuals::kPulseAmplitudeMin) * 0.5f;
     const float pulse = kPulseMid + kPulseAmp * std::sin(kamikaze_phase_ * GameRules::Visuals::kKamikazePulseFrequency);
-    const float aura_rad = static_cast<float>(Width()) * (0.88f * pulse + 0.12f);
+    const float aura_rad = static_cast<float>(Width()) * (GameRules::Visuals::kKamikazeAuraRadiusScale * pulse + GameRules::Visuals::kKamikazeAuraRadiusBias);
 
-    Gfx::Inst().DrawAura(render_pos, aura_rad * 1.30f, 255, 30, 40, 150);
-    Gfx::Inst().DrawAura(render_pos, aura_rad * 0.75f, 255, 140, 0, 190);
-    Gfx::Inst().DrawAura(render_pos, aura_rad * 0.35f, 255, 240, 220, 230);
+    Gfx::Inst().DrawAura(render_pos, aura_rad * GameRules::Visuals::kKamikazeAuraOuterScale, 255, 30, 40, 150);
+    Gfx::Inst().DrawAura(render_pos, aura_rad * GameRules::Visuals::kKamikazeAuraMidScale, 255, 140, 0, 190);
+    Gfx::Inst().DrawAura(render_pos, aura_rad * GameRules::Visuals::kKamikazeAuraInnerScale, 255, 240, 220, 230);
   }
 
   if (texture_id_ == TextureId::Alien4) {
     if (has_electrosphere_) {
-      const float aura_rad = static_cast<float>(Width()) * 0.85f;
-      const float pulse = 0.82f + 0.18f * std::sin(electron_phase_ * 3.5f);
+      const float aura_rad = static_cast<float>(Width()) * GameRules::SpecialEntities::kAlien4AuraRadiusScale;
+      const float pulse = GameRules::SpecialEntities::kAlien4AuraPulseMid + GameRules::SpecialEntities::kAlien4AuraPulseAmplitude * std::sin(electron_phase_ * GameRules::SpecialEntities::kAlien4AuraPulseFrequency);
 
       Gfx::Inst().DrawAura(render_pos, aura_rad * pulse, 45, 255, 85, 115);
-      Gfx::Inst().DrawAura(render_pos, aura_rad * 0.40f, 180, 255, 190, 160);
+      Gfx::Inst().DrawAura(render_pos, aura_rad * GameRules::SpecialEntities::kAlien4InnerAuraScale, 180, 255, 190, 160);
 
       SDL_Renderer* rend = Gfx::Inst().GetRenderer();
       const float rx = aura_rad * GameRules::SpecialEntities::kAlien4ElectronRadiusScale;
@@ -445,15 +434,17 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
       if (rend) {
         SDL_SetRenderDrawBlendMode(rend, SDL_BLENDMODE_BLEND);
         SDL_SetRenderDrawColor(rend, 60, 255, 100, 85);
-        const float tilt0 = GameRules::SpecialEntities::kAlien4OrbitTiltRad;
-        const float tilts[2] = {tilt0, -tilt0};
+        // CPU cache: orbit tilt is constant; sin/cos computed once per process.
+        static const float kTiltCos = std::cos(GameRules::SpecialEntities::kAlien4OrbitTiltRad);
+        static const float kTiltSin = std::sin(GameRules::SpecialEntities::kAlien4OrbitTiltRad);
+        const float ring_cos[2] = {kTiltCos, kTiltCos};
+        const float ring_sin[2] = {kTiltSin, -kTiltSin};
         const auto& knots = GetOrbitKnots();
 
         SDL_FPoint ring_pts[37];
         for (int ring = 0; ring < 2; ++ring) {
-          const float tilt = tilts[ring];
-          const float cos_t = std::cos(tilt);
-          const float sin_t = std::sin(tilt);
+          const float cos_t = ring_cos[ring];
+          const float sin_t = ring_sin[ring];
           for (size_t i = 0; i < 36; ++i) {
             const float x = rx * knots[i].c;
             const float y = ry * knots[i].s;
@@ -469,15 +460,15 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
         const float theta0 = electron_phase_ * speed + electron_offset0_;
         const float theta1 = -electron_phase_ * speed + electron_offset1_;
 
-        const float cos_t0 = std::cos(tilts[0]);
-        const float sin_t0 = std::sin(tilts[0]);
+        const float cos_t0 = kTiltCos;
+        const float sin_t0 = kTiltSin;
         const float e0_ox = rx * std::cos(theta0);
         const float e0_oy = ry * std::sin(theta0);
         const float e0_x = e0_ox * cos_t0 - e0_oy * sin_t0 + static_cast<float>(render_pos.x);
         const float e0_y = e0_ox * sin_t0 + e0_oy * cos_t0 + static_cast<float>(render_pos.y);
 
-        const float cos_t1 = std::cos(tilts[1]);
-        const float sin_t1 = std::sin(tilts[1]);
+        const float cos_t1 = kTiltCos;
+        const float sin_t1 = -kTiltSin;
         const float e1_ox = rx * std::cos(theta1);
         const float e1_oy = ry * std::sin(theta1);
         const float e1_x = e1_ox * cos_t1 - e1_oy * sin_t1 + static_cast<float>(render_pos.x);
@@ -506,7 +497,7 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
   }
 
   if (texture_id_ == TextureId::Alien14) {
-    const float aura_rad = static_cast<float>(Width()) * 0.70f;
+    const float aura_rad = static_cast<float>(Width()) * GameRules::Visuals::kAlien14AuraRadiusScale;
     Gfx::Inst().DrawAura(render_pos, aura_rad, 0, 200, 255, 80);
   }
 

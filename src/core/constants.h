@@ -295,9 +295,17 @@ namespace Visuals {
   static constexpr float kScreenShakeTraumaDecay         = 0.040f;
   // Kamikaze alert aura: smooth sinusoidal pulse (maximum alert breathing)
   static constexpr float kPulseAmplitudeMin              = 0.40f;
-  static constexpr float kPulseAmplitudeMax              = 0.90f;
+  static constexpr float kPulseAmplitudeMax              = 1.00f;
   static constexpr float kKamikazePulseFrequency         = 1.5f;
   static constexpr float kKamikazePulsePhaseStep         = 0.08f;
+  // Kamikaze alert aura geometry (concentric warning rings)
+  static constexpr float kKamikazeAuraRadiusScale        = 0.88f;
+  static constexpr float kKamikazeAuraRadiusBias         = 0.12f;
+  static constexpr float kKamikazeAuraOuterScale         = 1.30f;
+  static constexpr float kKamikazeAuraMidScale           = 0.75f;
+  static constexpr float kKamikazeAuraInnerScale         = 0.35f;
+  // Alien14 (Albert Alienstein) relativistic aura radius relative to width
+  static constexpr float kAlien14AuraRadiusScale         = 0.70f;
 }
 
 // =============================================================================
@@ -396,6 +404,13 @@ namespace SpecialEntities {
   static constexpr float  kAlien4OrbitTiltRad             = 0.628f;
   // Toggles alternation between vessels with and without active electrospheres
   static constexpr bool   kAlien4AlternateElectrosphere   = true;
+  // Alien4 electrosphere animation dynamics (deterministic 60 Hz steps)
+  static constexpr float  kAlien4ElectronPhaseStep        = 0.020f;
+  static constexpr float  kAlien4AuraRadiusScale          = 0.85f;
+  static constexpr float  kAlien4AuraPulseMid             = 0.82f;
+  static constexpr float  kAlien4AuraPulseAmplitude       = 0.18f;
+  static constexpr float  kAlien4AuraPulseFrequency       = 3.5f;
+  static constexpr float  kAlien4InnerAuraScale           = 0.40f;
 }
 
 // =============================================================================

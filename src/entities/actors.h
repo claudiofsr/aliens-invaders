@@ -155,4 +155,20 @@ class Alien {
   }
 };
 
+
+// ---------------------------------------------------------------------------
+// Shared Bonus -> TextureId mapping (SSOT). Previously duplicated verbatim in
+// actors.cc AND managers.cc anonymous namespaces (deep-DRY violation).
+// ---------------------------------------------------------------------------
+[[nodiscard]] inline TextureId GetBonusTextureId(Bonus::bonus_t type) noexcept {
+switch (type) {
+case Bonus::extra_speed:  return TextureId::BonusSpeed;
+case Bonus::extra_fire:   return TextureId::BonusFire;
+case Bonus::extra_shield: return TextureId::BonusShield;
+case Bonus::extra_multi:  return TextureId::BonusMulti;
+case Bonus::extra_nuke:   return TextureId::BonusNuke;
+default:                  return TextureId::None;
+}
+}
+
 #endif  // ACTORS_H

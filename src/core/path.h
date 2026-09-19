@@ -154,8 +154,8 @@ struct FlightPath {
 
     constexpr float cx = 512.0f;
     constexpr float cy = 516.0f;
-    constexpr float rx = 92.0f;
-    constexpr float ry = 88.0f;
+    constexpr float rx = 130.0f;
+    constexpr float ry = 125.0f;
     constexpr int kSteps = 36;
 
     for (int r = 0; r < repetitions; ++r) {
