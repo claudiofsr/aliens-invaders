@@ -105,7 +105,8 @@ class Alien {
   bool is_kamikaze_{false};
   bool is_wanderer_{false};
   bool has_electrosphere_{true};
-  mutable float kamikaze_phase_{0.0f};
+  float kamikaze_phase_{0.0f};
+  float electron_phase_{0.0f};
 
  public:
   Alien(const Pix* pix, const Trajectory& trajectory, float speed, TextureId texture_id = TextureId::None);

@@ -310,15 +310,15 @@ void Alien::Move() {
 
   if (move_dist > 1e-3f) {
     if (trajectory_.Stage() == Trajectory::cruising) {
-      dir_x_ += (0.0f - dir_x_) * 0.14f;
-      dir_y_ += (1.0f - dir_y_) * 0.14f;
+      dir_x_ += (0.0f - dir_x_) * GameRules::Fleet::kTurnDampingFactor;
+      dir_y_ += (1.0f - dir_y_) * GameRules::Fleet::kTurnDampingFactor;
     } else {
       const float inv_len = 1.0f / move_dist;
       const float target_dir_x = dx * inv_len;
       const float target_dir_y = dy * inv_len;
 
-      dir_x_ += (target_dir_x - dir_x_) * 0.14f;
-      dir_y_ += (target_dir_y - dir_y_) * 0.14f;
+      dir_x_ += (target_dir_x - dir_x_) * GameRules::Fleet::kTurnDampingFactor;
+      dir_y_ += (target_dir_y - dir_y_) * GameRules::Fleet::kTurnDampingFactor;
     }
 
     const float norm = std::sqrt(dir_x_ * dir_x_ + dir_y_ * dir_y_);
@@ -334,8 +334,7 @@ void Alien::Move() {
     while (diff > 180.0f) diff -= 360.0f;
 
     if (std::abs(diff) > 0.25f) {
-      constexpr float kMaxTurnRate = 5.5f;
-      const float turn = std::clamp(diff * 0.18f, -kMaxTurnRate, kMaxTurnRate);
+      const float turn = std::clamp(diff * 0.18f, -GameRules::Fleet::kMaxTurnRateDeg, GameRules::Fleet::kMaxTurnRateDeg);
       angle_ += turn;
     }
   }
@@ -357,6 +356,13 @@ void Alien::Move() {
       has_spun_ = true;
     }
   }
+
+  // Evolução determinística de animações no passo fixo de 60 Hz (independente do monitor)
+  if (is_kamikaze_) {
+  }
+  if (texture_id_ == TextureId::Alien4 && has_electrosphere_) {
+    electron_phase_ += 0.020f;
+  }
 }
 
 void Alien::Draw(float extra_angle) const {
@@ -371,7 +377,6 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
   const Coord render_pos(interp);
 
   if (is_kamikaze_) {
-    kamikaze_phase_ += 0.08f;
     const float pulse = 0.75f + 0.25f * std::sin(kamikaze_phase_ * 4.5f);
     const float aura_rad = static_cast<float>(Width()) * (0.88f * pulse + 0.12f);
 
@@ -382,11 +387,8 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
 
   if (texture_id_ == TextureId::Alien4) {
     if (has_electrosphere_) {
-      static float s_curie_epoch = 0.0f;
-      s_curie_epoch += 0.020f;
-
       const float aura_rad = static_cast<float>(Width()) * 0.85f;
-      const float pulse = 0.82f + 0.18f * std::sin(s_curie_epoch * 3.5f);
+      const float pulse = 0.82f + 0.18f * std::sin(electron_phase_ * 3.5f);
 
       Gfx::Inst().DrawAura(render_pos, aura_rad * pulse, 45, 255, 85, 115);
       Gfx::Inst().DrawAura(render_pos, aura_rad * 0.40f, 180, 255, 190, 160);
@@ -418,8 +420,8 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
         }
 
         const float speed = GameRules::SpecialEntities::kAlien4ElectronAngularSpeed;
-        const float theta0 = s_curie_epoch * speed;
-        const float theta1 = -s_curie_epoch * speed + 3.14159265f;
+        const float theta0 = electron_phase_ * speed;
+        const float theta1 = -electron_phase_ * speed + 3.14159265f;
 
         const float cos_t0 = std::cos(tilts[0]);
         const float sin_t0 = std::sin(tilts[0]);

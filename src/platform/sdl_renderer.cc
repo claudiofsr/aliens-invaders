@@ -553,20 +553,23 @@ void Gfx::DrawOverlays() {
     --flash_timer_;
   }
 
-  auto it = floating_texts_.begin();
-  while (it != floating_texts_.end()) {
-    float alpha =
-        (it->life < 25) ? (static_cast<float>(it->life) / 25.0f) : 1.0f;
-    it->pos_y -= 0.45f;
-    uint8_t cr = static_cast<uint8_t>(it->r * alpha);
-    uint8_t cg = static_cast<uint8_t>(it->g * alpha);
-    uint8_t cb = static_cast<uint8_t>(it->b * alpha);
-    DrawModernText(Coord(it->pos_x, static_cast<int32_t>(std::round(it->pos_y))),
-                   it->text, cr, cg, cb, it->size);
-    if (--it->life <= 0) {
-      it = floating_texts_.erase(it);
+  // Swap-and-Pop O(1): elimina realocacoes de memoria e deslocamentos de vetor por frame
+  for (size_t i = 0; i < floating_texts_.size(); ) {
+    auto& item = floating_texts_[i];
+    const float alpha = (item.life < 25) ? (static_cast<float>(item.life) / 25.0f) : 1.0f;
+    item.pos_y -= 0.45f;
+    const uint8_t cr = static_cast<uint8_t>(static_cast<float>(item.r) * alpha);
+    const uint8_t cg = static_cast<uint8_t>(static_cast<float>(item.g) * alpha);
+    const uint8_t cb = static_cast<uint8_t>(static_cast<float>(item.b) * alpha);
+    DrawModernText(Coord(item.pos_x, static_cast<int32_t>(std::round(item.pos_y))),
+                   item.text, cr, cg, cb, item.size);
+    if (--item.life <= 0) {
+      if (i + 1 < floating_texts_.size()) {
+        floating_texts_[i] = std::move(floating_texts_.back());
+      }
+      floating_texts_.pop_back();
     } else {
-      ++it;
+      ++i;
     }
   }
 }

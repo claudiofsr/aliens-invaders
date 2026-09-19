@@ -143,6 +143,10 @@ namespace Fleet {
   static constexpr float kKamikazeBlastRadiusMultiplier = 1.25f;
   // Total frames composing an aerobatic alien spin animation
   static constexpr int   kAlienSpinAnimationFrames      = 46;
+  // Taxa máxima angular de rotação de mira por frame (graus)
+  static constexpr float kMaxTurnRateDeg                = 5.5f;
+  // Fator de amortecimento inercial da trajetória vetorial
+  static constexpr float kTurnDampingFactor             = 0.14f;
 
   // Stage progression speed boundaries (smoothly interpolated per wave)
   static constexpr float kStage1MinSpeed                = 6.0f;
