@@ -399,6 +399,7 @@ void Alien::Move() {
 
   // Evolução determinística de animações no passo fixo de 60 Hz (independente do monitor)
   if (is_kamikaze_) {
+    kamikaze_phase_ += GameRules::Visuals::kKamikazePulsePhaseStep;
   }
   if (texture_id_ == TextureId::Alien4 && has_electrosphere_) {
     electron_phase_ += 0.020f;
@@ -417,7 +418,11 @@ void Alien::DrawInterpolated(float alpha, float extra_angle) const {
   const Coord render_pos(interp);
 
   if (is_kamikaze_) {
-    const float pulse = 0.75f + 0.25f * std::sin(kamikaze_phase_ * 4.5f);
+    constexpr float kPulseMid =
+      (GameRules::Visuals::kPulseAmplitudeMax + GameRules::Visuals::kPulseAmplitudeMin) * 0.5f;
+    constexpr float kPulseAmp =
+      (GameRules::Visuals::kPulseAmplitudeMax - GameRules::Visuals::kPulseAmplitudeMin) * 0.5f;
+    const float pulse = kPulseMid + kPulseAmp * std::sin(kamikaze_phase_ * GameRules::Visuals::kKamikazePulseFrequency);
     const float aura_rad = static_cast<float>(Width()) * (0.88f * pulse + 0.12f);
 
     Gfx::Inst().DrawAura(render_pos, aura_rad * 1.30f, 255, 30, 40, 150);

@@ -293,6 +293,11 @@ namespace Visuals {
   // Procedural screen shake trauma dynamics (Trauma^2 with linear frame decay)
   static constexpr float kScreenShakeMaxTrauma           = 1.0f;
   static constexpr float kScreenShakeTraumaDecay         = 0.040f;
+  // Kamikaze alert aura: smooth sinusoidal pulse (maximum alert breathing)
+  static constexpr float kPulseAmplitudeMin              = 0.40f;
+  static constexpr float kPulseAmplitudeMax              = 0.90f;
+  static constexpr float kKamikazePulseFrequency         = 1.5f;
+  static constexpr float kKamikazePulsePhaseStep         = 0.08f;
 }
 
 // =============================================================================
