@@ -29,7 +29,11 @@ class StartMenu {
     BonusShowcase,
     ShipCruiser,
     ShipVanguard,
-    StoryPrologue
+    StoryPrologue,
+    SoundtrackPart1,
+    SoundtrackPart2,
+    SoundtrackPart3,
+    SoundtrackPart4
   };
 
   PageMode current_page_;
@@ -65,8 +69,13 @@ class StartMenu {
   void PrintBonusShowcase();
   void PrintShipShowcase(bool is_vanguard);
   void PrintStoryPrologue();
+  void PrintSoundtrackPart1();
+  void PrintSoundtrackPart2();
+  void PrintSoundtrackPart3();
+  void PrintSoundtrackPart4();
+  void PrintSoundtrackPage(int start_stage, int end_stage, int part_num, int total_parts);
 
- public:
+public:
   
   
 
