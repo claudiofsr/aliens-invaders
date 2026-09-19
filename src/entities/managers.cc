@@ -311,9 +311,6 @@ void BulletsManager::OnResize(float rx, float ry) {
 // BonusSlot & BonusManager (DENSE ACTIVE LIST)
 // ==============================================================================
 
-namespace {
-}  // namespace
-
 bool BonusSlot::Out() const noexcept {
   if (!active || !pix) return true;
   const int hh = pix->Height() / 2;
@@ -437,7 +434,7 @@ AliensManager::AliensManager(BulletsManager* bombs_manager,
       fleet_state_(spawning_convoys),
       next_creation_wait_(convoys_data ? convoys_data[0].wait : 0),
       bonus_wait_(std::uniform_int_distribution<int>(5, 10)(rng_)),
-      bonus_allowed_this_level_(std::bernoulli_distribution(0.50)(rng_)),
+      bonus_allowed_this_level_(rng_.Bernoulli(static_cast<float>(GameRules::Combat::kBonusWaveDropProbability))),
       bonus_spawned_this_level_(false),
       wanderers_allowed_cycle_(((level_number - 1) / 15 + 1) >= 2),
       turning_bombs_remaining_(std::uniform_int_distribution<int>(GameRules::Fleet::kMinVectorMissilesPerStage, GameRules::Fleet::kMaxVectorMissilesPerStage)(rng_)),
