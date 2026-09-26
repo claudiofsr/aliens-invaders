@@ -109,9 +109,9 @@ void Score::DrawLevel(float alpha) const {
     const auto* pix = PixKeeper::Instance().Get(convoy[0].texture_id);
     if (pix) {
       const Coord center_pos(static_cast<int32_t>(cx), static_cast<int32_t>(cy));
-      const uint8_t aura_alpha = static_cast<uint8_t>(std::round(95.0f * clamped_alpha));
+      const uint8_t aura_alpha = static_cast<uint8_t>(FastRound(95.0f * clamped_alpha));
       Gfx::Inst().DrawAura(center_pos, alien_sz * 0.60f, 0, 230, 255, aura_alpha);
-      const uint8_t sprite_mod = static_cast<uint8_t>(std::round(255.0f * clamped_alpha));
+      const uint8_t sprite_mod = static_cast<uint8_t>(FastRound(255.0f * clamped_alpha));
       pix->DrawSized(center_pos, static_cast<int>(alien_sz), static_cast<int>(alien_sz), 0.0f,
                      sprite_mod, sprite_mod, sprite_mod);
     }

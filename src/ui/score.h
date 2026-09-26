@@ -116,7 +116,7 @@ class Score {
     const uint64_t step = ExtraShieldStep();
     const double remaining = std::max(0.0, 1.0 - shield_progress_);
     const uint64_t needed = static_cast<uint64_t>(
-        std::round(remaining * static_cast<double>(step)));
+        FastRound(remaining * static_cast<double>(step)));
     if (score_ > UINT64_MAX - needed) {
       return UINT64_MAX;
     }

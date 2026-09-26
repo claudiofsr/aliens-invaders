@@ -136,12 +136,12 @@ size_t StarsFields::CalculateTargetStarCount() const noexcept {
                            static_cast<double>(GameRules::Starfield::kBaseResolutionHeightPixels);
   const double current_area = static_cast<double>(w) * static_cast<double>(h);
   const double scale = std::sqrt(current_area / kBaseArea);
-  size_t base_target = static_cast<size_t>(std::round(static_cast<double>(GameRules::Starfield::kBaseStarCount) * scale));
+  size_t base_target = static_cast<size_t>(FastRound(static_cast<double>(GameRules::Starfield::kBaseStarCount) * scale));
 
   // Escala canônica calibrada obtida diretamente do SSOT em constants.h
   const double factor = GameRules::Starfield::GetDensityFactor(density_level);
 
-  size_t target = static_cast<size_t>(std::round(static_cast<double>(base_target) * factor));
+  size_t target = static_cast<size_t>(FastRound(static_cast<double>(base_target) * factor));
   if (target == 0) return 0;
   return std::clamp<size_t>(target, GameRules::Starfield::kMinStarsCount, GameRules::Starfield::kMaxStarsCount * 2);
 }
@@ -212,8 +212,8 @@ void StarsFields::RespawnStar(Star& s, bool random_initial_y) {
           phase * static_cast<float>(GameRules::Starfield::kTwinklePhaseScale) /
           GameRules::Starfield::kTau));
   s.twinkle_step = static_cast<uint16_t>(std::max(
-      1.0f,
-      std::round(speed * static_cast<float>(GameRules::Starfield::kTwinklePhaseScale) /
+      1,
+      FastRound(speed * static_cast<float>(GameRules::Starfield::kTwinklePhaseScale) /
                   GameRules::Starfield::kTau)));
 
   // Classificação Espectral Astrofísica OBAFGKM

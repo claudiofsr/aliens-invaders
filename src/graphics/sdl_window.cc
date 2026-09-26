@@ -146,7 +146,7 @@ int SdlWindow::QueryRefreshRate() const {
   if (display_id != 0) {
     const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(display_id);
     if (mode && mode->refresh_rate > 0.0f) {
-      return static_cast<int>(std::round(mode->refresh_rate));
+      return FastRound(mode->refresh_rate);
     }
   }
   return 60;

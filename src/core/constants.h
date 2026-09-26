@@ -110,7 +110,7 @@ namespace Player {
   [[nodiscard]] inline constexpr int ComputeFireInterval(int fire_level) noexcept {
     const int   clamped   = std::clamp(fire_level, 0, kPlayerMaxFireLevel);
     const float rate_mult = 1.0f + kFireRateBoostPercent * static_cast<float>(clamped);
-    return std::max(kMinFireIntervalFrames, static_cast<int>(std::round(kBaseFireIntervalFrames / rate_mult)));
+    return std::max(kMinFireIntervalFrames, static_cast<int>((kBaseFireIntervalFrames / rate_mult) + 0.5f));
   }
 }
 

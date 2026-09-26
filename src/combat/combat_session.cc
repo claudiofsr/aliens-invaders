@@ -346,7 +346,7 @@ class CombatSession {
 
       constexpr double kHyperspaceWarpDurationSec = static_cast<double>(GameRules::Progression::kStageFanfareDurationSeconds);
       const int warp_frames =
-          static_cast<int>(std::round(kHyperspaceWarpDurationSec * static_cast<double>(GameRules::Simulation::kSimulationFrequencyHz)));
+          FastRound(kHyperspaceWarpDurationSec * static_cast<double>(GameRules::Simulation::kSimulationFrequencyHz));
       fast_star_scrolling_time_ = warp_frames;
       ctx_.stars.TriggerHyperspaceWarp(warp_frames);
       ctx_.stars.SelectDistributionForLevel(

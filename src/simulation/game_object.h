@@ -20,11 +20,11 @@ struct GameObject {
   [[nodiscard]] Coord Position() const noexcept { return transform.position; }
   [[nodiscard]] int Width() const noexcept {
     const int base_w = renderable.pix ? renderable.pix->Width() : 0;
-    return (scale == 1.0f) ? base_w : static_cast<int>(std::round(static_cast<float>(base_w) * scale));
+    return (scale == 1.0f) ? base_w : FastRound(static_cast<float>(base_w) * scale);
   }
   [[nodiscard]] int Height() const noexcept {
     const int base_h = renderable.pix ? renderable.pix->Height() : 0;
-    return (scale == 1.0f) ? base_h : static_cast<int>(std::round(static_cast<float>(base_h) * scale));
+    return (scale == 1.0f) ? base_h : FastRound(static_cast<float>(base_h) * scale);
   }
   [[nodiscard]] Coord Dim() const noexcept { return Coord(Width(), Height()); }
 

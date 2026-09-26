@@ -293,7 +293,7 @@ void Telemetry::UpdateAndDraw() {
   }
 
   constexpr float font_size = GameRules::TelemetryConfig::kFontSize;
-  const float line_spacing = std::round(font_size * 1.18f);
+  const float line_spacing = static_cast<float>(FastRound(font_size * 1.18f));
   const float my = 12.0f;
   const float mx = 16.0f;
 
