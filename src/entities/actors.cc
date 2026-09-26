@@ -502,6 +502,10 @@ void Alien::Move() {
     if (trajectory_.Stage() == Trajectory::cruising && std::abs(angle_) < 0.05f && std::abs(dir_x_) < 0.01f) {
       angle_ = 0.0f;
     } else {
+    // Fast-path: skip expensive atan2f when alien is upright in horizontal cruising formation
+    if (trajectory_.Stage() == Trajectory::cruising && std::abs(angle_) < 0.05f && std::abs(dir_x_) < 0.01f) {
+      angle_ = 0.0f;
+    } else {
       const float target_angle =
           std::atan2(dir_y_, dir_x_) * (180.0f / 3.14159265f) - 90.0f;
       float diff = target_angle - angle_;
@@ -512,6 +516,7 @@ void Alien::Move() {
         const float turn = std::clamp(diff * 0.18f, -GameRules::Fleet::kMaxTurnRateDeg, GameRules::Fleet::kMaxTurnRateDeg);
         angle_ += turn;
       }
+    }
     }
   }
 

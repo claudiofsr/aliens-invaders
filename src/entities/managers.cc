@@ -926,13 +926,14 @@ void AliensManager::Fire(Coord player_pos) const {
   const int player_y = player_ ? player_->Position().y : (Gfx::Inst().WindowHeight() - GameRules::Combat::kPlayerYOffsetPixels);
   const int safe_corridor = static_cast<int>(GameRules::Fleet::kSafeEvasionCorridorPixels * s);
   const int window_w = Gfx::Inst().WindowWidth();
+  const int speed_threshold = static_cast<int>(std::lround(static_cast<double>(speed_)));
 
   for (const auto& alien : aliens_) {
     if (bombs_manager_->Nb() >= max_bombs) break;
 
     if (alien->Stage() != Trajectory::cruising &&
         alien->Stage() != Trajectory::joining &&
-        rng_.UniformInt(0, fire_chance - 1) < static_cast<int>(std::lround(static_cast<double>(speed_)))) {
+        rng_.UniformInt(0, fire_chance - 1) < speed_threshold) {
       Coord cannon_pos = alien->CannonPosition();
       if (bombs_manager_->HasBombNear(cannon_pos, static_cast<int>(GameRules::Combat::kBombNearDistancePixels * s))) {
         continue;
