@@ -927,6 +927,7 @@ void AliensManager::Fire(Coord player_pos) const {
   const int safe_corridor = static_cast<int>(GameRules::Fleet::kSafeEvasionCorridorPixels * s);
   const int window_w = Gfx::Inst().WindowWidth();
   const int speed_threshold = static_cast<int>(std::lround(static_cast<double>(speed_)));
+  //const int speed_threshold = static_cast<int>(FastRound(static_cast<double>(speed_)));
 
   for (const auto& alien : aliens_) {
     if (bombs_manager_->Nb() >= max_bombs) break;
