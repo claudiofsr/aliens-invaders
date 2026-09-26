@@ -1,0 +1,11 @@
+leak:libfontconfig
+leak:libdecor
+leak:libpango
+leak:libgtk-3
+leak:libdbus
+leak:_dbus
+leak:dbus_
+leak:libpipewire
+leak:libpulse
+leak:libasound
+leak:<unknown module>

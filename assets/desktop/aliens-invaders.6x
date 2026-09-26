@@ -1,0 +1,85 @@
+.TH ALIENS-INVADERS 6 "25-SEP-2026" "@VERSION@" "Aliens Invaders Manual"
+.SH NAME
+aliens-invaders \- Modern arcade vertical space shooter powered by C++20 and SDL3
+.SH SYNOPSIS
+.B aliens-invaders
+[\fB\-driver\fR \fIDRIVER\fR]
+[\fB\-drivers\fR]
+[\fB\-playlist\fR]
+[\fB\-play\fR \fITRACK\fR]
+[\fB\-play\fR \fIFIRST\fR \fILAST\fR]
+[\fB\-help\fR]
+.SH DESCRIPTION
+.B Aliens Invaders
+is an arcade vertical-scrolling space combat game engineered natively for
+.B Wayland
+and modern platforms using
+.BR SDL3 " and " C++20 .
+.PP
+The engine features a modern Vulkan graphics pipeline with automatic OpenGL fallback, deterministic fixed-step 60 Hz simulation physics, tear-free subpixel render interpolation (alpha) up to 360+ Hz, procedural physical stereo 2.1 sound synthesis, non-repeating stage bonus economy (maximum 5 unique power-ups per 15-wave stage), compile-time embedded assets, non-blocking asynchronous persistence, fair-play anti-scissor trajectory calculations, and resolution-segregated local Hall of Fame leaderboards.
+.SH OPTIONS
+.TP
+.BR \-driver " \fIDRIVER\fR, " \-\-driver " \fIDRIVER\fR, " \-d " \fIDRIVER\fR"
+Launch the game using a specific 2D graphics rendering driver (e.g. \fBvulkan\fR, \fBopengl\fR, \fBopengles2\fR, or \fBsoftware\fR).
+.TP
+.BR \-drivers ", " \-\-drivers ", " \-list\-drivers
+Display all available 2D graphics rendering drivers compiled into SDL3 on this display, then exit immediately.
+.TP
+.BR \-playlist ", " \-\-playlist ", " \-l
+Display the complete 15-track classical symphonic soundtrack anthology with composer biographies, opus catalogs, and historical curiosities, then exit immediately without launching the graphical display.
+.TP
+.BR \-play " \fITRACK\fR, " \-\-play " \fITRACK\fR"
+Play a single soundtrack movement (1 to 15) in headless terminal mode. Features live ASCII progress feedback.
+.TP
+.BR \-play " \fIFIRST\fR \fILAST\fR, " \-\-play " \fIFIRST\fR \fILAST\fR"
+Play a sequential range of movements from \fIFIRST\fR through \fILAST\fR inclusive (1 to 15, with \fILAST\fR >= \fIFIRST\fR). Press \fBCtrl+C\fR at any time to gracefully halt playback.
+.TP
+.BR \-help ", " \-\-help ", " \-h
+Print command-line reference and usage options to standard output.
+.SH IN-GAME CONTROLS
+.TP
+.B Keyboard & Gamepad Mappings:
+.TP
+.BI Space " / " Gamepad\ A " / " RT
+Fire primary plasma cannons.
+.TP
+.BI Left\ / \ Right\ Arrow " / " Left\ Analog " / " D-Pad
+Maneuver starship horizontally across the evasive baseline.
+.TP
+.BI t " / " Gamepad\ Y
+Toggle ship model between \fBThe Cruiser\fR (standard tactical workhorse) and \fBThe Vanguard\fR (skunkworks high-G apex interceptor).
+.TP
+.BI f
+Toggle Fullscreen mode (supports native 4K UHD resolutions).
+.TP
+.BI 1,\ 2,\ 3
+Preset resolution scales: 1280x720, 1600x900, 1920x1080.
+.TP
+.BI -\ / \ + " / " LB\ / \ RB
+Adjust particle density (0 OFF to 4 MAX).
+.TP
+.BI LT\ / \ RT
+Cycle menu documentation and briefing pages left / right.
+.TP
+.BI i\ / \ b " / " Gamepad\ B
+Toggle hardware telemetry OSD overlay (CPU%, RAM%, FPS, SDL driver).
+.TP
+.BI h " / " Gamepad\ Back
+Cycle Hall of Fame displays (per-resolution, global legends, dossiers).
+.TP
+.BI p " / " Gamepad\ Start
+Pause / Resume active combat.
+.TP
+.BI s " / " Gamepad\ Start
+Start a new game from the menu.
+.TP
+.BI c
+Cheat mode (instantly grants full firepower; disables leaderboard saving).
+.TP
+.BI q
+Quit current match or exit to desktop.
+.SH SOUNDTRACK
+The procedural audio engine synthesizes authentic 5-instrument classical quintet arrangements in RAM without audio files (Violin, Cello, Flute, Trumpet, and Concert Grand Piano). Featured works include Beethoven (Symphony No. 9 in D minor), Carlos Gomes (Il Guarany Overture), Puccini (Nessun Dorma), Tchaikovsky (Swan Lake, Piano Concerto No. 1), Dvorak (New World Symphony), Bach (Air on the G String), Ravel (Bolero), Rossini (The Barber of Seville), Grieg (Peer Gynt), Zequinha de Abreu (Tico-Tico no Fuba), Holst (Jupiter), Chopin (Nocturne Op. 9 No. 2), Debussy (Clair de Lune), and Vivaldi (The Four Seasons: Spring).
+.SH AUTHORS
+.B Claudio Fernandes de Souza Rodrigues
+(Lead Engine Architecture, C++20 Systems, Procedural 2.1 Audio, Aerodynamics & Gameplay).

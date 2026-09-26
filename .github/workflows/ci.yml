@@ -1,0 +1,61 @@
+name: "Multiplatform CI & Quality Assurance"
+on:
+  push:
+    branches: [master, main]
+    tags: ['v*']
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  linux-build-and-test:
+    name: Linux (${{ matrix.compiler }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build pkg-config \
+            libgl1-mesa-dev libasound2-dev libpulse-dev libudev-dev libx11-dev \
+            libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev \
+            libxss-dev libwayland-dev libxkbcommon-dev
+          if [ "${{ matrix.compiler }}" = "clang" ]; then sudo apt-get install -y clang; fi
+      - name: Select compiler for this matrix leg
+        run: |
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            echo "CC=clang" >> "$GITHUB_ENV"
+            echo "CXX=clang++" >> "$GITHUB_ENV"
+          else
+            echo "CC=gcc" >> "$GITHUB_ENV"
+            echo "CXX=g++" >> "$GITHUB_ENV"
+          fi
+      - name: Build SDL3
+        run: |
+          git clone https://github.com/libsdl-org/SDL.git --branch release-3.4.16 --depth 1 /tmp/SDL
+          cmake -S /tmp/SDL -B /tmp/SDL/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSDL_TESTS=OFF
+          cmake --build /tmp/SDL/build --parallel
+          sudo cmake --install /tmp/SDL/build && sudo ldconfig
+      - run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+      - run: cmake --build build --parallel
+      - run: ./build/unit_tests
+
+  macos-build:
+    name: macOS 15
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew update && brew install sdl3 gcc cmake ninja pkg-config
+      - name: Use Homebrew GCC (Apple Clang's libc++ has no std::jthread/std::stop_token)
+        run: |
+          GCC_BIN="$(brew --prefix gcc)/bin"
+          CXX_NAME="$(ls "$GCC_BIN" | grep -E '^g\+\+-[0-9]+$' | sort -V | tail -n1)"
+          CC_NAME="$(ls "$GCC_BIN" | grep -E '^gcc-[0-9]+$' | sort -V | tail -n1)"
+          echo "CC=$GCC_BIN/$CC_NAME" >> "$GITHUB_ENV"
+          echo "CXX=$GCC_BIN/$CXX_NAME" >> "$GITHUB_ENV"
+      - run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+      - run: cmake --build build --parallel
+      - run: ./build/unit_tests
