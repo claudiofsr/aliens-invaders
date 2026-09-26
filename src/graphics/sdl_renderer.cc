@@ -1025,8 +1025,8 @@ void Gfx::Clear() {
   SDL_RenderClear(renderer_);
   if (std::abs(shake_x_) > 0.01f || std::abs(shake_y_) > 0.01f) {
     const SDL_Rect viewport = {
-        static_cast<int>(std::round(shake_x_)),
-        static_cast<int>(std::round(shake_y_)),
+        FastRound(shake_x_),
+        FastRound(shake_y_),
         window_width_,
         window_height_
     };
@@ -1055,7 +1055,7 @@ void Gfx::DrawOverlays() {
     const uint8_t cr = static_cast<uint8_t>(static_cast<float>(item.r) * alpha);
     const uint8_t cg = static_cast<uint8_t>(static_cast<float>(item.g) * alpha);
     const uint8_t cb = static_cast<uint8_t>(static_cast<float>(item.b) * alpha);
-    DrawModernText(Coord(item.pos_x, static_cast<int32_t>(std::round(item.pos_y))),
+    DrawModernText(Coord(item.pos_x, FastRound(item.pos_y)),
                    item.text, cr, cg, cb, item.size);
     if (--item.life <= 0) {
       if (i + 1 < floating_count_) {

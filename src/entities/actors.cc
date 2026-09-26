@@ -686,8 +686,8 @@ void Alien::OnResize(float rx, float ry) noexcept {
     }
   }
   Coord p = object_.transform.position;
-  p.x = static_cast<int32_t>(std::lround(static_cast<double>(p.x) * static_cast<double>(rx)));
-  p.y = static_cast<int32_t>(std::lround(static_cast<double>(p.y) * static_cast<double>(ry)));
+  p.x = FastRound(static_cast<double>(p.x) * static_cast<double>(rx));
+  p.y = FastRound(static_cast<double>(p.y) * static_cast<double>(ry));
   object_.transform.position = p;
   UpdateAABB();
   if (trajectory_.Stage() == Trajectory::cruising) {

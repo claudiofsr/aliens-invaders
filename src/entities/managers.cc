@@ -55,8 +55,8 @@ void ProjectileSlot::Move(std::array<ExhaustParticle, 128>& exhaust_pool,
         bomb_render_angle = -deflection_angle_deg;
 
         const float rad = deflection_angle_deg * (3.14159265f / 180.0f);
-        speed.x = static_cast<int>(std::round(std::sin(rad) * speed_magnitude));
-        speed.y = std::max(3, static_cast<int>(std::round(std::cos(rad) * speed_magnitude)));
+        speed.x = FastRound(std::sin(rad) * speed_magnitude);
+        speed.y = std::max(3, FastRound(std::cos(rad) * speed_magnitude));
       }
     }
 
@@ -943,10 +943,10 @@ void AliensManager::Fire(Coord player_pos) const {
       float base_spd = std::max(GameRules::Combat::kBombMinSpeed, (speed_ * GameRules::Combat::kBombSpeedBaseMultiplier + GameRules::Combat::kBombSpeedBaseOffset) * cycle_bomb_mult * individual_variance * s);
 
       float rad = (alien->Angle() + 90.0f) * (3.14159265f / 180.0f);
-      int vy = std::max(2, static_cast<int>(std::round(std::sin(rad) * base_spd)));
-      int max_vx = std::max(1, static_cast<int>(std::round(static_cast<float>(vy) * GameRules::Combat::kBombMaxHorizontalSpeedRatio)));
+      int vy = std::max(2, FastRound(std::sin(rad) * base_spd));
+      int max_vx = std::max(1, FastRound(static_cast<float>(vy) * GameRules::Combat::kBombMaxHorizontalSpeedRatio));
       int vx = std::clamp(
-          static_cast<int>(std::round(std::cos(rad) * base_spd * GameRules::Combat::kBombHorizontalSpeedMultiplier)),
+          FastRound(std::cos(rad) * base_spd * GameRules::Combat::kBombHorizontalSpeedMultiplier),
           -max_vx, max_vx);
 
       if (bombs_manager_->WouldTrapPlayer(cannon_pos, Coord(vx, vy), player_y,
@@ -1228,11 +1228,11 @@ void Player::Fire() {
   if (audio_) audio_->Play(SoundManager::SFX_PLAYER_FIRE, pan * 0.65f);
 
   const float s = Gfx::Inst().Scale();
-  const int b_speed_y = std::min(-4, static_cast<int>(std::round(GameRules::Player::kPlayerBaseBulletSpeed * s)));
+  const int b_speed_y = std::min(-4, FastRound(GameRules::Player::kPlayerBaseBulletSpeed * s));
 
   for (int i = 0; i < multi_fire_; ++i) {
-    Coord speed(static_cast<int>(std::round(static_cast<float>(i - multi_fire_ / 2) * s)),
-                static_cast<int>(b_speed_y));
+    Coord speed(FastRound(static_cast<float>(i - multi_fire_ / 2) * s),
+                b_speed_y);
     if (multi_fire_ % 2 == 0 && i >= multi_fire_ / 2) {
       ++speed.x;
     }

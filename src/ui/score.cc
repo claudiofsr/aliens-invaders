@@ -95,7 +95,7 @@ void Score::DrawLevel(float alpha) const {
   }
 
   auto ScaleRGB = [clamped_alpha](uint8_t c) noexcept -> uint8_t {
-    return static_cast<uint8_t>(std::round(static_cast<float>(c) * clamped_alpha));
+    return static_cast<uint8_t>(FastRound(static_cast<float>(c) * clamped_alpha));
   };
 
   // 1. Header (Above Alien) with generous breathing space
