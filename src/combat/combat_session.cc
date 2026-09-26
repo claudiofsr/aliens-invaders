@@ -27,6 +27,7 @@
 #include "stars.h"
 #include "telemetry.h"
 #include "time_util.h"
+#include "math_types.h"
 
 namespace {
 

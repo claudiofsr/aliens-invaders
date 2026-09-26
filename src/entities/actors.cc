@@ -10,6 +10,7 @@
 #include "constants.h"
 #include "formation_grid.h"
 #include "embedded_assets.h"
+#include "math_types.h"
 
 namespace {
 struct OrbitKnot { float c; float s; };

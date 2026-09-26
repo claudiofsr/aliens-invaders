@@ -19,6 +19,7 @@
 #include "stage_fanfare.h"
 #include "telemetry.h"
 #include "time_util.h"
+#include "math_types.h"
 
 #ifndef VERSION_STRING
 #define VERSION_STRING "0.10.0"
@@ -210,7 +211,7 @@ void StartMenu::PrintAlienDossier(int index) {
 
   const auto* pix = PixKeeper::Instance().Get(info.id);
   if (pix) {
-    const Coord center_pos(static_cast<int>(std::round(win_w * 0.5f)), static_cast<int>(std::round(cur_y + alien_disp_size * 0.5f)));
+    const Coord center_pos(FastRound(win_w * 0.5f), FastRound(cur_y + alien_disp_size * 0.5f));
     Gfx::Inst().DrawAura(center_pos, alien_disp_size * 0.60f, 0, 220, 255, 80);
     pix->DrawSized(center_pos, static_cast<int>(alien_disp_size), static_cast<int>(alien_disp_size));
     cur_y += alien_disp_size + gap;

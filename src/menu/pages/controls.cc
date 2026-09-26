@@ -19,6 +19,7 @@
 #include "stage_fanfare.h"
 #include "telemetry.h"
 #include "time_util.h"
+#include "math_types.h"
 
 #ifndef VERSION_STRING
 #define VERSION_STRING "0.10.0"
@@ -149,7 +150,7 @@ void StartMenu::PrintGamepadLayout() {
     DrawFillCircle(bx, by, btn_rad, cr, cg, cb, 240);
     const float fsz = 17.0f * joy_s;
     const float tw = Gfx::Inst().GetTextWidth(label, fsz);
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(bx - tw * 0.5f)), static_cast<int>(std::round(by - fsz * 0.65f))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(bx - tw * 0.5f), FastRound(by - fsz * 0.65f)),
                                label, 15, 20, 25, fsz);
   };
 
@@ -169,8 +170,8 @@ void StartMenu::PrintGamepadLayout() {
     float elbow_x = (start_x < cx) ? (text_x + 16.0f * s) : (text_x - 16.0f * s);
     SDL_RenderLine(renderer, start_x, start_y, elbow_x, text_y + 11.0f * s);
     SDL_RenderLine(renderer, elbow_x, text_y + 11.0f * s, text_x, text_y + 11.0f * s);
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(text_x)), static_cast<int>(std::round(text_y))), title, tr, tg, tb, callout_title_font);
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(text_x)), static_cast<int>(std::round(text_y + 24.0f * s))), desc, 230, 240, 245, callout_desc_font);
+    Gfx::Inst().DrawModernText(Coord(FastRound(text_x), FastRound(text_y)), title, tr, tg, tb, callout_title_font);
+    Gfx::Inst().DrawModernText(Coord(FastRound(text_x), FastRound(text_y + 24.0f * s)), desc, 230, 240, 245, callout_desc_font);
   };
 
   const float left_col_x = std::max(16.0f, cx - 550.0f * s);

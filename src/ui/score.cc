@@ -10,6 +10,7 @@
 #include "constants.h"
 #include "layout.h"
 #include "level_data.h"
+#include "math_types.h"
 
 Score::Score() { ReInit(); }
 

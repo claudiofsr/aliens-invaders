@@ -1,6 +1,7 @@
 #include "formation_grid.h"
 
 #include <cstddef>
+#include "math_types.h"
 
 namespace GameRules::Fleet {
 
@@ -8,11 +9,11 @@ FormationGrid::GridData FormationGrid::data_{};
 
 void FormationGrid::Recompute(float scale) noexcept {
   data_.scale = scale;
-  data_.width = static_cast<int>(std::round(kAlienBaseWidthPixels * scale));
-  data_.height = static_cast<int>(std::round(kAlienBaseHeightPixels * scale));
-  data_.spacing_x = static_cast<int>(std::round(kAlienHorizontalSpacingPixels * scale));
-  data_.spacing_y = static_cast<int>(std::round(kAlienVerticalSpacingPixels * scale));
-  data_.base_cruise_y = static_cast<int>(std::round(kFleetBaseCruiseYPixels * scale));
+  data_.width = FastRound(kAlienBaseWidthPixels * scale);
+  data_.height = FastRound(kAlienBaseHeightPixels * scale);
+  data_.spacing_x = FastRound(kAlienHorizontalSpacingPixels * scale);
+  data_.spacing_y = FastRound(kAlienVerticalSpacingPixels * scale);
+  data_.base_cruise_y = FastRound(kFleetBaseCruiseYPixels * scale);
 
   const float spacing_x_f = kAlienHorizontalSpacingPixels * scale;
   const float spacing_y_f = kAlienVerticalSpacingPixels * scale;
@@ -21,8 +22,8 @@ void FormationGrid::Recompute(float scale) noexcept {
     for (std::size_t row = 0; row < static_cast<std::size_t>(kMaxGridRows); ++row) {
       for (std::size_t col = 0; col < static_cast<std::size_t>(kMaxGridCols); ++col) {
         const auto& u = kUnitGrid[mode][row][col];
-        data_.grid[mode][row][col].offset_x = static_cast<int>(std::round(u.offset_x * spacing_x_f));
-        data_.grid[mode][row][col].offset_y = static_cast<int>(std::round(u.offset_y * spacing_y_f));
+        data_.grid[mode][row][col].offset_x = FastRound(u.offset_x * spacing_x_f);
+        data_.grid[mode][row][col].offset_y = FastRound(u.offset_y * spacing_y_f);
       }
     }
   }

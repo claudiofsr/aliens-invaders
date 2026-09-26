@@ -19,6 +19,7 @@
 #include "stage_fanfare.h"
 #include "telemetry.h"
 #include "time_util.h"
+#include "math_types.h"
 
 #ifndef VERSION_STRING
 #define VERSION_STRING "0.10.0"
@@ -41,14 +42,14 @@ void StartMenu::PrintBonusShowcase() {
     uint8_t r, g, b;
   };
 
-  const int spd_step = static_cast<int>(std::round(GameRules::Player::kSpeedBoostPercent * 100.0f));
+  const int spd_step = FastRound(GameRules::Player::kSpeedBoostPercent * 100.0f);
   const int spd_max = 100 + spd_step * GameRules::Player::kPlayerMaxSpeedLevel;
   const std::string speed_effect =
       "Agility +" + std::to_string(spd_step) + "% per boost up to " +
       std::to_string(spd_max) + "% MAX (" +
       std::to_string(GameRules::Player::kPlayerMaxSpeedLevel) + " levels)";
 
-  const int fire_step = static_cast<int>(std::round(GameRules::Player::kFireRateBoostPercent * 100.0f));
+  const int fire_step = FastRound(GameRules::Player::kFireRateBoostPercent * 100.0f);
   const int fire_max = 100 + fire_step * GameRules::Player::kPlayerMaxFireLevel;
   const std::string fire_effect =
       "Fire rate +" + std::to_string(fire_step) + "% per upgrade up to " +
@@ -100,17 +101,17 @@ void StartMenu::PrintBonusShowcase() {
     const auto* pix = PixKeeper::Instance().Get(b.id);
     if (pix) {
       const float icon_sz = 40.0f * s;
-      const Coord icon_pos(static_cast<int>(std::round(card_x + icon_sz * 0.5f + 8.0f * s)), static_cast<int>(std::round(cur_y + item_h * 0.5f)));
+      const Coord icon_pos(FastRound(card_x + icon_sz * 0.5f + 8.0f * s), FastRound(cur_y + item_h * 0.5f));
       Gfx::Inst().DrawAura(icon_pos, icon_sz * 0.80f, b.r, b.g, b.b, 85);
       pix->DrawSized(icon_pos, static_cast<int>(icon_sz), static_cast<int>(icon_sz));
     }
 
     const float text_x = card_x + 68.0f * s;
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(text_x)), static_cast<int>(std::round(cur_y + 2.0f * s))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(text_x), FastRound(cur_y + 2.0f * s)),
                                b.name, b.r, b.g, b.b, Typography::SectionHeader(s));
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(text_x + 230.0f * s)), static_cast<int>(std::round(cur_y + 2.0f * s))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(text_x + 230.0f * s), FastRound(cur_y + 2.0f * s)),
                                b.effect, 240, 245, 255, Typography::ItemDesc(s));
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(text_x)), static_cast<int>(std::round(cur_y + 28.0f * s))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(text_x), FastRound(cur_y + 28.0f * s)),
                                b.lore, 170, 205, 225, Typography::Detail(s));
   }
 

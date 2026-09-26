@@ -19,6 +19,7 @@
 #include "stage_fanfare.h"
 #include "telemetry.h"
 #include "time_util.h"
+#include "math_types.h"
 
 #ifndef VERSION_STRING
 #define VERSION_STRING "0.10.0"
@@ -67,7 +68,7 @@ void StartMenu::PrintShipShowcase(bool is_vanguard) {
   const TextureId ship_id = is_vanguard ? TextureId::PlayerAlt : TextureId::Player;
   const auto* pix = PixKeeper::Instance().Get(ship_id);
   if (pix) {
-    const Coord ship_pos(static_cast<int>(std::round(win_w * 0.5f)), static_cast<int>(std::round(cur_y + ship_sz * 0.5f)));
+    const Coord ship_pos(FastRound(win_w * 0.5f), FastRound(cur_y + ship_sz * 0.5f));
     if (!is_vanguard) {
       Gfx::Inst().DrawAura(ship_pos, ship_sz * 0.60f, 0, 190, 255, 90);
     } else {

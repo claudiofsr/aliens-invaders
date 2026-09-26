@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include <cmath>
 #include <sstream>
+#include "math_types.h"
 
 float GetMenuScaleBase(float win_h) noexcept {
   if (win_h <= 1080.0f) {
@@ -29,7 +30,7 @@ float GetShowcaseTextureSize(float win_h, bool is_fullscreen,
   }
   float target_size = 512.0f * scale_factor;
   const float max_fit = std::max(220.0f, win_h - reserved_vertical_h);
-  return std::round(std::min(target_size, max_fit));
+  return static_cast<float>(FastRound(std::min(target_size, max_fit)));
 }
 
 std::vector<std::string> WordWrap(const std::string& text, float max_width, float font_size) {
@@ -58,8 +59,8 @@ void DrawWrappedParagraph(float x, float& y, const std::string& text,
     if (centered) {
       Gfx::Inst().DrawCenteredText(y, line, r, g, b, font_size);
     } else {
-      Gfx::Inst().DrawModernText(Coord(static_cast<int32_t>(std::round(x)),
-                                       static_cast<int32_t>(std::round(y))),
+      Gfx::Inst().DrawModernText(Coord(FastRound(x),
+                                       FastRound(y)),
                                  line, r, g, b, font_size);
     }
     y += line_step;
@@ -143,20 +144,20 @@ void TacticalCard::Draw(SDL_Renderer* renderer, float x, float y, float width, f
   const float item_font = Typography::ItemDesc(scale);
   const float item_step = 26.0f * scale;
 
-  Gfx::Inst().DrawModernText(Coord(static_cast<int32_t>(std::round(x + pad_x)),
-                                   static_cast<int32_t>(std::round(y + top_pad))),
+  Gfx::Inst().DrawModernText(Coord(FastRound(x + pad_x),
+                                   FastRound(y + top_pad)),
                              title_, r_, g_, b_, title_font);
 
-  Gfx::Inst().DrawRegularText(Coord(static_cast<int32_t>(std::round(x + pad_x)),
-                                    static_cast<int32_t>(std::round(y + top_pad + title_font + 4.0f * scale))),
+  Gfx::Inst().DrawRegularText(Coord(FastRound(x + pad_x),
+                                    FastRound(y + top_pad + title_font + 4.0f * scale)),
                               subtitle_, 160, 205, 230, sub_font);
 
   float cur_item_y = y + (top_pad + title_font + 4.0f * scale + sub_font + 12.0f * scale);
   for (const auto& item : items_) {
     const float label_w = item.label.empty() ? 0.0f : Gfx::Inst().GetTextWidth(item.label, item_font);
     if (!item.label.empty()) {
-      Gfx::Inst().DrawModernText(Coord(static_cast<int32_t>(std::round(x + pad_x + 6.0f * scale)),
-                                       static_cast<int32_t>(std::round(cur_item_y))),
+      Gfx::Inst().DrawModernText(Coord(FastRound(x + pad_x + 6.0f * scale),
+                                       FastRound(cur_item_y)),
                                  item.label, item.label_r, item.label_g, item.label_b, item_font);
     }
 
@@ -170,8 +171,8 @@ void TacticalCard::Draw(SDL_Renderer* renderer, float x, float y, float width, f
       cur_item_y += item_step;
     } else {
       for (const auto& line : lines) {
-        Gfx::Inst().DrawRegularText(Coord(static_cast<int32_t>(std::round(desc_x)),
-                                          static_cast<int32_t>(std::round(cur_item_y))),
+        Gfx::Inst().DrawRegularText(Coord(FastRound(desc_x),
+                                          FastRound(cur_item_y)),
                                     line, item.desc_r, item.desc_g, item.desc_b, item_font);
         cur_item_y += item_step;
       }
@@ -197,12 +198,12 @@ void TelemetryPlate::Draw(SDL_Renderer* rend, float x, float y, float w, float h
   const float text_y_v = box_mid_y - (0.64f * v_font);
   const float pad_x = 22.0f * s;
 
-  Gfx::Inst().DrawModernText(Coord(static_cast<int32_t>(std::round(x + pad_x)),
-                                   static_cast<int32_t>(std::round(text_y_l))),
+  Gfx::Inst().DrawModernText(Coord(FastRound(x + pad_x),
+                                   FastRound(text_y_l)),
                              label_, label_r_, label_g_, label_b_, l_font);
 
-  Gfx::Inst().DrawModernText(Coord(static_cast<int32_t>(std::round(x + value_col_x * s)),
-                                   static_cast<int32_t>(std::round(text_y_v))),
+  Gfx::Inst().DrawModernText(Coord(FastRound(x + value_col_x * s),
+                                   FastRound(text_y_v)),
                              value_, value_r_, value_g_, value_b_, v_font);
 }
 

@@ -19,6 +19,7 @@
 #include "stage_fanfare.h"
 #include "telemetry.h"
 #include "time_util.h"
+#include "math_types.h"
 
 #ifndef VERSION_STRING
 #define VERSION_STRING "0.10.0"
@@ -65,20 +66,20 @@ void StartMenu::PrintHelp() {
 
   for (size_t i = 0; i < 11; ++i) {
     const float cur_y = layout.GetItemY(i);
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(col_key_x)), static_cast<int>(std::round(cur_y))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(col_key_x), FastRound(cur_y)),
                                rows[i].key, 255, 230, 100, font_key);
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(col_dash_x)), static_cast<int>(std::round(cur_y))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(col_dash_x), FastRound(cur_y)),
                                "-", 180, 180, 180, font_key);
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(col_desc_x)), static_cast<int>(std::round(cur_y))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(col_desc_x), FastRound(cur_y)),
                                rows[i].desc, rows[i].r, rows[i].g, rows[i].b, font_desc);
 
     if (rows[i].key == "T / [Y]") {
       const auto* ship_pix = PixKeeper::Instance().Get((ctx_ ? ctx_->config.PlayerTextureId() : TextureId::Player));
       if (ship_pix) {
         const float desc_w = Gfx::Inst().GetTextWidth(rows[i].desc, font_desc);
-        const float thumb_sz = std::round(font_key * 1.50f);
+        const float thumb_sz = static_cast<float>(FastRound(font_key * 1.50f));
         const float thumb_x = col_desc_x + desc_w + thumb_sz * 0.85f;
-        const Coord thumb_pos(static_cast<int>(std::round(thumb_x)), static_cast<int>(std::round(cur_y + font_key * 0.35f)));
+        const Coord thumb_pos(FastRound(thumb_x), FastRound(cur_y + font_key * 0.35f));
         Gfx::Inst().DrawAura(thumb_pos, thumb_sz * 0.65f, 0, 240, 255, 110);
         ship_pix->DrawSized(thumb_pos, static_cast<int>(thumb_sz), static_cast<int>(thumb_sz));
       }

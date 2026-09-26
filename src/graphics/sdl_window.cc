@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "embedded_assets.h"
+#include "math_types.h"
 
 SdlWindow *SdlWindow::singleton_ = nullptr;
 

@@ -8,6 +8,7 @@
 
 #include "constants.h"
 #include "gfxinterface.h"
+#include "math_types.h"
 
 class Score {
   uint64_t score_{0};

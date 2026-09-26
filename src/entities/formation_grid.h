@@ -120,9 +120,9 @@ class FormationGrid {
     const int half_w = Width() / 2;
     const int half_h = Height() / 2;
     const float s = Scale();
-    const int margin_x = half_w + static_cast<int>(std::round(static_cast<float>(kFleetMarginXPixels) * s));
-    const int min_y = half_h + static_cast<int>(std::round(static_cast<float>(kFleetMarginYMinPixels) * s));
-    const int max_y = window_height - half_h - static_cast<int>(std::round(static_cast<float>(kFleetMarginYMaxOffsetPixels) * s));
+    const int margin_x = half_w + FastRound(static_cast<float>(kFleetMarginXPixels) * s);
+    const int min_y = half_h + FastRound(static_cast<float>(kFleetMarginYMinPixels) * s);
+    const int max_y = window_height - half_h - FastRound(static_cast<float>(kFleetMarginYMaxOffsetPixels) * s);
 
     // 1. Check if symmetric slot on the same row is filled, overlapping, or beyond margins
     const bool is_slot_filled = (std::abs(tx - base_x) < sp_x) || (tx < margin_x) || (tx > window_width - margin_x);

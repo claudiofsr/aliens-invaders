@@ -19,6 +19,7 @@
 #include "stage_fanfare.h"
 #include "telemetry.h"
 #include "time_util.h"
+#include "math_types.h"
 
 #ifndef VERSION_STRING
 #define VERSION_STRING "0.10.0"
@@ -55,7 +56,7 @@ void StartMenu::PrintCombatManualPage1() {
   }
 
   {
-    const int seeker_pct = static_cast<int>(std::round(GameRules::Fleet::kSeekerMissileProbability * 100.0f));
+    const int seeker_pct = FastRound(GameRules::Fleet::kSeekerMissileProbability * 100.0f);
     std::string seekers = std::to_string(seeker_pct) + "% chance per alien bomb release, with vector thrusters turning up to " + fmt1(GameRules::Fleet::kMaxDeflectionAngleDeg) + " deg to intercept";
     std::string corridor = "Game always leaves " + std::to_string(GameRules::Fleet::kSafeEvasionCorridorPixels) + " pixels free. You always have a safe path to escape left or right.";
     cards.emplace_back("2. FAIR PLAY & SEEKER MISSILES", "Game is fair and never cheats you. It always leaves a safe gap so you can escape.", 0, 230, 255)

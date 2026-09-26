@@ -9,6 +9,7 @@
 #include "config.h"
 #include "constants.h"
 #include "formation_grid.h"
+#include "math_types.h"
 
 void ExplosionsManager::Clear() noexcept {
   for (size_t i = 0; i < active_count_; ++i) {
@@ -136,9 +137,9 @@ void ExplosionsManager::TriggerScreenWideNova(Coord epicenter, int win_w, int wi
     }
   }
 
-  const int step_x = static_cast<int>(std::round(220.0f * s));
-  const int step_y = static_cast<int>(std::round(180.0f * s));
-  const int margin = static_cast<int>(std::round(80.0f * s));
+  const int step_x = FastRound(220.0f * s);
+  const int step_y = FastRound(180.0f * s);
+  const int margin = FastRound(80.0f * s);
   for (int x = margin; x < win_w; x += step_x) {
     for (int y = margin; y < win_h; y += step_y) {
       Add(Coord(x + rng_.UniformInt(-static_cast<int>(30.0f * s), static_cast<int>(30.0f * s)),

@@ -15,6 +15,7 @@
 #include "constants.h"
 #include "formation_grid.h"
 #include "sdl_window.h"
+#include "math_types.h"
 
 static std::vector<SDL_FPoint> g_points_cache;
 
@@ -308,7 +309,7 @@ class FontEngine {
     static constexpr float kCombatBases[] = {
         22.0f, 24.0f, 25.0f, 35.0f, 36.0f, 42.0f};
     for (float base : kCombatBases) {
-      const int sz = QuantizeSize(static_cast<int>(std::round(base)));
+      const int sz = QuantizeSize(FastRound(base));
       for (char c = 32; c <= 126; ++c) {
         GetOrCreateGlyph(renderer, c, sz, false);
         GetOrCreateGlyph(renderer, c, sz, true);
@@ -318,7 +319,7 @@ class FontEngine {
     static constexpr float kMenuBases[] = {
         14.0f, 16.0f, 18.0f, 20.0f, 22.0f, 24.0f, 28.0f, 32.0f, 36.0f, 48.0f};
     for (float base : kMenuBases) {
-      const int sz = QuantizeSize(static_cast<int>(std::round(base * scale)));
+      const int sz = QuantizeSize(FastRound(base * scale));
       for (char c = 32; c <= 126; ++c) {
         GetOrCreateGlyph(renderer, c, sz, false);
         GetOrCreateGlyph(renderer, c, sz, true);
@@ -364,9 +365,9 @@ class FontEngine {
     if (c >= '0' && c <= '9') {
       int adv0 = 0, lsb0 = 0;
       stbtt_GetCodepointHMetrics(&info, '0', &adv0, &lsb0);
-      glyph.advance = static_cast<int>(std::round(static_cast<float>(adv0) * scale));
+      glyph.advance = FastRound(static_cast<float>(adv0) * scale);
     } else {
-      glyph.advance = static_cast<int>(std::round(static_cast<float>(advance) * scale));
+      glyph.advance = FastRound(static_cast<float>(advance) * scale);
     }
 
     if (bitmap && width > 0 && height > 0) {
@@ -432,7 +433,7 @@ class FontEngine {
   float GetTextWidth(SDL_Renderer* renderer, std::string_view text,
                      float font_size, bool bold) {
     if (text.empty()) return 0.0f;
-    const int size_key = static_cast<int>(std::round(font_size));
+    const int size_key = FastRound(font_size);
     GlyphInfo* glyph_zero = GetOrCreateGlyph(renderer, '0', size_key, bold);
     const float tabular_adv = (glyph_zero && glyph_zero->advance > 0)
                                   ? static_cast<float>(glyph_zero->advance)
@@ -513,7 +514,7 @@ class FontEngine {
   BakedString* FindOrBakeString(SDL_Renderer* renderer, std::string_view text,
                                 float font_size, bool bold, bool shadow) {
     if (!renderer || text.empty() || text.size() >= kBakedKeyMax) return nullptr;
-    const int size_key = static_cast<int>(std::round(font_size));
+    const int size_key = FastRound(font_size);
     if (BakedString* hit = FindBaked(text, size_key, bold, shadow)) return hit;
     if (baked_count_ >= kCombatTextBakeCache) return nullptr;
 
@@ -631,7 +632,7 @@ class FontEngine {
     if (text.size() >= kBakedKeyMax) return false;
     // O(1) lookup in pre-warmed cache only; never allocate textures or switch render targets mid-frame
     BakedString* baked =
-        FindBaked(text, static_cast<int>(std::round(font_size)), bold, shadow);
+        FindBaked(text, FastRound(font_size), bold, shadow);
     if (!baked || !baked->texture) return false;
 
     SDL_SetTextureColorMod(baked->texture, r, g, b);
@@ -655,7 +656,7 @@ class FontEngine {
         TryDrawBaked(renderer, x, y, text, r, g, b, font_size, bold, shadow)) {
       return;
     }
-    const int size_key = static_cast<int>(std::round(font_size));
+    const int size_key = FastRound(font_size);
     GlyphInfo* glyph_zero = GetOrCreateGlyph(renderer, '0', size_key, bold);
     const float tabular_adv = (glyph_zero && glyph_zero->advance > 0)
                                   ? static_cast<float>(glyph_zero->advance)
@@ -754,8 +755,8 @@ void Pix::RefreshScaleCache() const noexcept {
   const float s = Gfx::Inst().Scale();
   if (s != cached_scale_) {
     cached_scale_ = s;
-    scaled_w_ = static_cast<int>(std::round(static_cast<float>(base_dim_.x) * s));
-    scaled_h_ = static_cast<int>(std::round(static_cast<float>(base_dim_.y) * s));
+    scaled_w_ = FastRound(static_cast<float>(base_dim_.x) * s);
+    scaled_h_ = FastRound(static_cast<float>(base_dim_.y) * s);
   }
 }
 
@@ -1173,7 +1174,7 @@ void Gfx::OnWindowResized(int w, int h) {
     const float r_scale = (old_scale > 0.001f) ? (scale_ / old_scale) : 1.0f;
     for (size_t i = 0; i < floating_count_; ++i) {
       auto& ft = floating_texts_[i];
-      ft.pos_x = static_cast<int32_t>(std::round(static_cast<float>(ft.pos_x) * rx));
+      ft.pos_x = FastRound(static_cast<float>(ft.pos_x) * rx);
       ft.pos_y *= ry;
       ft.size *= r_scale;
     }

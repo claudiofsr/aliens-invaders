@@ -19,6 +19,7 @@
 #include "stage_fanfare.h"
 #include "telemetry.h"
 #include "time_util.h"
+#include "math_types.h"
 
 #ifndef VERSION_STRING
 #define VERSION_STRING "0.10.0"
@@ -76,13 +77,13 @@ void StartMenu::PrintResolutionScores(Coord target_size) {
     const std::string score_str = std::to_string(it->Value());
     const std::string meta_str = FormatDate(it->Date());
 
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(start_x)), static_cast<int>(std::round(cur_y))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(start_x), FastRound(cur_y)),
                                rank_buf, 255, 230, 100, row_font);
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(start_x + 75.0f * s)), static_cast<int>(std::round(cur_y))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(start_x + 75.0f * s), FastRound(cur_y)),
                                score_str, 0, 255, 255, row_font);
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(start_x + 300.0f * s)), static_cast<int>(std::round(cur_y))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(start_x + 300.0f * s), FastRound(cur_y)),
                                meta_str, 160, 220, 160, Typography::Detail(s));
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(start_x + 600.0f * s)), static_cast<int>(std::round(cur_y))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(start_x + 600.0f * s), FastRound(cur_y)),
                                it->Name(), 255, 255, 255, row_font);
     ++rank;
   }
@@ -130,15 +131,15 @@ void StartMenu::PrintGlobalScores() {
     const std::string score_str = std::to_string(it->Value());
     const std::string date_str = FormatDate(it->Date());
 
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(start_x)), static_cast<int>(std::round(cur_y))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(start_x), FastRound(cur_y)),
                                rank_buf, 255, 230, 100, row_font);
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(start_x + 75.0f * s)), static_cast<int>(std::round(cur_y))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(start_x + 75.0f * s), FastRound(cur_y)),
                                score_str, 0, 255, 255, row_font);
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(start_x + 300.0f * s)), static_cast<int>(std::round(cur_y))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(start_x + 300.0f * s), FastRound(cur_y)),
                                res_buf, 100, 200, 255, Typography::Detail(s));
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(start_x + 480.0f * s)), static_cast<int>(std::round(cur_y))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(start_x + 480.0f * s), FastRound(cur_y)),
                                date_str, 160, 220, 160, Typography::Detail(s));
-    Gfx::Inst().DrawModernText(Coord(static_cast<int>(std::round(start_x + 620.0f * s)), static_cast<int>(std::round(cur_y))),
+    Gfx::Inst().DrawModernText(Coord(FastRound(start_x + 620.0f * s), FastRound(cur_y)),
                                it->Name(), 255, 255, 255, row_font);
     ++rank;
   }

@@ -9,6 +9,7 @@
 #include "config.h"
 #include "constants.h"
 #include "gfxinterface.h"
+#include "math_types.h"
 
 namespace {
 // Precalculated uint8_t brightness table [0..255]: eliminates roundf32 and float math in hot loop

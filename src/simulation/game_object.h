@@ -5,6 +5,7 @@
 #include "motion.h"
 #include "renderable.h"
 #include "transform.h"
+#include "math_types.h"
 
 namespace simulation {
 

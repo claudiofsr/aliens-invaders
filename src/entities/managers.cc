@@ -12,11 +12,12 @@
 #include "level_data.h"
 #include "constants.h"
 #include "score.h"
+#include "math_types.h"
 
 int ConvoyData::ConvoySize() const {
   const double ratio = static_cast<double>(Gfx::Inst().WindowWidth()) / static_cast<double>(GameRules::Fleet::SpacingX());
   return std::max(
-      1, static_cast<int>(std::round(ratio * static_cast<double>(convoy_size_pc) / 100.0)));
+      1, FastRound(ratio * static_cast<double>(convoy_size_pc) / 100.0));
 }
 
 void ExhaustParticle::Draw() const {
@@ -153,10 +154,10 @@ void ProjectileSlot::OnResize(float rx, float ry) noexcept {
     prev_fy = fy;
     pos.x = FastRound(fx);
     pos.y = FastRound(fy);
-    speed.x = static_cast<int>(std::round(static_cast<float>(speed.x) * rx));
-    speed.y = static_cast<int>(std::round(static_cast<float>(speed.y) * ry));
+    speed.x = FastRound(static_cast<float>(speed.x) * rx);
+    speed.y = FastRound(static_cast<float>(speed.y) * ry);
     speed_magnitude *= ry;
-    turn_trigger_y = static_cast<int>(std::round(static_cast<float>(turn_trigger_y) * ry));
+    turn_trigger_y = FastRound(static_cast<float>(turn_trigger_y) * ry);
     if (pix) {
       hitbox_w = static_cast<int>(static_cast<float>(pix->Width()) * GameRules::Player::kCollisionHitboxScale);
       hitbox_h = static_cast<int>(static_cast<float>(pix->Height()) * GameRules::Player::kCollisionHitboxScale);
@@ -456,8 +457,8 @@ void BonusSlot::Draw() const {
 
 void BonusSlot::OnResize(float rx, float ry) noexcept {
   if (active) {
-    pos.x = static_cast<int>(std::round(static_cast<float>(pos.x) * rx));
-    pos.y = static_cast<int>(std::round(static_cast<float>(pos.y) * ry));
+    pos.x = FastRound(static_cast<float>(pos.x) * rx);
+    pos.y = FastRound(static_cast<float>(pos.y) * ry);
   }
 }
 
@@ -573,7 +574,7 @@ void AliensManager::UpdateCruiseBounds() noexcept {
   const int new_w = Gfx::Inst().WindowWidth();
   const int half_w = GameRules::Fleet::Width() / 2;
   const float s = Gfx::Inst().Scale();
-  const int margin_x = half_w + static_cast<int>(std::round(static_cast<float>(GameRules::Fleet::kFleetMarginXPixels) * s));
+  const int margin_x = half_w + FastRound(static_cast<float>(GameRules::Fleet::kFleetMarginXPixels) * s);
   min_cruise_x_ = margin_x;
   const int fleet_span = (max_convoy_size_ - 1) * GameRules::Fleet::SpacingX() +
                          GameRules::Fleet::SpacingX() / 2;
@@ -680,7 +681,7 @@ void AliensManager::OnResize(float rx, float ry) {
   max_convoy_size_ = wanderers_allowed_cycle_
                          ? (original_max_convoy_size_ + GameRules::Fleet::kRandomWanderersCount)
                          : original_max_convoy_size_;
-  base_cruise_.x = static_cast<int>(std::round(static_cast<float>(base_cruise_.x) * rx));
+  base_cruise_.x = FastRound(static_cast<float>(base_cruise_.x) * rx);
   base_cruise_.y = GameRules::Fleet::BaseCruiseY();
 
   UpdateCruiseBounds();
@@ -710,7 +711,7 @@ AliensManager::BuildOccupancyBitset(const Alien* exclude_alien) const noexcept {
 }
 
 void AliensManager::Move() {
-  const int scaled_cruise_spd = std::max(1, static_cast<int>(std::round(Gfx::Inst().Scale())));
+  const int scaled_cruise_spd = std::max(1, FastRound(Gfx::Inst().Scale()));
   base_cruise_.x += (base_cruise_speed_ >= 0 ? scaled_cruise_spd : -scaled_cruise_spd);
 
   if (base_cruise_.x <= min_cruise_x_) {
@@ -790,7 +791,7 @@ void AliensManager::Creation() {
 
         const float s = Gfx::Inst().Scale();
         const int scaled_vel =
-            std::max(2, static_cast<int>(std::round(speed_ * s)));
+            std::max(2, FastRound(speed_ * s));
         const int stage_cycle = GameRules::Progression::WaveToStage(level_number_);
 
         for (int c = convoy_idx_; c < group_end; ++c) {
@@ -834,7 +835,7 @@ void AliensManager::Creation() {
         if (!all_done) {
           ++convoy_alien_idx_;
           const int spawn_dist =
-              static_cast<int>(std::round(1.10f * static_cast<float>(GameRules::Fleet::Height())));
+              FastRound(1.10f * static_cast<float>(GameRules::Fleet::Height()));
           next_creation_wait_ = std::max(5, spawn_dist / scaled_vel);
         } else {
           convoy_alien_idx_ = 0;
@@ -848,7 +849,7 @@ void AliensManager::Creation() {
 
             const float factor = same_lane ? 1.75f : 1.18f;
             const int min_gap_frames =
-                static_cast<int>(std::round(factor * static_cast<float>(GameRules::Fleet::Height()))) /
+                FastRound(factor * static_cast<float>(GameRules::Fleet::Height())) /
                 scaled_vel;
             next_creation_wait_ =
                 std::max(min_gap_frames, convoys_[convoy_idx_].wait);
@@ -970,7 +971,7 @@ void AliensManager::Fire(Coord player_pos) const {
         turning_spacing_cooldown_ = std::uniform_int_distribution<int>(GameRules::Combat::kTurningSpacingCooldownMinFrames, GameRules::Combat::kTurningSpacingCooldownMaxFrames)(rng_);
 
         const float vector_speed_variance = GameRules::Combat::kBombSpeedVectorVarianceBase + static_cast<float>(std::uniform_int_distribution<int>(0, GameRules::Combat::kBombSpeedVectorVarianceRange)(rng_)) / 100.0f;
-        vy = std::max(3, static_cast<int>(std::round(static_cast<float>(vy) * vector_speed_variance)));
+        vy = std::max(3, FastRound(static_cast<float>(vy) * vector_speed_variance));
 
         const int mid_delta = (player_y - cannon_pos.y);
         trigger_y = cannon_pos.y + mid_delta * (std::uniform_int_distribution<int>(GameRules::Combat::kTurningTriggerYMinPercent, GameRules::Combat::kTurningTriggerYMaxPercent)(rng_)) / 100;
@@ -1183,7 +1184,7 @@ Player::Player(BulletsManager* bullets_manager, BulletsManager* bombs_manager,
 void Player::OnResize(float rx, float ry) noexcept {
   static_cast<void>(ry);
   Coord p = Position();
-  p.x = static_cast<int>(std::round(static_cast<float>(p.x) * rx));
+  p.x = FastRound(static_cast<float>(p.x) * rx);
   const int max_right = Gfx::Inst().WindowWidth() - Width() / 2 - 1;
   if (p.x > max_right) p.x = static_cast<int>(max_right);
   if (p.x < Width() / 2) p.x = static_cast<int>(Width() / 2);
@@ -1265,7 +1266,7 @@ void Player::DoBonusCollisions(AliensManager* aliens_mgr) {
       case Bonus::extra_speed: {
         if (audio_) audio_->Play(SoundManager::SFX_POWERUP_SPEED);
         ExtraSpeed();
-        const int spd_step_pct = static_cast<int>(std::round(GameRules::Player::kSpeedBoostPercent * 100.0f));
+        const int spd_step_pct = FastRound(GameRules::Player::kSpeedBoostPercent * 100.0f);
         const int spd_max_pct = 100 + spd_step_pct * GameRules::Player::kPlayerMaxSpeedLevel;
         char buf[48];
         if (IsSpeedMaxed()) {
@@ -1280,7 +1281,7 @@ void Player::DoBonusCollisions(AliensManager* aliens_mgr) {
       case Bonus::extra_fire: {
         if (audio_) audio_->Play(SoundManager::SFX_POWERUP_FIRE);
         ExtraFire();
-        const int fr_step_pct = static_cast<int>(std::round(GameRules::Player::kFireRateBoostPercent * 100.0f));
+        const int fr_step_pct = FastRound(GameRules::Player::kFireRateBoostPercent * 100.0f);
         const int fr_max_pct = 100 + fr_step_pct * GameRules::Player::kPlayerMaxFireLevel;
         char buf[48];
         if (IsFireMaxed()) {
