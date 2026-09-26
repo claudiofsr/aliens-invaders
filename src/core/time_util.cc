@@ -97,10 +97,12 @@ bool FramePacingEngine::ShouldStepPhysics() noexcept {
                                       : kFixedStepNanoseconds;
   if (accumulator_ns_ < threshold) return false;
   if (steps_this_frame_ >= kMaxStepsPerFrame) {
-    // Spiral-of-death guard: drop remaining backlog to prevent freeze.
+    // Spiral-of-death guard: drop remaining backlog to prevent lag spike freezes.
     accumulator_ns_ = 0;
     return false;
   }
+  // Smoothly deduct fixed step interval while preserving sub-millisecond debt
+  // for accurate visual sub-pixel interpolation alpha.
   accumulator_ns_ = (accumulator_ns_ >= kFixedStepNanoseconds)
                         ? (accumulator_ns_ - kFixedStepNanoseconds)
                         : 0;

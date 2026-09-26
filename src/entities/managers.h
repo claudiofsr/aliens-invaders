@@ -76,6 +76,10 @@ struct ProjectileSlot {
   uint8_t engine_g{60};
   uint8_t engine_b{255};
 
+  // Pre-calculated integer hitbox extents: eliminates Pix::Height() & Scale() queries in hot collision loop
+  int hitbox_w{0};
+  int hitbox_h{0};
+
   void Move(std::array<ExhaustParticle, 128>& exhaust_pool,
             std::array<uint16_t, 128>& active_exhaust,
             int& active_exhaust_count) noexcept;
@@ -216,6 +220,10 @@ class AliensManager {
   int min_cruise_x_{0};
   int max_cruise_x_{0};
   void UpdateCruiseBounds() noexcept;
+
+  // Single Source of Truth for fleet occupancy bitset (Deep DRY)
+  [[nodiscard]] std::array<std::uint16_t, GameRules::Fleet::FormationGrid::kMaxGridRows>
+  BuildOccupancyBitset(const Alien* exclude_alien) const noexcept;
 
   void SpawnRandomWanderers();
   [[nodiscard]] bool AreAllAliensDocked() const noexcept;

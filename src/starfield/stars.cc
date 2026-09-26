@@ -326,26 +326,16 @@ void StarsFields::Draw() {
     return;
   }
 
-    // MidField stars: small textured quads (not single pixels) with
-    // per-star twinkle modulating alpha (shimmer) AND half-size
-    // (pulsating breath).  One SDL_RenderGeometry call for ALL
-    // background stars using the flare texture (core + halo + spikes).
-    static constexpr float kMidColors[4][3] = {
-        {185.0f / 255.0f, 220.0f / 255.0f, 255.0f / 255.0f},  // Blue
-        {245.0f / 255.0f, 250.0f / 255.0f, 255.0f / 255.0f},  // White
-        {255.0f / 255.0f, 245.0f / 255.0f, 190.0f / 255.0f},  // Yellow
-        {255.0f / 255.0f, 175.0f / 255.0f, 120.0f / 255.0f},  // OrangeRed
-    };
-    // Compile-time ceiling: kStarPoolCapacity * 4 vertices. Zero heap in Draw().
-    static std::array<SDL_Vertex, StarsFields::kStarPoolCapacity * 4> mid_verts{};
-    size_t mid_quad_count = 0;
-
-
-
-  // Pre-sized vertex array eliminating push_back overhead in the draw loop
-  // Compile-time ceiling: kStarPoolCapacity * 4 vertices. Zero heap in Draw().
-  static std::array<SDL_Vertex, StarsFields::kStarPoolCapacity * 4> flare_vertices{};
-  size_t flare_quad_count = 0;
+    // Unified vertex buffer: merges MidField and Foreground into a single geometry batch.
+  // Cuts GPU draw calls and cuts static BSS memory allocation in half.
+  static constexpr float kMidColors[4][3] = {
+      {185.0f / 255.0f, 220.0f / 255.0f, 255.0f / 255.0f},  // Blue
+      {245.0f / 255.0f, 250.0f / 255.0f, 255.0f / 255.0f},  // White
+      {255.0f / 255.0f, 245.0f / 255.0f, 190.0f / 255.0f},  // Yellow
+      {255.0f / 255.0f, 175.0f / 255.0f, 120.0f / 255.0f},  // OrangeRed
+  };
+  static std::array<SDL_Vertex, StarsFields::kStarPoolCapacity * 4> unified_star_verts{};
+  size_t total_quad_count = 0;
 
   static constexpr struct { float r, g, b; } kSpectralColors[4] = {
       {185.0f / 255.0f, 225.0f / 255.0f, 1.0f},
@@ -370,12 +360,12 @@ void StarsFields::Draw() {
       const auto& mc = kMidColors[static_cast<size_t>(s.spectral)];
       const float alpha = std::max(SF::kMidFieldAlphaFloor, tw);
       const SDL_FColor color{mc[0], mc[1], mc[2], alpha};
-      const size_t bv = mid_quad_count * 4;
-      mid_verts[bv + 0] = {{s.x - hs, s.y - hs}, color, {0.0f, 0.0f}};
-      mid_verts[bv + 1] = {{s.x + hs, s.y - hs}, color, {1.0f, 0.0f}};
-      mid_verts[bv + 2] = {{s.x + hs, s.y + hs}, color, {1.0f, 1.0f}};
-      mid_verts[bv + 3] = {{s.x - hs, s.y + hs}, color, {0.0f, 1.0f}};
-      ++mid_quad_count;
+      const size_t bv = total_quad_count * 4;
+      unified_star_verts[bv + 0] = {{s.x - hs, s.y - hs}, color, {0.0f, 0.0f}};
+      unified_star_verts[bv + 1] = {{s.x + hs, s.y - hs}, color, {1.0f, 0.0f}};
+      unified_star_verts[bv + 2] = {{s.x + hs, s.y + hs}, color, {1.0f, 1.0f}};
+      unified_star_verts[bv + 3] = {{s.x - hs, s.y + hs}, color, {0.0f, 1.0f}};
+      ++total_quad_count;
     } else {
       // Nearby star: larger flare; diffraction spikes breathe with the pulse.
       const float star_size = (SF::kForegroundSizeMinPx +
@@ -392,33 +382,22 @@ void StarsFields::Draw() {
       const auto& sc = kSpectralColors[static_cast<size_t>(s.spectral)];
       const SDL_FColor color{sc.r, sc.g, sc.b, af};
 
-      const size_t v_idx = flare_quad_count * 4;
-      flare_vertices[v_idx + 0] = {{left, top}, color, {0.0f, 0.0f}};
-      flare_vertices[v_idx + 1] = {{left + star_size, top}, color, {1.0f, 0.0f}};
-      flare_vertices[v_idx + 2] = {{left + star_size, top + star_size}, color, {1.0f, 1.0f}};
-      flare_vertices[v_idx + 3] = {{left, top + star_size}, color, {0.0f, 1.0f}};
+      const size_t v_idx = total_quad_count * 4;
+      unified_star_verts[v_idx + 0] = {{left, top}, color, {0.0f, 0.0f}};
+      unified_star_verts[v_idx + 1] = {{left + star_size, top}, color, {1.0f, 0.0f}};
+      unified_star_verts[v_idx + 2] = {{left + star_size, top + star_size}, color, {1.0f, 1.0f}};
+      unified_star_verts[v_idx + 3] = {{left, top + star_size}, color, {0.0f, 1.0f}};
 
-      ++flare_quad_count;
+      ++total_quad_count;
     }
   }
 
+  // Single consolidated geometry draw call for the entire starfield
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-  // Draw background star points in compact spectral batches
-    // Single geometry batch for ALL MidField stars: 1 draw call,
-    // star_flare_tex_ (core + halo + spikes) with bilinear filtering.
-    // Reuses the compile-time s_quad_indices table (0,1,2,0,2,3 per quad).
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    if (mid_quad_count > 0) {
-        SDL_RenderGeometry(renderer, star_flare_tex_, mid_verts.data(),
-                           static_cast<int>(mid_quad_count * 4),
-                           s_quad_indices.data(),
-                           static_cast<int>(mid_quad_count * 6));
-    }
-
-  if (flare_quad_count > 0) {
-    SDL_RenderGeometry(renderer, star_flare_tex_, flare_vertices.data(),
-                       static_cast<int>(flare_quad_count * 4),
+  if (total_quad_count > 0) {
+    SDL_RenderGeometry(renderer, star_flare_tex_, unified_star_verts.data(),
+                       static_cast<int>(total_quad_count * 4),
                        s_quad_indices.data(),
-                       static_cast<int>(flare_quad_count * 6));
+                       static_cast<int>(total_quad_count * 6));
   }
 }

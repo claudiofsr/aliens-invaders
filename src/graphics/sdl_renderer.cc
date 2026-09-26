@@ -393,21 +393,28 @@ class FontEngine {
           }
         }
       } else {
-        // Alocação dinâmica sob demanda fora do Init() (ex: após resize de tela)
-        std::vector<uint8_t> glyph_rgba(static_cast<size_t>(width * height * 4));
+        // Zero-allocation fallback for dynamic glyph updates using stack buffer
+        static std::array<uint8_t, 128 * 128 * 4> stack_glyph_buf;
+        const size_t req_bytes = static_cast<size_t>(width * height * 4);
+        uint8_t* dst_buf = (req_bytes <= stack_glyph_buf.size()) ? stack_glyph_buf.data() : nullptr;
+        std::vector<uint8_t> heap_fallback;
+        if (!dst_buf) {
+          heap_fallback.resize(req_bytes);
+          dst_buf = heap_fallback.data();
+        }
         for (int y = 0; y < height; ++y) {
           for (int x = 0; x < width; ++x) {
             const uint8_t alpha = bitmap[y * width + x];
             const size_t dst_idx = static_cast<size_t>((y * width + x) * 4);
-            glyph_rgba[dst_idx + 0] = 255;
-            glyph_rgba[dst_idx + 1] = 255;
-            glyph_rgba[dst_idx + 2] = 255;
-            glyph_rgba[dst_idx + 3] = alpha;
+            dst_buf[dst_idx + 0] = 255;
+            dst_buf[dst_idx + 1] = 255;
+            dst_buf[dst_idx + 2] = 255;
+            dst_buf[dst_idx + 3] = alpha;
           }
         }
         if (page.texture) {
           const SDL_Rect update_rect = {ox, oy, width, height};
-          SDL_UpdateTexture(page.texture, &update_rect, glyph_rgba.data(), width * 4);
+          SDL_UpdateTexture(page.texture, &update_rect, dst_buf, width * 4);
         }
       }
     } else {

@@ -157,6 +157,10 @@ void ProjectileSlot::OnResize(float rx, float ry) noexcept {
     speed.y = static_cast<int>(std::round(static_cast<float>(speed.y) * ry));
     speed_magnitude *= ry;
     turn_trigger_y = static_cast<int>(std::round(static_cast<float>(turn_trigger_y) * ry));
+    if (pix) {
+      hitbox_w = static_cast<int>(static_cast<float>(pix->Width()) * GameRules::Player::kCollisionHitboxScale);
+      hitbox_h = static_cast<int>(static_cast<float>(pix->Height()) * GameRules::Player::kCollisionHitboxScale);
+    }
   }
 }
 
@@ -237,6 +241,13 @@ void BulletsManager::Add(const Pix* pix, Coord pos, Coord speed,
       b.engine_g = eng_g;
       b.engine_b = eng_b;
 
+      if (pix) {
+        b.hitbox_w = static_cast<int>(static_cast<float>(pix->Width()) * GameRules::Player::kCollisionHitboxScale);
+        b.hitbox_h = static_cast<int>(static_cast<float>(pix->Height()) * GameRules::Player::kCollisionHitboxScale);
+      } else {
+        b.hitbox_w = b.hitbox_h = 0;
+      }
+
       cached_min_y_ = std::min(cached_min_y_, pos.y);
       cached_max_y_ = std::max(cached_max_y_, pos.y);
       active_ids_[static_cast<size_t>(active_count_++)] = static_cast<uint16_t>(idx);
@@ -263,15 +274,13 @@ int BulletsManager::DoCollisions(const simulation::GameObject& other, int max) {
       continue;
     }
 
-    // Direct arithmetic comparison avoiding redundant virtual Pix::Height() queries
-    const int hh1 = static_cast<int>(static_cast<float>(b.pix->Height()) * GameRules::Player::kCollisionHitboxScale);
-    if (std::abs(b.pos.y - other_y) * 2 >= (hh1 + hh2)) {
+    // Fast path: use cached integer hitbox extents (zero float math / scale queries per bullet)
+    if (std::abs(b.pos.y - other_y) * 2 >= (b.hitbox_h + hh2)) {
       ++i;
       continue;
     }
 
-    const int hw1 = static_cast<int>(static_cast<float>(b.pix->Width()) * GameRules::Player::kCollisionHitboxScale);
-    if (std::abs(b.pos.x - other_x) * 2 < (hw1 + hw2)) {
+    if (std::abs(b.pos.x - other_x) * 2 < (b.hitbox_w + hw2)) {
       b.active = false;
       active_ids_[static_cast<size_t>(i)] = active_ids_[static_cast<size_t>(--active_count_)];
       if (++res >= max) break;
@@ -682,6 +691,24 @@ void AliensManager::OnResize(float rx, float ry) {
   }
 }
 
+// Single Source of Truth for armada cell occupancy map (Deep DRY)
+std::array<std::uint16_t, GameRules::Fleet::FormationGrid::kMaxGridRows>
+AliensManager::BuildOccupancyBitset(const Alien* exclude_alien) const noexcept {
+  std::array<std::uint16_t, GameRules::Fleet::FormationGrid::kMaxGridRows> occ{};
+  occ.fill(0);
+  for (const auto& other : aliens_) {
+    if (!other || other.get() == exclude_alien) continue;
+    const int c = other->GetTrajectory().GridCol();
+    const int r = other->GetTrajectory().GridRow();
+    if (r >= 0 && r < GameRules::Fleet::FormationGrid::kMaxGridRows &&
+        c >= 0 && c < GameRules::Fleet::FormationGrid::kMaxGridCols) {
+      occ[static_cast<std::size_t>(r)] |=
+          static_cast<std::uint16_t>(std::uint16_t{1} << static_cast<unsigned>(c));
+    }
+  }
+  return occ;
+}
+
 void AliensManager::Move() {
   const int scaled_cruise_spd = std::max(1, static_cast<int>(std::round(Gfx::Inst().Scale())));
   base_cruise_.x += (base_cruise_speed_ >= 0 ? scaled_cruise_spd : -scaled_cruise_spd);
@@ -706,18 +733,7 @@ void AliensManager::Move() {
         // Bullet penetrates proximity radius: consume bullet and execute warp jump
         bullets_manager_->ConsumeBullet(threatening_idx);
 
-        std::array<std::uint16_t, GameRules::Fleet::FormationGrid::kMaxGridRows> occ{};
-        occ.fill(0);
-        for (const auto& other : aliens_) {
-          if (!other || other.get() == alien.get()) continue;
-          const int c = other->GetTrajectory().GridCol();
-          const int r = other->GetTrajectory().GridRow();
-          if (r >= 0 && r < GameRules::Fleet::FormationGrid::kMaxGridRows &&
-              c >= 0 && c < GameRules::Fleet::FormationGrid::kMaxGridCols) {
-            occ[static_cast<std::size_t>(r)] |=
-                static_cast<std::uint16_t>(std::uint16_t{1} << static_cast<unsigned>(c));
-          }
-        }
+        const auto occ = BuildOccupancyBitset(alien.get());
         const int px = (player_ != nullptr) ? player_->Position().x : 0;
         const int py = (player_ != nullptr) ? player_->Position().y : 0;
         alien->TriggerSpacetimeWarp(occ, px, py);
@@ -916,7 +932,7 @@ void AliensManager::Fire(Coord player_pos) const {
 
     if (alien->Stage() != Trajectory::cruising &&
         alien->Stage() != Trajectory::joining &&
-        std::uniform_int_distribution<int>(0, fire_chance - 1)(rng_) < static_cast<int>(std::lround(static_cast<double>(speed_)))) {
+        rng_.UniformInt(0, fire_chance - 1) < static_cast<int>(std::lround(static_cast<double>(speed_)))) {
       Coord cannon_pos = alien->CannonPosition();
       if (bombs_manager_->HasBombNear(cannon_pos, static_cast<int>(GameRules::Combat::kBombNearDistancePixels * s))) {
         continue;
@@ -1042,18 +1058,7 @@ BulletCollisionSummary AliensManager::DoBulletsCollisions() {
       // Alien 14 is annihilated ONLY if hit while kAlien14NumWarpEvasions is Zero
       if (aliens_[i]->GetTextureId() == TextureId::Alien14 &&
           aliens_[i]->WarpEvasionsRemaining() > 0) {
-        std::array<std::uint16_t, GameRules::Fleet::FormationGrid::kMaxGridRows> occ{};
-        occ.fill(0);
-        for (size_t j = 0; j < aliens_.size(); ++j) {
-          if (j == i || !aliens_[j]) continue;
-          const int c = aliens_[j]->GetTrajectory().GridCol();
-          const int r = aliens_[j]->GetTrajectory().GridRow();
-          if (r >= 0 && r < GameRules::Fleet::FormationGrid::kMaxGridRows &&
-              c >= 0 && c < GameRules::Fleet::FormationGrid::kMaxGridCols) {
-            occ[static_cast<std::size_t>(r)] |=
-                static_cast<std::uint16_t>(std::uint16_t{1} << static_cast<unsigned>(c));
-          }
-        }
+        const auto occ = BuildOccupancyBitset(aliens_[i].get());
         const int px = (player_ != nullptr) ? player_->Position().x : 0;
         const int py = (player_ != nullptr) ? player_->Position().y : 0;
 

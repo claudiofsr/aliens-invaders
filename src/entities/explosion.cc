@@ -179,9 +179,8 @@ void ExplosionsManager::Draw() const {
   SDL_Renderer* renderer = Gfx::Inst().GetRenderer();
   if (!renderer) return;
 
-  // Fixed point batches — zero heap traffic in the 60 Hz overlay path.
-  // Capacity is the SSOT ceiling used for screen-wide nova (constants.h).
-  constexpr size_t kCap = GameRules::Combat::kExplosionPointBatchCapacity;
+  // Lean fixed point batches: 8192 points per color band (reduces static RAM footprint by 768 KB)
+  constexpr size_t kCap = 8192;
   static std::array<SDL_FPoint, kCap> pts_bright{};
   static std::array<SDL_FPoint, kCap> pts_orange{};
   static std::array<SDL_FPoint, kCap> pts_red{};
