@@ -68,10 +68,15 @@
   vez de `Gfx::Inst()` ao vivo. Gameplay byte-idêntico; 49 testes + 6 legs validam.
 - **Fatia 2 (fix19)**: métricas injetadas em ConvoySize, ProjectileSlot/
   BonusSlot (Out/Move), Bullets/Bonus/Explosions e Player; Player também emite
-  cosméticos pelo sink. `Gfx::Inst()` sobrevive apenas nos Draw* (render,
-  Fase 4/6) e nos sync points (RefreshMetrics/DistributeMetrics).
-- **Fatia 3**: `Pix` ganha fonte de dimensões headless; `dump_vectors` +
-  RecordingSink: warp/alpha-decay/kamikaze/bônus/colisões seedados → ports
+  cosméticos pelo sink.
+- **Fatia 3 (fix20)**: `Pix` com escala global desacoplada da `Gfx` (espelhada
+  nos 4 sítios de recálculo) + `CreateHeadless()`; `TextureProvider` injetado em
+  AliensManager/BonusManager/Player; `RefreshMetrics` aposentado (`SetMetrics` +
+  `DistributeMetrics`); Draw* fisicamente movidos para `actors_draw.cc` /
+  `managers_draw.cc` / `explosion_draw.cc`. actors/managers/explosion agora
+  linkam sem SDL — pré-requisito dos vetores de entidades.
+- **Fatia 4 (fix21)**: `dump_vectors` linka os TUs puros e grava as entidades
+  seedadas (warp/alpha-decay/kamikaze/bônus/colisões) + RecordingSink → ports
   Rust de actors/managers sob contrato dourado.
 
 ## Comandos

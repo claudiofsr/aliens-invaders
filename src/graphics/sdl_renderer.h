@@ -25,16 +25,47 @@ class Pix {
   mutable float cached_scale_{-1.0f};
   Coord base_dim_{64, 64};
 
+  // Slice 3: process-wide scale snapshot mirrored by Gfx at every recompute
+  // site; simulation-side hitbox queries read THIS, never Gfx::Inst() live.
+  inline static float global_scale_{1.0f};
+  // Texture-release hook: the graphics shell binds SDL_DestroyTexture at
+  // startup; headless builds leave it null (a headless Pix owns no texture).
+  inline static void (*texture_deleter_)(SDL_Texture*){nullptr};
+
   Pix(const Pix&) = delete;
   Pix& operator=(const Pix&) = delete;
   friend class PixKeeper;
   Pix(std::span<const uint8_t> png_bytes, Coord base_dim);
-  void RefreshScaleCache() const noexcept;
+  explicit Pix(Coord base_dim) noexcept : base_dim_(base_dim) {}
+  void RefreshScaleCache() const noexcept {
+    const float s = global_scale_;
+    if (s != cached_scale_) {
+      cached_scale_ = s;
+      scaled_w_ = FastRound(static_cast<float>(base_dim_.x) * s);
+      scaled_h_ = FastRound(static_cast<float>(base_dim_.y) * s);
+    }
+  }
 
  public:
-  ~Pix();
-  [[nodiscard]] int Width() const noexcept;
-  [[nodiscard]] int Height() const noexcept;
+  ~Pix() {
+    if (texture_ && texture_deleter_) texture_deleter_(texture_);
+  }
+  /// Headless pixmap: dimensions only, no GPU texture (golden-vector tools).
+  [[nodiscard]] static std::unique_ptr<Pix> CreateHeadless(Coord base_dim) {
+    return std::unique_ptr<Pix>(new Pix(base_dim));
+  }
+  static void SetGlobalScale(float s) noexcept { global_scale_ = s; }
+  static void SetTextureDeleter(void (*fn)(SDL_Texture*)) noexcept {
+    texture_deleter_ = fn;
+  }
+  [[nodiscard]] int Width() const noexcept {
+    RefreshScaleCache();
+    return scaled_w_;
+  }
+  [[nodiscard]] int Height() const noexcept {
+    RefreshScaleCache();
+    return scaled_h_;
+  }
   void Draw(Coord pos, float angle = 0.0f, uint8_t mod_r = 255,
             uint8_t mod_g = 255, uint8_t mod_b = 255) const;
   void DrawF(Vec2f pos, float angle = 0.0f, uint8_t mod_r = 255,
@@ -118,6 +149,9 @@ class Gfx {
 
   Gfx();
   ~Gfx();
+  // The single writer of scale_: recomputes from the window height and
+  // mirrors the result into the Pix global-scale cache (Slice 3).
+  void RecomputeScaleFromWindow() noexcept;
 
  public:
   static Gfx& Inst();

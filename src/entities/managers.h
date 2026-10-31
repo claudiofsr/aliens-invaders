@@ -17,10 +17,10 @@
 #include "path.h"
 #include "random_stream.h"
 #include "recycle_bin.h"
+#include "texture_provider.h"
 
 class PresentationSink;
 class Score;
-class SoundManager;
 
 struct ConvoyData {
   int wait;
@@ -159,10 +159,12 @@ class BonusManager {
   std::array<BonusSlot, MAX_BONUSES> pool_{};
   std::array<uint16_t, MAX_BONUSES> active_ids_{};
   int active_count_{0};
+  const TextureProvider& textures_;  // texture-resolution boundary (Slice 3)
   ViewportMetrics metrics_{1280, 720, 1.0f};  // injected snapshot (see BulletsManager)
 
  public:
-  BonusManager() = default;
+  explicit BonusManager(const TextureProvider& textures) noexcept
+      : textures_(textures) {}
   ~BonusManager() = default;
   void SetMetrics(const ViewportMetrics& m) noexcept { metrics_ = m; }
 
@@ -190,6 +192,7 @@ class AliensManager {
   ExplosionsManager* const explosions_manager_;
   Score* const score_{nullptr};
   PresentationSink& sink_;  // cosmetic-event boundary (required, non-null)
+  const TextureProvider& textures_;  // texture-resolution boundary (Slice 3)
 
   // Wave-dependent state (AGENT 7, pool/reuse): these members are rebindable so Rebuild() can
   // re-arm the SAME manager in place at every phase transition. The whole session shares one ...
@@ -205,10 +208,9 @@ class AliensManager {
   Coord base_cruise_{};
   int base_cruise_speed_{1};
 
-  // Injected display snapshot (SSOT of the pure kinematics core): refreshed from the graphics
-  // boundary at construction/rebuild/resize ONLY -- the 60 Hz loop never calls Gfx for movement ...
+  // Injected display snapshot (SSOT of the pure kinematics core): the shell pushes it at
+  // construction and before every resize cascade -- the 60 Hz loop never calls Gfx for movement ...
   ViewportMetrics metrics_{};
-  void RefreshMetrics() noexcept;
 
   enum FleetState { spawning_convoys, active_combat };
   FleetState fleet_state_{spawning_convoys};
@@ -259,6 +261,7 @@ class AliensManager {
                 BonusManager* bonus_manager,
                 ExplosionsManager* explosions_manager,
                 Score* score, PresentationSink& sink,
+                const TextureProvider& textures, const ViewportMetrics& metrics,
                 int level_number, const ConvoyData* convoysdata, int max_level,
                 std::uint32_t random_seed = 0x5EED0002u);
   ~AliensManager() = default;
@@ -270,6 +273,10 @@ class AliensManager {
   /// aliens and wanderer splines survive the transition; RNG order is stable.
   void Rebuild(int level_number, const ConvoyData* convoys_data, int max_level,
                std::uint32_t random_seed);
+
+  /// Shell push of the display snapshot (ctor and before every resize
+  /// cascade); Rebuild/OnResize then consume metrics_ as-is.
+  void SetMetrics(const ViewportMetrics& m) noexcept { metrics_ = m; }
 
   void Move();
   void Draw(float alpha = 1.0f) const;
@@ -299,6 +306,7 @@ class Player {
   ExplosionsManager* const explosions_manager_;
   const Config* config_{nullptr};
   PresentationSink& sink_;                      // cosmetic-event boundary
+  const TextureProvider& textures_;             // texture-resolution boundary
   ViewportMetrics metrics_{1280, 720, 1.0f};    // injected display snapshot
 
   int shield_{GameRules::Player::kInitialShields};
@@ -315,7 +323,8 @@ class Player {
  public:
   Player(BulletsManager* bullets_manager, BulletsManager* bombs_manager,
          BonusManager* bonus_manager, ExplosionsManager* explosions_manager,
-         const Config* config, PresentationSink& sink, const ViewportMetrics& metrics);
+         const Config* config, PresentationSink& sink,
+         const TextureProvider& textures, const ViewportMetrics& metrics);
 
   void SetMetrics(const ViewportMetrics& m) noexcept { metrics_ = m; }
 

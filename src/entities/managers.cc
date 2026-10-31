@@ -1,7 +1,5 @@
 #include "managers.h"
 
-#include <SDL3/SDL.h>
-
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -24,17 +22,6 @@ int ConvoyData::ConvoySize(int window_w) const {
   return std::clamp(
       FastRound(ratio * static_cast<double>(convoy_size_pc) / 100.0),
       1, GameRules::Fleet::FormationGrid::kMaxGridCols);
-}
-
-void ExhaustParticle::Draw() const {
-  if (!active) return;
-  const float progress = static_cast<float>(life) / static_cast<float>(max_life);
-  const uint8_t alpha = static_cast<uint8_t>(std::clamp(progress * 255.0f, 0.0f, 255.0f));
-
-  const float radius = (4.0f + (1.0f - progress) * 5.5f) * Gfx::Inst().Scale();
-  const Coord pt(pos.x, pos.y);
-
-  Gfx::Inst().DrawAura(pt, radius * 0.85f, r, g, b, alpha);
 }
 
 void ProjectileSlot::Move(std::array<ExhaustParticle, 128>& exhaust_pool,
@@ -138,31 +125,6 @@ bool ProjectileSlot::Collide(const simulation::GameObject& other) const noexcept
   return std::abs(pos.x - other.Position().x) * 2 < (hw1 + hw2);
 }
 
-void ProjectileSlot::Draw(float alpha) const {
-  if (!active || !pix) return;
-
-  const float interp_x = prev_fx + (fx - prev_fx) * alpha;
-  const float interp_y = prev_fy + (fy - prev_fy) * alpha;
-  const Coord render_pos(FastRound(interp_x), FastRound(interp_y));
-
-  if (relativistic) {
-    Gfx::Inst().DrawAura(render_pos, 18.0f * Gfx::Inst().Scale(), 0, 220, 255, 110);
-  }
-
-  if (radioactive) {
-    Gfx::Inst().DrawAura(render_pos, 20.0f * Gfx::Inst().Scale(), 50, 255, 90, 160);
-  }
-
-  if (is_turning_bomb) {
-    if (!turn_completed && pos.y >= turn_trigger_y) {
-      Gfx::Inst().DrawAura(render_pos, 18.0f * Gfx::Inst().Scale(), 255, 210, 0, 180);
-    }
-    pix->Draw(render_pos, bomb_render_angle);
-  } else {
-    pix->Draw(render_pos);
-  }
-}
-
 void ProjectileSlot::OnResize(float rx, float ry) noexcept {
   if (active) {
     fx *= rx;
@@ -214,15 +176,6 @@ void BulletsManager::Move(Coord player_pos) {
       if (b.pos.y > cached_max_y_) cached_max_y_ = b.pos.y;
       ++i;
     }
-  }
-}
-
-void BulletsManager::Draw(float alpha) const {
-  for (int i = 0; i < active_exhaust_count_; ++i) {
-    exhaust_pool_[active_exhaust_ids_[static_cast<size_t>(i)]].Draw();
-  }
-  for (int i = 0; i < active_count_; ++i) {
-    pool_[active_ids_[static_cast<size_t>(i)]].Draw(alpha);
   }
 }
 
@@ -407,10 +360,6 @@ bool BonusSlot::Collide(const simulation::GameObject& other) const noexcept {
   return std::abs(pos.x - other.Position().x) * 2 < (hw1 + hw2);
 }
 
-void BonusSlot::Draw() const {
-  if (active && pix) pix->Draw(pos);
-}
-
 void BonusSlot::OnResize(float rx, float ry) noexcept {
   if (active) {
     pos.x = FastRound(static_cast<float>(pos.x) * rx);
@@ -431,19 +380,13 @@ void BonusManager::Move() {
   }
 }
 
-void BonusManager::Draw() const {
-  for (int i = 0; i < active_count_; ++i) {
-    pool_[active_ids_[static_cast<size_t>(i)]].Draw();
-  }
-}
-
 void BonusManager::Add(Coord pos, Bonus::bonus_t type) {
   if (active_count_ >= static_cast<int>(MAX_BONUSES)) return;
 
   for (size_t idx = 0; idx < MAX_BONUSES; ++idx) {
     auto& b = pool_[idx];
     if (!b.active) {
-      b.pix = PixKeeper::Instance().Get(GetBonusTextureId(type));
+      b.pix = textures_.Get(GetBonusTextureId(type));
       b.pos = pos;
       b.speed = Coord(0, 1);
       b.type = type;
@@ -483,6 +426,8 @@ AliensManager::AliensManager(BulletsManager* bombs_manager,
                              BonusManager* bonus_manager,
                              ExplosionsManager* explosions_manager,
                              Score* score, PresentationSink& sink,
+                             const TextureProvider& textures,
+                             const ViewportMetrics& metrics,
                              int level_number, const ConvoyData* convoys_data,
                              int max_level, std::uint32_t random_seed)
     : bombs_manager_(bombs_manager),
@@ -490,7 +435,9 @@ AliensManager::AliensManager(BulletsManager* bombs_manager,
       bonus_manager_(bonus_manager),
       explosions_manager_(explosions_manager),
       score_(score),
-      sink_(sink) {
+      sink_(sink),
+      textures_(textures),
+      metrics_(metrics) {
   // AGENT 7 (pool/reuse): size every container ONCE for the whole session. The spawn sites hard-cap
   // the armada at 256 aliens, and the wanderer entry path can transiently hold at most ...
   aliens_.reserve(GameRules::Fleet::kMaxAliensCount);
@@ -505,10 +452,6 @@ void AliensManager::Rebuild(int level_number, const ConvoyData* convoys_data,
       convoys_data[0].texture_id == TextureId::None) {
     throw std::invalid_argument("AliensManager initialization error");
   }
-  // Graphics -> simulation sync point: refresh the injected metrics before
-  // anything derives formation geometry from them.
-  RefreshMetrics();
-
   level_number_ = level_number;
   stage_profile_ = GameRules::StageCatalog::GetProfile(level_number, max_level);
   rng_.Seed(random_seed);
@@ -574,11 +517,6 @@ std::unique_ptr<Alien> AliensManager::AcquireAlien(const Pix* pix,
   auto fresh = std::make_unique<Alien>(pix, trajectory, speed, texture_id);
   fresh->SetPresentationSink(&sink_);
   return fresh;
-}
-
-void AliensManager::RefreshMetrics() noexcept {
-  metrics_ = ViewportMetrics{Gfx::Inst().WindowWidth(),
-                             Gfx::Inst().WindowHeight(), Gfx::Inst().Scale()};
 }
 
 void AliensManager::UpdateCruiseBounds() noexcept {
@@ -695,7 +633,7 @@ void AliensManager::SpawnRandomWanderers() {
         static_cast<int>(TextureId::Alien1) + std::uniform_int_distribution<int>(0, GameRules::Combat::kAlienTextureCount - 1)(rng_));
 
     auto alien = AcquireAlien(
-        PixKeeper::Instance().Get(rnd_sprite),
+        textures_.Get(rnd_sprite),
         Trajectory(&path, false, base_cruise_, &metrics_, col_idx, top_row,
                    static_cast<uint32_t>(rng_()), stage_cycle, max_convoy_size_),
         speed_, rnd_sprite);
@@ -723,7 +661,7 @@ int AliensManager::GetMaxConvoySize() const {
 }
 
 void AliensManager::OnResize(float rx, float ry) {
-  RefreshMetrics();  // graphics -> simulation sync point
+  // Metrics arrive pre-injected: the shell pushes SetMetrics before this cascade.
   original_max_convoy_size_ = GetMaxConvoySize();
   // Same fixed-capacity containment as Rebuild(): resizing into an extreme aspect inflates the
   // convoy metrics, and kMaxGridCols is the hard ceiling for every col_idx derived from them.
@@ -815,11 +753,6 @@ void AliensManager::Move() {
   Creation();
 }
 
-void AliensManager::Draw(float alpha) const {
-  HITCH_SCOPE("AliensManager::Draw");
-  for (const auto& alien : aliens_) alien->DrawInterpolated(alpha);
-}
-
 bool AliensManager::CheckKamikazeProximity(Coord player_pos, float lethal_radius) {
   const float lethal_sq = lethal_radius * lethal_radius;
   for (const auto& alien : aliens_) {
@@ -883,7 +816,7 @@ void AliensManager::Creation() {
                 convoy->x_mirror ^ (convoy->split && convoy_alien_idx_ % 2 == 0);
 
             auto spawned_alien = AcquireAlien(
-                PixKeeper::Instance().Get(convoy->texture_id),
+                textures_.Get(convoy->texture_id),
                 Trajectory(convoy->arrival, mirrored, base_cruise_, &metrics_,
                            col_idx, row_idx, static_cast<uint32_t>(rng_()),
                            stage_cycle, max_convoy_size_),
@@ -1076,7 +1009,7 @@ void AliensManager::Fire(Coord player_pos) const {
         engine_color = GameRules::Combat::kAlien4RadioEngineColor;  // radio emission
       }
 
-      bombs_manager_->Add(PixKeeper::Instance().Get(TextureId::Bomb), cannon_pos,
+      bombs_manager_->Add(textures_.Get(TextureId::Bomb), cannon_pos,
                           Coord(vx, vy), is_relativistic, is_turning, trigger_y,
                           target_deflection_deg, is_radioactive,
                           engine_color.r, engine_color.g, engine_color.b);
@@ -1257,15 +1190,16 @@ Player::Player(BulletsManager* bullets_manager, BulletsManager* bombs_manager,
                BonusManager* bonus_manager,
                ExplosionsManager* explosions_manager,
                const Config* config, PresentationSink& sink,
-               const ViewportMetrics& metrics)
+               const TextureProvider& textures, const ViewportMetrics& metrics)
     : bullets_manager_(bullets_manager),
       bombs_manager_(bombs_manager),
       bonus_manager_(bonus_manager),
       explosions_manager_(explosions_manager),
       config_(config),
       sink_(sink),
+      textures_(textures),
       metrics_(metrics) {
-  const auto* pix = PixKeeper::Instance().Get(config ? config->PlayerTextureId() : TextureId::Player);
+  const auto* pix = textures_.Get(config ? config->PlayerTextureId() : TextureId::Player);
   object_.renderable.pix = pix;
   object_.transform.position = Coord(metrics_.win_w / 2, -50);
   UpdateAABB();
@@ -1332,7 +1266,7 @@ void Player::Fire() {
     }
     Coord fire_pos(Position());
     fire_pos.y -= Height() / 2;
-    bullets_manager_->Add(PixKeeper::Instance().Get(TextureId::Bullet), fire_pos,
+    bullets_manager_->Add(textures_.Get(TextureId::Bullet), fire_pos,
                           speed);
   }
 }
@@ -1426,40 +1360,6 @@ void Player::DoBonusCollisions(AliensManager* aliens_mgr) {
         break;
     }
   }
-}
-
-void Player::DrawInterpolated(float alpha, float angle) const {
-  const auto* curPix =
-      PixKeeper::Instance().Get(config_ ? config_->PlayerTextureId() : TextureId::Player);
-  if (!curPix) return;
-
-  const float interp_x = prev_fx_ + (fx_ - prev_fx_) * alpha;
-  const Coord render_pos(FastRound(interp_x), PosY());
-
-  if (hit_timer_ > 0) {
-    const float s = Gfx::Inst().Scale();
-    const float progress =
-        static_cast<float>(hit_timer_) / static_cast<float>(GameRules::Player::kDamageImmunityFrames);
-    const float pulse = std::sin(static_cast<float>(hit_timer_) * 0.55f);
-    const float base_radius = static_cast<float>(Width()) * 0.72f;
-    const float aura_radius = base_radius + pulse * (9.0f * s);
-    const float alpha_val = (150.0f + pulse * 65.0f) * progress;
-    const uint8_t aura_alpha = static_cast<uint8_t>(std::clamp(alpha_val, 0.0f, 255.0f));
-    Gfx::Inst().DrawAura(render_pos, aura_radius * 1.35f, 255, 10, 10, aura_alpha / 2);
-    Gfx::Inst().DrawAura(render_pos, aura_radius, 255, 35, 35, aura_alpha);
-    const bool flash_frame = ((hit_timer_ / 3) % 2 == 0);
-    if (flash_frame) {
-      curPix->Draw(render_pos, angle, 255, 75, 75);
-    } else {
-      curPix->Draw(render_pos, angle, 255, 190, 190);
-    }
-  } else {
-    curPix->DrawF(Vec2f(interp_x, static_cast<float>(PosY())), angle);
-  }
-}
-
-void Player::Draw(float angle) const {
-  DrawInterpolated(1.0f, angle);
 }
 
 int Player::PosY() const {

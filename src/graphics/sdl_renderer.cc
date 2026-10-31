@@ -1146,24 +1146,13 @@ class FontEngine {
 FontEngine* FontEngine::singleton_ = nullptr;
 }  // namespace
 
-void Pix::RefreshScaleCache() const noexcept {
-  const float s = Gfx::Inst().Scale();
-  if (s != cached_scale_) {
-    cached_scale_ = s;
-    scaled_w_ = FastRound(static_cast<float>(base_dim_.x) * s);
-    scaled_h_ = FastRound(static_cast<float>(base_dim_.y) * s);
-  }
-}
-
-int Pix::Width() const noexcept {
-  RefreshScaleCache();
-  return scaled_w_;
-}
-
-int Pix::Height() const noexcept {
-  RefreshScaleCache();
-  return scaled_h_;
-}
+namespace {
+// Slice 3: bind the Pix texture-release hook once per process; the inline
+// destructor calls through it, so headless TUs never link an SDL symbol.
+const struct PixHookBinder {
+  PixHookBinder() { Pix::SetTextureDeleter(&SDL_DestroyTexture); }
+} pix_hook_binder;
+}  // namespace
 
 Pix::Pix(std::span<const uint8_t> png_bytes, Coord base_dim)
     : base_dim_(base_dim) {
@@ -1194,13 +1183,6 @@ Pix::Pix(std::span<const uint8_t> png_bytes, Coord base_dim)
 
   SDL_SetTextureBlendMode(texture_, SDL_BLENDMODE_BLEND);
   SDL_SetTextureScaleMode(texture_, SDL_SCALEMODE_LINEAR);
-}
-
-Pix::~Pix() {
-  if (texture_) {
-    SDL_DestroyTexture(texture_);
-    texture_ = nullptr;
-  }
 }
 
 void Pix::DrawSized(Coord pos, int w, int h, float angle, uint8_t mod_r,
@@ -1318,6 +1300,11 @@ void Gfx::DestroyInstance() {
 
 Gfx& Gfx::Inst() { return *singleton_; }
 
+void Gfx::RecomputeScaleFromWindow() noexcept {
+  scale_ = GameRules::Display::ComputeScale(window_height_);
+  Pix::SetGlobalScale(scale_);  // Slice 3: headless-safe dimension cache
+}
+
 Gfx::Gfx() {
   singleton_ = this;
   if (!SdlWindow::Instance().Create("Aliens Invaders", default_window_width_,
@@ -1384,7 +1371,7 @@ Gfx::Gfx() {
 
   window_width_ = SdlWindow::Instance().Width();
   window_height_ = SdlWindow::Instance().Height();
-  scale_ = GameRules::Display::ComputeScale(window_height_);
+  RecomputeScaleFromWindow();
   // Display cadence for the present-calm rebake gate: the nominal frame period can only change
   // where the display configuration changes -- exactly the sites that recompute scale_.
   nominal_frame_ms_ = 1000.0f / static_cast<float>(
@@ -1591,7 +1578,7 @@ void Gfx::ToggleFullscreen() {
   SdlWindow::Instance().ToggleFullscreen();
   window_width_ = SdlWindow::Instance().Width();
   window_height_ = SdlWindow::Instance().Height();
-  scale_ = GameRules::Display::ComputeScale(window_height_);
+  RecomputeScaleFromWindow();
   nominal_frame_ms_ = 1000.0f / static_cast<float>(
       std::max(1, SdlWindow::Instance().QueryRefreshRate()));
   GameRules::Fleet::FormationGrid::Recompute(scale_);
@@ -1606,7 +1593,7 @@ void Gfx::ResizeWindow(int w, int h) {
   SdlWindow::Instance().Resize(w, h);
   window_width_ = w;
   window_height_ = h;
-  scale_ = GameRules::Display::ComputeScale(window_height_);
+  RecomputeScaleFromWindow();
   nominal_frame_ms_ = 1000.0f / static_cast<float>(
       std::max(1, SdlWindow::Instance().QueryRefreshRate()));
   GameRules::Fleet::FormationGrid::Recompute(scale_);
@@ -1627,7 +1614,7 @@ void Gfx::OnWindowResized(int w, int h) {
   window_width_ = w;
   window_height_ = h;
   const float old_scale = scale_;
-  scale_ = GameRules::Display::ComputeScale(window_height_);
+  RecomputeScaleFromWindow();
   nominal_frame_ms_ = 1000.0f / static_cast<float>(
       std::max(1, SdlWindow::Instance().QueryRefreshRate()));
   GameRules::Fleet::FormationGrid::Recompute(scale_);

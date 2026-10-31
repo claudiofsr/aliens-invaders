@@ -36,10 +36,11 @@ namespace {
 class CombatSession {
   GameContext& ctx_;
   GfxPresentationSink sink_;  // cosmetic-event boundary for the armada sim
+  PixKeeperTextureProvider textures_{};  // texture-resolution boundary (Slice 3)
   Input input_{};
   BulletsManager bullets_{};
   BulletsManager bombs_{};
-  BonusManager bonuses_{};
+  BonusManager bonuses_;
   ExplosionsManager explosions_;
   std::unique_ptr<AliensManager> aliens_{nullptr};
   Player player_;
@@ -81,8 +82,10 @@ class CombatSession {
         sink_(&ctx_.audio),
         bullets_(ctx_.rng.NextU32()),
         bombs_(ctx_.rng.NextU32()),
+        bonuses_(textures_),
         explosions_(ctx_.config),
         player_(&bullets_, &bombs_, &bonuses_, &explosions_, &ctx.config, sink_,
+                textures_,
                 ViewportMetrics{Gfx::Inst().WindowWidth(), Gfx::Inst().WindowHeight(),
                                 Gfx::Inst().Scale()}),
         pacer_(ctx_.config.RefreshRate(), Gfx::Inst().IsVSyncEnabled()) {
@@ -268,9 +271,13 @@ class CombatSession {
 
   std::unique_ptr<AliensManager> SpawnLevelArmada() {
     const int level = ctx_.score.Level();
+    // Shell-side live read (sync point): the armada is born in the current viewport.
+    const ViewportMetrics m{Gfx::Inst().WindowWidth(), Gfx::Inst().WindowHeight(),
+                            Gfx::Inst().Scale()};
     return std::make_unique<AliensManager>(
         &bombs_, &bullets_, &bonuses_, &explosions_,
-        &ctx_.score, sink_, level, LevelData::GetConvoyData(static_cast<size_t>(level)),
+        &ctx_.score, sink_, textures_, m, level,
+        LevelData::GetConvoyData(static_cast<size_t>(level)),
         static_cast<int>(LevelData::GetTotalLevels()),
         ctx_.rng.NextU32());
   }
@@ -290,6 +297,7 @@ class CombatSession {
     bonuses_.SetMetrics(m);
     explosions_.SetMetrics(m);
     player_.SetMetrics(m);
+    if (aliens_) aliens_->SetMetrics(m);
   }
 
   // Applies any pending resolution change to EVERY position-owning subsystem in ONE cumulative

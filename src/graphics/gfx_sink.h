@@ -4,6 +4,7 @@
 #include "gfxinterface.h"
 #include "presentation_sink.h"
 #include "sdl_audio.h"
+#include "texture_provider.h"
 
 /// Production PresentationSink: forwards each simulation intent to the live Gfx
 /// singleton and SoundManager -- exactly the pre-sink inline behavior.
@@ -27,6 +28,14 @@ class GfxPresentationSink final : public PresentationSink {
 
  private:
   SoundManager* audio_;
+};
+
+/// Production TextureProvider: resolves ids through the live PixKeeper.
+class PixKeeperTextureProvider final : public TextureProvider {
+ public:
+  [[nodiscard]] const Pix* Get(TextureId id) const override {
+    return PixKeeper::Instance().Get(id);
+  }
 };
 
 #endif  // GRAPHICS_GFX_SINK_H
