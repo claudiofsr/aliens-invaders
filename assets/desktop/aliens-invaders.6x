@@ -1,0 +1,267 @@
+.\" aliens-invaders.6x -- game manual (man 6). Simple English, portable macros.
+.TH ALIENS-INVADERS 6 "2026" "Aliens Invaders" "Games Manual"
+.SH NAME
+aliens-invaders \- modern C++20 / SDL3 arcade invasion game with a 15-movement
+classical soundtrack
+.SH SYNOPSIS
+.B aliens-invaders
+.RI [ option "] [" "track list" "] ..."
+.SH DESCRIPTION
+.B aliens-invaders
+is a fast, deterministic arcade invasion game written in modern C++20 on top of
+SDL3 (Vulkan by default, with automatic OpenGL fallback). Fifteen alien
+armadas guard each stage cycle. Every stage is announced by a short classical
+fanfare, synthesized live as a ten-instrument classical ensemble (violin,
+viola, cello, double bass, flute, oboe, trumpet, French horn, piano, harp)
+in 2.1 stereo: no audio files ship with the game.
+.PP
+Two synthesis engines share the same written scores. When a GM-compatible
+SoundFont bank (\fB.sf2\fR) is installed, the soundtrack renders through
+TinySoundFont with real instrument samples (CD-quality, the default);
+otherwise \- and whenever \fB\-render\fR is passed \- the zero-asset
+procedural synth takes over. A missing bank prints a one-time notice on
+stderr naming the recommended bank (FluidR3 GM, MIT-licensed) and how to
+install it.
+.PP
+Armada flight is continuous 60 Hz kinematics with subpixel render
+interpolation: the formation drifts as a whole between cruise bounds, attack
+dives follow inertial Catmull-Rom splines, every return to a honeycomb
+station is a banked, rate-limited arc (never a sideways or backwards slide),
+and hull attitudes turn in partitioned angular slices. No starship ever
+teleports; motion stays smooth on 60, 120, 144, 240 and 360+ Hz displays.
+.PP
+Alien 14 (\fIAlbert Alienstein\fR) may carry a relativistic warp drive. Each
+relativistic starship holds exactly two spacetime jumps. A player projectile
+entering its proximity radius (2.4x the hull half-diagonal) is dodged before
+impact: the jump is consumed, the physical colliders deactivate so the
+projectile keeps its normal trajectory straight through the vacated space,
+and the starship re-materializes in a free honeycomb cell at least five
+Chebyshev cells away from both its previous station and the player ship. The
+landing cell is drawn in constant time from the active formation minus both
+exclusion zones, clamped inside the screen margins, cached for the whole
+transit and then kept as the new permanent station. While at least one jump
+remains no projectile can destroy it; only the tactical nuke kills a
+starship in mid-warp.
+.PP
+With no arguments the game starts normally. The options below drive the
+graphics driver, the audio engine, the headless soundtrack jukebox and its
+exporter, the frame-hitch flight recorder, and the usual version/help
+banners. Every flag is dash-agnostic:
+one or more leading dashes are equivalent, so \fB\-play\fR, \fB\-\-play\fR and
+\fB\-\-\-play\fR all select the same option.
+.SH OPTIONS
+.TP
+.BR \-driver ", " \-d " \fIname\fR"
+Launch the game with a specific 2D graphics driver
+(\fBvulkan\fR, \fBopengl\fR, \fBopengles2\fR, \fBsoftware\fR).
+.TP
+.BR \-backends ", " \-b
+List all 2D graphics rendering backends (SDL3 render drivers) supported on
+the current display, then exit.
+.TP
+.BR \-list ", " \-l
+Print the 15-movement classical soundtrack anthology (composer, work, movement,
+scored length and one historical note per track), then exit.
+.TP
+.BR \-play ", " \-p " \fItracks\fR"
+Play soundtrack movements in headless terminal mode with a live progress
+bar. \fItracks\fR is a single number (\fB3\fR), an inclusive range
+(\fB1 15\fR), or a comma-separated list in any order (\fB6,1,15,2,8\fR;
+spaces around commas are accepted and a list may repeat tracks). Each
+movement plays COMPLETE by default; \fB\-start\fR / \fB\-end\fR narrow
+the window. Ctrl+C stops playback cleanly.
+.TP
+.B \-shuffle
+Jukebox only: play the \fB\-play\fR selection (range or list) in random
+order, drawing a fresh permutation per run (printed before
+playback). Long form only: the short \fB\-s\fR belongs to \fB\-start\fR.
+Requires \fB\-play\fR and cannot be combined with \fB\-output\fR,
+which writes a single, fixed track.
+.TP
+.BR \-start ", " \-s " \fIsec\fR"
+Jukebox only: open the playback window at \fIsec\fR seconds (default \fB0\fR).
+Used together with \fB\-play\fR; accepted in any position on the command line,
+with or without the short spelling \fB\-s\fR.
+.TP
+.BR \-end ", " \-e " \fIsec\fR"
+Jukebox only: close the playback window at \fIsec\fR seconds. Omit it and the
+movement plays to its end: the default window runs to the track's own
+scored length, printed per track by \fB\-list\fR, and any value given
+is clamped to it. Used together with \fB\-play\fR; accepted in any
+position on the command line, with or without the short spelling
+\fB\-e\fR.
+.TP
+.BR \-output ", " \-o " \fIfile\fR"
+Jukebox only: write the selected window to \fIfile\fR instead of playing
+it. WAV is written natively (zero dependencies); FLAC/MP3/OGG/Opus/M4A are
+piped through an encoder found on PATH (\fBffmpeg\fR, \fBflac\fR,
+\fBlame\fR, \fBoggenc\fR, \fBopusenc\fR), with a graceful WAV fallback when
+none is installed. Combine with a single \fB\-play\fR track (no ranges) and
+with the \fB\-start\fR/\fB\-end\fR window.
+.TP
+.BR \-render ", " \-r
+Force the procedural synth renderer for the game and the jukebox. By
+default the TinySoundFont engine renders through a GM-compatible SoundFont
+bank (\fB.sf2\fR) whenever one is installed; with no bank found, the
+procedural synth takes over automatically and a one-time terminal notice
+recommends the MIT-licensed FluidR3 GM bank. Accepted in any position on
+the command line, with or without the short spelling \fB\-r\fR.
+.TP
+.B \-log
+Arm the frame-hitch flight recorder (same as \fBALIENS_HITCH_LOG=1\fR).
+Each slow frame prints one aligned row naming the culprit phase
+(input, simulation, render, present, pacing) and a verdict. The report
+threshold defaults to 33.3 ms and is set with \fBALIENS_HITCH_MS\fR.
+.TP
+.BR \-version ", " \-v
+Print the version banner (release, engine, license, repository) and exit.
+.TP
+.BR \-help ", " \-h
+Display the command-line manual and option reference, then exit.
+.SH SOUNDTRACK
+Each movement is a public-domain classical work, synthesized at run time,
+scored as a
+.B one continuous performance at its own length
+\- no internal seams. The anthology is scored as complete works, one
+translation unit per movement (\fBsrc/musics/music_NN.cc\fR), and
+\fB\-list\fR prints every track's exact scored length. The stage
+fanfare heard in-game is the movement's climatic six seconds \- the window
+[\fIpeak_start_seconds\fR, +6 s] published by the track's ScoreManifest,
+frozen by ear per work (\fB0.0f\fR keeps the movement's opening) and
+sealed by the shared 0.50 s fade-out. Both engines share one finishing
+chain (hall reverb, an ear-guard high-shelf above ~4.2 kHz, the fades and
+peak normalization to 0.92), and scores are regenerated from MIDI with the
+repository tool \fBtools/midi2cpp\fR. The
+jukebox plays any window inside the performance: by default the COMPLETE
+movement (\fB0\fR to the track's own scored length); \fB\-start\fR/\fB\-s\fR
+and \fB\-end\fR/\fB\-e\fR narrow it to any slice (as short as one second).
+.PP
+The anthology:
+.PP
+.RS 4
+.PD 0
+.TP 3
+1.
+Wolfgang Amadeus Mozart - Rondo alla Turca (Turkish March), K. 331
+.TP
+2.
+Carlos Gomes - O Guarani (Il Guarany Overture, complete: mm. 1-65)
+.TP
+3.
+Giacomo Puccini - Turandot: Nessun Dorma
+.TP
+4.
+Pyotr Ilyich Tchaikovsky - Swan Lake (Danse des petits cygnes)
+.TP
+5.
+Ludwig van Beethoven - Symphony No. 5 (The Fate Motif)
+.TP
+6.
+Johann Sebastian Bach - Toccata and Fugue in D minor, BWV 565
+.TP
+7.
+Pyotr Ilyich Tchaikovsky - The Nutcracker: Waltz of the Flowers
+.TP
+8.
+Maurice Ravel - Bolero
+.TP
+9.
+Gioachino Rossini - The Barber of Seville: Overture
+.TP
+10.
+Edvard Grieg - Peer Gynt: Morning Mood
+.TP
+11.
+Zequinha de Abreu - Tico-Tico no Fuba
+.TP
+12.
+Richard Wagner - Die Walkure: Ride of the Valkyries
+.TP
+13.
+Frederic Chopin - Fantaisie-Impromptu, Op. 66
+.TP
+14.
+Claude Debussy - Suite Bergamasque: Clair de Lune
+.TP
+15.
+Antonio Vivaldi - The Four Seasons: Spring
+.PD
+.RE
+.SH ENVIRONMENT
+.TP
+.B ALIENS_HITCH_LOG
+Set to \fB1\fR to arm the frame-hitch flight recorder (same as \fB\-log\fR).
+.TP
+.B ALIENS_HITCH_MS
+Report threshold in milliseconds for the flight recorder (default 33.3;
+accepted range 4..2000).
+.TP
+.B ALIENS_INVADERS_PLAYER
+Callsign identifying you in the multi-user Hall of Fame. Fallback order
+when unset: \fBALIENS_INVADERS_PSEUDO\fR (legacy alias), the Steam persona
+name (\fBSteamPersonName\fR), then the login user
+(\fBUSER\fR/\fBLOGNAME\fR/\fBUSERNAME\fR).
+.TP
+.B ALIENS_SOUNDFONT
+Path to a GM-compatible SoundFont bank (\fB.sf2\fR) for the TinySoundFont
+engine; an absolute path is recommended, since the working directory may
+vary. Checked before the directory search (see FILES).
+.SH EXIT STATUS
+.TP
+.B 0
+Success (game closed normally, or the requested banner/jukebox run finished).
+.TP
+.B 1
+A command-line option was unknown or badly formed, or a requested subsystem
+(audio device, graphics driver) failed to start.
+.SH EXAMPLES
+.PP
+.RS 4
+.nf
+aliens-invaders                       # launch the game
+aliens-invaders -driver opengl        # launch with OpenGL
+aliens-invaders -list                 # print the anthology
+aliens-invaders -play 3               # track 3, complete (the default)
+aliens-invaders -play 3 -s 6 -e 30    # track 3, a slice from second 6 to 30
+aliens-invaders -play 3 -s 41 -e 47   # audition a climatic preset window
+aliens-invaders -play 1 15            # the whole anthology, each track in full
+aliens-invaders -play 6,1,15,2,8      # exactly these tracks, in this order
+aliens-invaders -play 1 15 -shuffle   # the anthology in random order
+aliens-invaders -play 5 -e 30 -output m5.flac  # write track 5, 0-30 s, FLAC
+aliens-invaders -render               # procedural synth instead of the bank
+aliens-invaders -log                  # launch with the hitch recorder armed
+.fi
+.RE
+.SH FILES
+.TP
+.I aliens-invaders.scores
+Arcade high-score tables (multi-user Hall of Fame). Written to the shared
+\fB/var/games/aliens-invaders.scores\fR on Linux/FreeBSD when that file
+exists and is writable; otherwise to the user save directory
+(\fB$XDG_DATA_HOME/aliens-invaders\fR, defaulting to
+\fB~/.local/share/aliens-invaders\fR on Linux; the roaming \fBAPPDATA\fR
+folder on Windows; the platform preference path on macOS and mobile). A
+legacy \fB./aliens-invaders.scores\fR in the working directory is migrated
+into the user save directory on first run. Every row ends with a salted,
+truncated SHA-256 digest column computed over the row's exact contents: a
+hand-edited or forged row fails verification and is silently dropped at
+load, so the leaderboard only trusts runs the game itself signed.
+.TP
+.I *.sf2
+Optional GM-compatible SoundFont bank for the TinySoundFont engine
+(FluidR3 GM recommended; ties break alphabetically within a directory).
+Search order: \fB$ALIENS_SOUNDFONT\fR,
+\fB./assets/soundfonts\fR,
+\fB~/.local/share/aliens-invaders/soundfonts\fR,
+\fB~/.local/share/soundfonts\fR,
+\fB/usr/local/share/aliens-invaders/soundfonts\fR,
+\fB/usr/local/share/soundfonts\fR,
+\fB/usr/share/aliens-invaders/soundfonts\fR, \fB/usr/share/soundfonts\fR;
+macOS adds \fB/Library/Audio/Sounds/Banks\fR. The first directory holding
+a bank wins.
+.SH AUTHOR
+Claudio Fernandes de Souza Rodrigues.
+.SH COPYRIGHT
+MIT License - Copyright (c) 2026 Claudio Fernandes de Souza Rodrigues.
+The soundtrack arrangements are synthesized performances of public-domain
+works; the compositions themselves carry no copyright.

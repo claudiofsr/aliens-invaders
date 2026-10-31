@@ -1,0 +1,2 @@
+# SoundFont banks are large binary assets: Git LFS keeps clones light.
+assets/soundfonts/*.sf2 filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,16 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    { "name": "debug", "displayName": "Debug",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" } },
+    { "name": "asan", "displayName": "ASan + UBSan", "inherits": "debug",
+      "cacheVariables": { "ENABLE_SANITIZERS": "ON" } },
+    { "name": "tsan", "displayName": "ThreadSanitizer", "inherits": "debug",
+      "cacheVariables": { "ENABLE_TSAN": "ON" } },
+    { "name": "release", "displayName": "Release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" } },
+    { "name": "release-lto", "displayName": "Release + LTO", "inherits": "release",
+      "cacheVariables": { "ENABLE_LTO": "ON" } }
+  ]
+}

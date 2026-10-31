@@ -1,0 +1,121 @@
+name: Release Artifacts
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  package-linux:
+    name: Package Linux x86_64
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build pkg-config patchelf \
+            libgl1-mesa-dev libasound2-dev libpulse-dev libudev-dev libx11-dev \
+            libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev \
+            libxss-dev libwayland-dev libxkbcommon-dev libxtst-dev
+      - name: Build SDL3
+        run: |
+          git clone https://github.com/libsdl-org/SDL.git --branch release-3.4.16 --depth 1 /tmp/SDL
+          cmake -S /tmp/SDL -B /tmp/SDL/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSDL_TESTS=OFF
+          cmake --build /tmp/SDL/build --parallel
+          sudo cmake --install /tmp/SDL/build && sudo ldconfig
+      - run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
+      - run: cmake --build build --parallel
+      - name: "Bundle (self-contained: SDL3 ships inside, rpath $ORIGIN/lib)"
+        run: |
+          PKG=aliens-invaders-linux-x86_64
+          mkdir -p "dist/$PKG/lib"
+          cp build/aliens-invaders "dist/$PKG/"
+          cp /usr/local/lib/libSDL3*.so* "dist/$PKG/lib/"
+          patchelf --set-rpath '$ORIGIN/lib' "dist/$PKG/aliens-invaders"
+          cp LICENSE README.md "dist/$PKG/"
+          mkdir -p "dist/$PKG/assets/soundfonts"
+          cp assets/soundfonts/FluidR3_GM.sf2 assets/soundfonts/LICENSE-FluidR3_GM.txt "dist/$PKG/assets/soundfonts/"
+          tar -C dist -cJf "$PKG.tar.xz" "$PKG"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: aliens-invaders-linux-x86_64.tar.xz
+
+  package-macos:
+    name: Package macOS arm64
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - run: brew update && brew install sdl3 cmake ninja pkg-config
+      - run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
+      - run: cmake --build build --parallel
+      - name: Bundle (dylib beside the exe, @executable_path, ad-hoc signed)
+        run: |
+          PKG=aliens-invaders-macos-arm64
+          mkdir -p "dist/$PKG"
+          cp build/aliens-invaders "dist/$PKG/"
+          DYLIB=$(otool -L "dist/$PKG/aliens-invaders" | awk '/libSDL3/{print $1; exit}')
+          cp "$DYLIB" "dist/$PKG/"
+          install_name_tool -change "$DYLIB" "@executable_path/$(basename "$DYLIB")" "dist/$PKG/aliens-invaders"
+          codesign --force --sign - "dist/$PKG/aliens-invaders"
+          cp LICENSE README.md "dist/$PKG/"
+          mkdir -p "dist/$PKG/assets/soundfonts"
+          cp assets/soundfonts/FluidR3_GM.sf2 assets/soundfonts/LICENSE-FluidR3_GM.txt "dist/$PKG/assets/soundfonts/"
+          ditto -c -k --keepParent "dist/$PKG" "$PKG.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: aliens-invaders-macos-arm64.zip
+
+  package-windows:
+    name: Package Windows x64
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Install SDL3 (vcpkg)
+        run: vcpkg install sdl3:x64-windows
+      - name: Configure
+        run: |
+          $root = if ($env:VCPKG_ROOT) { $env:VCPKG_ROOT }
+                  elseif ($env:VCPKG_INSTALLATION_ROOT) { $env:VCPKG_INSTALLATION_ROOT }
+                  else { Split-Path (Get-Command vcpkg).Source }
+          cmake -B build -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=OFF "-DCMAKE_TOOLCHAIN_FILE=$root/scripts/buildsystems/vcpkg.cmake"
+      - run: cmake --build build --config Release --parallel
+      - name: Bundle (vcpkg applocal already placed SDL3.dll beside the exe)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist\aliens-invaders-windows-x64 | Out-Null
+          Copy-Item build\Release\aliens-invaders.exe dist\aliens-invaders-windows-x64\
+          Copy-Item build\Release\*.dll dist\aliens-invaders-windows-x64\
+          Copy-Item LICENSE, README.md dist\aliens-invaders-windows-x64\
+          New-Item -ItemType Directory -Force dist\aliens-invaders-windows-x64\assets\soundfonts | Out-Null
+          Copy-Item assets\soundfonts\FluidR3_GM.sf2, assets\soundfonts\LICENSE-FluidR3_GM.txt dist\aliens-invaders-windows-x64\assets\soundfonts\
+          Compress-Archive -Path dist\aliens-invaders-windows-x64 -DestinationPath aliens-invaders-windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: aliens-invaders-windows-x64.zip
+
+  publish:
+    name: Publish GitHub Release
+    needs: [package-linux, package-macos, package-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: packages
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: packages/*
+          generate_release_notes: true

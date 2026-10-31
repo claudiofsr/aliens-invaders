@@ -1,0 +1,27 @@
+app-id: org.claudiofsr.aliens_invaders
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+command: aliens-invaders
+
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --device=dri
+  # SDL_INIT_GAMEPAD reads /dev/input: the precise device permission that
+  # keeps controllers working inside the sandbox (flatpak >= 1.11; this
+  # manifest already targets runtime 23.08). Not --device=all: only input.
+  - --device=input
+
+modules:
+  - name: aliens-invaders
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+    sources:
+      - type: git
+        url: https://github.com/claudiofsr/aliens-invaders.git
+        tag: v0.10.0

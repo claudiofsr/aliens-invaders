@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Aliens Invaders
+GenericName=Arcade Space Shooter
+Comment=Classic arcade vertical space shooter powered by C++20 and SDL3
+TryExec=aliens-invaders
+Exec=aliens-invaders
+Icon=aliens-invaders
+Categories=Game;ArcadeGame;ActionGame;
+Keywords=arcade;space;shooter;invaders;aliens;retro;wayland;sdl3;
+StartupWMClass=aliens-invaders
+Terminal=false

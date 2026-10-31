@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.claudiofsr.aliens_invaders</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Aliens Invaders</name>
+  <summary>Modern vertical arcade space shooter powered by C++20 and SDL3</summary>
+  <description>
+    <p>
+      Aliens Invaders is an arcade vertical space combat game engineered natively
+      for Wayland and modern display architectures using modern C++20 and native SDL3.
+    </p>
+    <p>
+      Features include high-performance Vulkan rendering with automatic OpenGL fallback,
+      GPU-accelerated double buffering, tear-free subpixel interpolation,
+      procedural sound synthesis, Barry-Goldman centripetal Catmull-Rom splines,
+      fair-play anti-scissor ballistics, and tactical nuclear munitions.
+    </p>
+  </description>
+  <launchable type="desktop-id">aliens-invaders.desktop</launchable>
+  <url type="homepage">https://github.com/claudiofsr/aliens-invaders</url>
+  <provides>
+    <binary>aliens-invaders</binary>
+  </provides>
+  <developer_name>Claudio Fernandes de Souza Rodrigues</developer_name>
+  <releases>
+    <release version="0.10.0" date="2026-09-25">
+      <description>
+        <p>C++20 Clean Architecture milestone with decoupled components, pure math tests, and zero warnings.</p>
+      </description>
+    </release>
+  </releases>
+</component>

@@ -1,0 +1,93 @@
+name: "Multiplatform CI & Quality Assurance"
+on:
+  push:
+    branches: [master, main]
+    tags: ['v*']
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  linux-build-and-test:
+    name: Linux (${{ matrix.compiler }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build pkg-config \
+            libgl1-mesa-dev libasound2-dev libpulse-dev libudev-dev libx11-dev \
+            libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev \
+            libxss-dev libwayland-dev libxkbcommon-dev libxtst-dev
+          if [ "${{ matrix.compiler }}" = "clang" ]; then sudo apt-get install -y clang; fi
+      - name: Select compiler for this matrix leg
+        run: |
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            echo "CC=clang" >> "$GITHUB_ENV"
+            echo "CXX=clang++" >> "$GITHUB_ENV"
+          else
+            echo "CC=gcc" >> "$GITHUB_ENV"
+            echo "CXX=g++" >> "$GITHUB_ENV"
+          fi
+      - name: Build SDL3
+        run: |
+          git clone https://github.com/libsdl-org/SDL.git --branch release-3.4.16 --depth 1 /tmp/SDL
+          cmake -S /tmp/SDL -B /tmp/SDL/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSDL_TESTS=OFF
+          cmake --build /tmp/SDL/build --parallel
+          sudo cmake --install /tmp/SDL/build && sudo ldconfig
+      - run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+      - run: cmake --build build --parallel
+      - run: ./build/unit_tests
+
+  macos-build:
+    name: macOS 15 (Apple Clang)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew update && brew install sdl3 cmake ninja pkg-config
+      - run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+      - run: cmake --build build --parallel
+      - run: ./build/unit_tests
+
+  windows-build:
+    name: Windows (MSVC)
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SDL3 (vcpkg)
+        run: vcpkg install sdl3:x64-windows
+      - name: Configure
+        run: |
+          $root = if ($env:VCPKG_ROOT) { $env:VCPKG_ROOT }
+                  elseif ($env:VCPKG_INSTALLATION_ROOT) { $env:VCPKG_INSTALLATION_ROOT }
+                  else { Split-Path (Get-Command vcpkg).Source }
+          Write-Host "vcpkg root: $root"
+          cmake -B build -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON "-DCMAKE_TOOLCHAIN_FILE=$root/scripts/buildsystems/vcpkg.cmake"
+      - run: cmake --build build --config Release --parallel
+      - run: ./build/Release/unit_tests.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aliens-invaders-windows-x64
+          path: |
+            build/Release/aliens-invaders.exe
+            build/Release/*.dll
+
+  freebsd-build:
+    name: FreeBSD 14
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build & test in a FreeBSD VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          copyback: false
+          prepare: pkg install -y sdl3 cmake ninja pkgconf
+          run: |
+            cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+            cmake --build build --parallel
+            ./build/unit_tests
