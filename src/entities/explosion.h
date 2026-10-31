@@ -28,6 +28,7 @@ class ExplosionsManager {
   std::array<uint16_t, kMaxParticles> free_indices_{};
   RandomStream rng_{0x5EED1337u};
   const Config& config_;
+  ViewportMetrics metrics_{1280, 720, 1.0f};  // injected snapshot (shell pushes)
   size_t active_count_{0};
   size_t free_count_{kMaxParticles};
 
@@ -48,6 +49,7 @@ class ExplosionsManager {
   void Draw() const;
   void Clear() noexcept;
   void SeedRandom(std::uint32_t seed) noexcept { rng_.Seed(seed); }
+  void SetMetrics(const ViewportMetrics& m) noexcept { metrics_ = m; }
 
   void Add(Coord pos, Coord speed, uint8_t r, uint8_t g, uint8_t b, int duration = 24);
   void TriggerScreenWideNova(Coord epicenter, int win_w, int win_h);

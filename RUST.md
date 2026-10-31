@@ -66,12 +66,13 @@
 - **Fatia 1 (fix18)**: `PresentationSink` (fronteira core→shell) injetado em
   AliensManager/Alien; Fire/DoBulletsCollisions lêem o snapshot `metrics_` em
   vez de `Gfx::Inst()` ao vivo. Gameplay byte-idêntico; 49 testes + 6 legs validam.
-- **Fatia 2**: `ConvoyData::ConvoySize()`, BulletsManager/BonusManager/Player e
-  ExplosionsManager::TriggerScreenWideNova param de consultar `Gfx::Inst()`
-  (métricas injetadas); `Pix` ganha fonte de dimensões headless.
-- **Fatia 3**: `dump_vectors` ganha seções de entidades (RecordingSink):
-  warp/alpha-decay/kamikaze/bônus/colisões seedados → ports Rust de actors/
-  managers sob contrato dourado.
+- **Fatia 2 (fix19)**: métricas injetadas em ConvoySize, ProjectileSlot/
+  BonusSlot (Out/Move), Bullets/Bonus/Explosions e Player; Player também emite
+  cosméticos pelo sink. `Gfx::Inst()` sobrevive apenas nos Draw* (render,
+  Fase 4/6) e nos sync points (RefreshMetrics/DistributeMetrics).
+- **Fatia 3**: `Pix` ganha fonte de dimensões headless; `dump_vectors` +
+  RecordingSink: warp/alpha-decay/kamikaze/bônus/colisões seedados → ports
+  Rust de actors/managers sob contrato dourado.
 
 ## Comandos
 

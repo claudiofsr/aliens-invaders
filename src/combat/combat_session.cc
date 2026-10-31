@@ -82,7 +82,9 @@ class CombatSession {
         bullets_(ctx_.rng.NextU32()),
         bombs_(ctx_.rng.NextU32()),
         explosions_(ctx_.config),
-        player_(&bullets_, &bombs_, &bonuses_, &explosions_, &ctx.config, &ctx.audio),
+        player_(&bullets_, &bombs_, &bonuses_, &explosions_, &ctx.config, sink_,
+                ViewportMetrics{Gfx::Inst().WindowWidth(), Gfx::Inst().WindowHeight(),
+                                Gfx::Inst().Scale()}),
         pacer_(ctx_.config.RefreshRate(), Gfx::Inst().IsVSyncEnabled()) {
     explosions_.SeedRandom(ctx_.rng.NextU32());
     ctx_.score.ReInit();
@@ -95,6 +97,7 @@ class CombatSession {
     applied_w_ = Gfx::Inst().WindowWidth();
     applied_h_ = Gfx::Inst().WindowHeight();
     UpdateLethalProximity();
+    DistributeMetrics();
   }
 
   ~CombatSession() {
@@ -277,6 +280,18 @@ class CombatSession {
                    GameRules::Fleet::kKamikazeBlastRadiusMultiplier;
   }
 
+  // The shell owns the live Gfx queries; every simulation manager receives one
+  // snapshot at construction and before each resize cascade (core/shell split).
+  void DistributeMetrics() {
+    const ViewportMetrics m{Gfx::Inst().WindowWidth(), Gfx::Inst().WindowHeight(),
+                            Gfx::Inst().Scale()};
+    bullets_.SetMetrics(m);
+    bombs_.SetMetrics(m);
+    bonuses_.SetMetrics(m);
+    explosions_.SetMetrics(m);
+    player_.SetMetrics(m);
+  }
+
   // Applies any pending resolution change to EVERY position-owning subsystem in ONE cumulative
   // step, from the resolution the entities currently live in (applied_w_/applied_h_) to the ...
   void ApplyResolutionChange() {
@@ -293,6 +308,7 @@ class CombatSession {
 
     const float rx = static_cast<float>(nw) / static_cast<float>(applied_w_);
     const float ry = static_cast<float>(nh) / static_cast<float>(applied_h_);
+    DistributeMetrics();  // clamps below must see the NEW viewport
     player_.OnResize(rx, ry);
     if (aliens_) aliens_->OnResize(rx, ry);
     bullets_.OnResize(rx, ry);

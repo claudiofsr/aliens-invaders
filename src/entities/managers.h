@@ -32,7 +32,7 @@ struct ConvoyData {
   bool simultaneous{false};
   int8_t dock_align{0};  // 0 = Center, 1 = Left Flank, 2 = Right Flank
 
-  [[nodiscard]] int ConvoySize() const;
+  [[nodiscard]] int ConvoySize(int window_w) const;
 };
 
 struct ExhaustParticle {
@@ -84,9 +84,9 @@ struct ProjectileSlot {
 
   void Move(std::array<ExhaustParticle, 128>& exhaust_pool,
             std::array<uint16_t, 128>& active_exhaust,
-            int& active_exhaust_count, Coord player_pos) noexcept;
+            int& active_exhaust_count, Coord player_pos, float scale) noexcept;
   void SeedRandom(std::uint32_t seed) noexcept { rng_.Seed(seed); }
-  [[nodiscard]] bool Out() const noexcept;
+  [[nodiscard]] bool Out(int win_w, int win_h) const noexcept;
   [[nodiscard]] bool Collide(const simulation::GameObject& other) const noexcept;
   void Draw(float alpha = 1.0f) const;
   void OnResize(float rx, float ry) noexcept;
@@ -105,12 +105,16 @@ class BulletsManager {
   int active_exhaust_count_{0};
   int cached_min_y_{std::numeric_limits<int>::max()};
   int cached_max_y_{std::numeric_limits<int>::min()};
+  // Injected display snapshot: the shell pushes it at construction/resize and
+  // the simulation paths never query Gfx live.
+  ViewportMetrics metrics_{1280, 720, 1.0f};
 
  public:
   BulletsManager() = default;
   explicit BulletsManager(std::uint32_t seed) noexcept : rng_(seed) {}
   ~BulletsManager() = default;
   void SeedRandom(std::uint32_t seed) noexcept { rng_.Seed(seed); }
+  void SetMetrics(const ViewportMetrics& m) noexcept { metrics_ = m; }
 
   void Move(Coord player_pos = Coord(-1, -1));
   void Draw(float alpha = 1.0f) const;
@@ -144,7 +148,7 @@ struct BonusSlot {
   void Move() noexcept {
     if (active) pos += speed;
   }
-  [[nodiscard]] bool Out() const noexcept;
+  [[nodiscard]] bool Out(int win_h) const noexcept;
   [[nodiscard]] bool Collide(const simulation::GameObject& other) const noexcept;
   void Draw() const;
   void OnResize(float rx, float ry) noexcept;
@@ -155,10 +159,12 @@ class BonusManager {
   std::array<BonusSlot, MAX_BONUSES> pool_{};
   std::array<uint16_t, MAX_BONUSES> active_ids_{};
   int active_count_{0};
+  ViewportMetrics metrics_{1280, 720, 1.0f};  // injected snapshot (see BulletsManager)
 
  public:
   BonusManager() = default;
   ~BonusManager() = default;
+  void SetMetrics(const ViewportMetrics& m) noexcept { metrics_ = m; }
 
   void Move();
   void Draw() const;
@@ -292,7 +298,8 @@ class Player {
   BonusManager* const bonus_manager_;
   ExplosionsManager* const explosions_manager_;
   const Config* config_{nullptr};
-  SoundManager* audio_{nullptr};
+  PresentationSink& sink_;                      // cosmetic-event boundary
+  ViewportMetrics metrics_{1280, 720, 1.0f};    // injected display snapshot
 
   int shield_{GameRules::Player::kInitialShields};
   int speed_level_{0};
@@ -308,7 +315,9 @@ class Player {
  public:
   Player(BulletsManager* bullets_manager, BulletsManager* bombs_manager,
          BonusManager* bonus_manager, ExplosionsManager* explosions_manager,
-         const Config* config = nullptr, SoundManager* audio = nullptr);
+         const Config* config, PresentationSink& sink, const ViewportMetrics& metrics);
+
+  void SetMetrics(const ViewportMetrics& m) noexcept { metrics_ = m; }
 
   [[nodiscard]] Coord Position() const noexcept { return object_.Position(); }
   [[nodiscard]] int Width() const noexcept { return object_.Width(); }

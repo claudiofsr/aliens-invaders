@@ -16,8 +16,8 @@
 #include "presentation_sink.h"
 #include "hitch_monitor.h"
 
-int ConvoyData::ConvoySize() const {
-  const double ratio = static_cast<double>(Gfx::Inst().WindowWidth()) /
+int ConvoyData::ConvoySize(int window_w) const {
+  const double ratio = static_cast<double>(window_w) /
                        static_cast<double>(GameRules::Fleet::FormationGrid::SpacingX());
   // Single-step containment (AGENT 2 fixed super-table): the width/spacing ratio grows with the
   // window ASPECT, so extreme ultrawides would request more columns than the kMaxGridCols ...
@@ -39,7 +39,8 @@ void ExhaustParticle::Draw() const {
 
 void ProjectileSlot::Move(std::array<ExhaustParticle, 128>& exhaust_pool,
                           std::array<uint16_t, 128>& active_exhaust,
-                          int& active_exhaust_count, Coord player_pos) noexcept {
+                          int& active_exhaust_count, Coord player_pos,
+                          float scale) noexcept {
   if (!active) return;
 
   prev_fx = fx;
@@ -85,7 +86,7 @@ void ProjectileSlot::Move(std::array<ExhaustParticle, 128>& exhaust_pool,
       float rear_x = fx - std::sin(current_deflection_rad) * rear_offset;
       float rear_y = fy - std::cos(current_deflection_rad) * rear_offset;
 
-      const float lateral_spread = (static_cast<float>(rng_.UniformInt(-GameRules::Combat::kExhaustLateralSpreadRange, GameRules::Combat::kExhaustLateralSpreadRange - 1)) / static_cast<float>(GameRules::Combat::kExhaustLateralSpreadRange)) * (GameRules::Combat::kTurningBombLateralSpreadScale * Gfx::Inst().Scale());
+      const float lateral_spread = (static_cast<float>(rng_.UniformInt(-GameRules::Combat::kExhaustLateralSpreadRange, GameRules::Combat::kExhaustLateralSpreadRange - 1)) / static_cast<float>(GameRules::Combat::kExhaustLateralSpreadRange)) * (GameRules::Combat::kTurningBombLateralSpreadScale * scale);
       rear_x += std::cos(current_deflection_rad) * lateral_spread;
       rear_y -= std::sin(current_deflection_rad) * lateral_spread;
 
@@ -117,12 +118,12 @@ void ProjectileSlot::Move(std::array<ExhaustParticle, 128>& exhaust_pool,
   pos.y = FastRound(fy);
 }
 
-bool ProjectileSlot::Out() const noexcept {
+bool ProjectileSlot::Out(int win_w, int win_h) const noexcept {
   if (!active || !pix) return true;
   const int hw = pix->Width() / 2;
   const int hh = pix->Height() / 2;
-  return (pos.y + hh < -60 || pos.y - hh >= Gfx::Inst().WindowHeight() + 60 ||
-          pos.x + hw < -60 || pos.x - hw >= Gfx::Inst().WindowWidth() + 60);
+  return (pos.y + hh < -60 || pos.y - hh >= win_h + 60 ||
+          pos.x + hw < -60 || pos.x - hw >= win_w + 60);
 }
 
 bool ProjectileSlot::Collide(const simulation::GameObject& other) const noexcept {
@@ -198,13 +199,14 @@ void BulletsManager::Move(Coord player_pos) {
   for (int i = 0; i < active_count_; ) {
     const uint16_t idx = active_ids_[static_cast<size_t>(i)];
     auto& b = pool_[idx];
-    b.Move(exhaust_pool_, active_exhaust_ids_, active_exhaust_count_, player_pos);
+    b.Move(exhaust_pool_, active_exhaust_ids_, active_exhaust_count_, player_pos,
+           metrics_.scale);
     if (b.relativistic) {
       ++b.wave_phase;
       b.fx += static_cast<float>(std::sin(static_cast<float>(b.wave_phase) * GameRules::Combat::kRelativisticBombOscFrequency) * GameRules::Combat::kRelativisticBombOscAmplitude);
       b.pos.x = FastRound(b.fx);
     }
-    if (b.Out()) {
+    if (b.Out(metrics_.win_w, metrics_.win_h)) {
       b.active = false;
       active_ids_[static_cast<size_t>(i)] = active_ids_[static_cast<size_t>(--active_count_)];
     } else {
@@ -387,10 +389,10 @@ void BulletsManager::OnResize(float rx, float ry) {
 
 // BonusSlot & BonusManager (DENSE ACTIVE LIST)
 
-bool BonusSlot::Out() const noexcept {
+bool BonusSlot::Out(int win_h) const noexcept {
   if (!active || !pix) return true;
   const int hh = pix->Height() / 2;
-  return pos.y - hh >= Gfx::Inst().WindowHeight();
+  return pos.y - hh >= win_h;
 }
 
 bool BonusSlot::Collide(const simulation::GameObject& other) const noexcept {
@@ -420,7 +422,7 @@ void BonusManager::Move() {
   for (int i = 0; i < active_count_; ) {
     const uint16_t idx = active_ids_[static_cast<size_t>(i)];
     pool_[idx].Move();
-    if (pool_[idx].Out()) {
+    if (pool_[idx].Out(metrics_.win_h)) {
       pool_[idx].active = false;
       active_ids_[static_cast<size_t>(i)] = active_ids_[static_cast<size_t>(--active_count_)];
     } else {
@@ -714,7 +716,7 @@ void AliensManager::SpawnRandomWanderers() {
 int AliensManager::GetMaxConvoySize() const {
   int res = 0;
   for (int i = 0; i < nconvoys_; ++i) {
-    const int convoy_size = convoys_[i].ConvoySize();
+    const int convoy_size = convoys_[i].ConvoySize(metrics_.win_w);
     if (convoy_size > res) res = convoy_size;
   }
   return res;
@@ -761,7 +763,7 @@ AliensManager::BuildOccupancyBitset(const Alien* exclude_alien) const noexcept {
   for (int c = convoy_idx_; c < nconvoys_; ++c) {
     const int row = nconvoys_ - c - 1;
     if (row < 0 || row >= GameRules::Fleet::FormationGrid::kMaxGridRows) continue;
-    const int size = convoys_[c].ConvoySize();
+    const int size = convoys_[c].ConvoySize(metrics_.win_w);
     int first_col = (max_convoy_size_ - size) / 2;
     if (convoys_[c].dock_align == 1) first_col = 0;
     else if (convoys_[c].dock_align == 2) first_col = std::max(0, max_convoy_size_ - size);
@@ -862,7 +864,7 @@ void AliensManager::Creation() {
 
         for (int c = convoy_idx_; c < group_end; ++c) {
           const ConvoyData* const convoy = convoys_ + c;
-          if (convoy_alien_idx_ < convoy->ConvoySize() &&
+          if (convoy_alien_idx_ < convoy->ConvoySize(metrics_.win_w) &&
               aliens_.size() < GameRules::Fleet::kMaxAliensCount) {
             // Flank-docking: left incursions dock on the left wing, right incursions on the right wing.
             // Guarantees that after the dance the fleet does not cluster in the middle of the screen.
@@ -870,10 +872,10 @@ void AliensManager::Creation() {
             if (convoy->dock_align == 1) {
               col_idx = convoy_alien_idx_;  // Outer Left Wing
             } else if (convoy->dock_align == 2) {
-              col_idx = std::max(0, max_convoy_size_ - convoy->ConvoySize()) + convoy_alien_idx_;  // Outer Right Wing
+              col_idx = std::max(0, max_convoy_size_ - convoy->ConvoySize(metrics_.win_w)) + convoy_alien_idx_;  // Outer Right Wing
             } else {
               col_idx = static_cast<int>(
-                  convoy_alien_idx_ + (max_convoy_size_ - convoy->ConvoySize()) / 2);  // Standard Center
+                  convoy_alien_idx_ + (max_convoy_size_ - convoy->ConvoySize(metrics_.win_w)) / 2);  // Standard Center
             }
 
             const int row_idx = static_cast<int>(nconvoys_ - c - 1);
@@ -893,7 +895,7 @@ void AliensManager::Creation() {
 
         bool all_done = true;
         for (int c = convoy_idx_; c < group_end; ++c) {
-          if (convoy_alien_idx_ + 1 < convoys_[c].ConvoySize()) {
+          if (convoy_alien_idx_ + 1 < convoys_[c].ConvoySize(metrics_.win_w)) {
             all_done = false;
             break;
           }
@@ -1254,16 +1256,18 @@ void AliensManager::CreateBonusMaybe(Coord pos) {
 Player::Player(BulletsManager* bullets_manager, BulletsManager* bombs_manager,
                BonusManager* bonus_manager,
                ExplosionsManager* explosions_manager,
-               const Config* config, SoundManager* audio)
+               const Config* config, PresentationSink& sink,
+               const ViewportMetrics& metrics)
     : bullets_manager_(bullets_manager),
       bombs_manager_(bombs_manager),
       bonus_manager_(bonus_manager),
       explosions_manager_(explosions_manager),
       config_(config),
-      audio_(audio) {
+      sink_(sink),
+      metrics_(metrics) {
   const auto* pix = PixKeeper::Instance().Get(config ? config->PlayerTextureId() : TextureId::Player);
   object_.renderable.pix = pix;
-  object_.transform.position = Coord(Gfx::Inst().WindowWidth() / 2, -50);
+  object_.transform.position = Coord(metrics_.win_w / 2, -50);
   UpdateAABB();
   fx_ = static_cast<float>(Position().x);
   prev_fx_ = fx_;
@@ -1273,7 +1277,7 @@ void Player::OnResize(float rx, float ry) noexcept {
   static_cast<void>(ry);
   Coord p = Position();
   p.x = FastRound(static_cast<float>(p.x) * rx);
-  const int max_right = Gfx::Inst().WindowWidth() - Width() / 2 - 1;
+  const int max_right = metrics_.win_w - Width() / 2 - 1;
   if (p.x > max_right) p.x = static_cast<int>(max_right);
   if (p.x < Width() / 2) p.x = static_cast<int>(Width() / 2);
   p.y = static_cast<int>(PosY());
@@ -1287,13 +1291,13 @@ void Player::Move(int direction) {
   if (fire_wait_ > 0) --fire_wait_;
   if (hit_timer_ > 0) --hit_timer_;
 
-  const float s = Gfx::Inst().Scale();
+  const float s = metrics_.scale;
   const float current_speed = GameRules::Player::ComputeSpeed(speed_level_);
 
   prev_fx_ = fx_;
   fx_ += static_cast<float>(direction) * (current_speed * s);
   const float half_w = static_cast<float>(Width()) * 0.5f;
-  const float max_r = static_cast<float>(Gfx::Inst().WindowWidth()) - half_w - 1.0f;
+  const float max_r = static_cast<float>(metrics_.win_w) - half_w - 1.0f;
   fx_ = std::clamp(fx_, half_w, max_r);
 
   Coord pos(Position());
@@ -1301,7 +1305,7 @@ void Player::Move(int direction) {
   if (pos.x < Width() / 2) {
     pos.x = Width() / 2;
   } else {
-    const int max_right = Gfx::Inst().WindowWidth() - Width() / 2 - 1;
+    const int max_right = metrics_.win_w - Width() / 2 - 1;
     if (pos.x > max_right) pos.x = max_right;
   }
   pos.y = PosY();
@@ -1313,11 +1317,11 @@ void Player::Fire() {
   fire_wait_ = fire_interval_;
 
   const float pan =
-      (static_cast<float>(Position().x) - static_cast<float>(Gfx::Inst().WindowWidth()) * 0.5f) /
-      (static_cast<float>(Gfx::Inst().WindowWidth()) * 0.5f);
-  if (audio_) audio_->Play(SoundManager::SFX_PLAYER_FIRE, pan * 0.65f);
+      (static_cast<float>(Position().x) - static_cast<float>(metrics_.win_w) * 0.5f) /
+      (static_cast<float>(metrics_.win_w) * 0.5f);
+  sink_.Sfx(SoundManager::SFX_PLAYER_FIRE, pan * 0.65f);
 
-  const float s = Gfx::Inst().Scale();
+  const float s = metrics_.scale;
   const int b_speed_y = std::min(-4, FastRound(GameRules::Player::kPlayerBaseBulletSpeed * s));
 
   for (int i = 0; i < multi_fire_; ++i) {
@@ -1338,9 +1342,9 @@ void Player::DoBombsCollisions() {
   if (hits > 0) {
     shield_ -= hits;
     hit_timer_ = GameRules::Player::kDamageImmunityFrames;
-    Gfx::Inst().TriggerFlash(255, 40, 40, 8);
-    Gfx::Inst().AddTrauma(0.50f);
-    if (audio_) audio_->Play(SoundManager::SFX_PLAYER_HIT);
+    sink_.Flash(255, 40, 40, 8);
+    sink_.Trauma(0.50f);
+    sink_.Sfx(SoundManager::SFX_PLAYER_HIT, 0.0f);
     for (int i = 0; i < hits; ++i) {
       explosions_manager_->Add(Position(), Coord(0, 0), 255, 80, 80, 45);
     }
@@ -1352,7 +1356,7 @@ void Player::DoBonusCollisions(AliensManager* aliens_mgr) {
   while ((res = bonus_manager_->GetBonusCollision(object_)) != Bonus::none) {
     switch (res) {
       case Bonus::extra_speed: {
-        if (audio_) audio_->Play(SoundManager::SFX_POWERUP_SPEED);
+        sink_.Sfx(SoundManager::SFX_POWERUP_SPEED, 0.0f);
         ExtraSpeed();
         const int spd_step_pct = FastRound(GameRules::Player::kSpeedBoostPercent * 100.0f);
         const int spd_max_pct = 100 + spd_step_pct * GameRules::Player::kPlayerMaxSpeedLevel;
@@ -1362,12 +1366,12 @@ void Player::DoBonusCollisions(AliensManager* aliens_mgr) {
         } else {
           std::snprintf(buf, sizeof(buf), "SPEED +%d%%!", spd_step_pct);
         }
-        Gfx::Inst().AddFloatingText(Position(), buf,
-                                    100, 220, 255, GameRules::Visuals::kFloatingTextPowerupFontSize, 120);
+        sink_.FloatingText(Position(), buf,
+                           100, 220, 255, GameRules::Visuals::kFloatingTextPowerupFontSize, 120);
         break;
       }
       case Bonus::extra_fire: {
-        if (audio_) audio_->Play(SoundManager::SFX_POWERUP_FIRE);
+        sink_.Sfx(SoundManager::SFX_POWERUP_FIRE, 0.0f);
         ExtraFire();
         const int fr_step_pct = FastRound(GameRules::Player::kFireRateBoostPercent * 100.0f);
         const int fr_max_pct = 100 + fr_step_pct * GameRules::Player::kPlayerMaxFireLevel;
@@ -1377,12 +1381,12 @@ void Player::DoBonusCollisions(AliensManager* aliens_mgr) {
         } else {
           std::snprintf(buf, sizeof(buf), "FIRE RATE +%d%%!", fr_step_pct);
         }
-        Gfx::Inst().AddFloatingText(Position(), buf,
-                                    255, 120, 120, GameRules::Visuals::kFloatingTextPowerupFontSize, 120);
+        sink_.FloatingText(Position(), buf,
+                           255, 120, 120, GameRules::Visuals::kFloatingTextPowerupFontSize, 120);
         break;
       }
       case Bonus::extra_multi: {
-        if (audio_) audio_->Play(SoundManager::SFX_POWERUP_MULTI);
+        sink_.Sfx(SoundManager::SFX_POWERUP_MULTI, 0.0f);
         ExtraMulti();
         char buf[48];
         if (IsMultiMaxed()) {
@@ -1392,12 +1396,12 @@ void Player::DoBonusCollisions(AliensManager* aliens_mgr) {
         } else {
           std::snprintf(buf, sizeof(buf), "MULTI CANNON +1!");
         }
-        Gfx::Inst().AddFloatingText(Position(), buf,
-                                    180, 120, 255, GameRules::Visuals::kFloatingTextPowerupFontSize, 120);
+        sink_.FloatingText(Position(), buf,
+                           180, 120, 255, GameRules::Visuals::kFloatingTextPowerupFontSize, 120);
         break;
       }
       case Bonus::extra_shield: {
-        if (audio_) audio_->Play(SoundManager::SFX_SHIELD_RESTORE);
+        sink_.Sfx(SoundManager::SFX_SHIELD_RESTORE, 0.0f);
         ExtraShield();
         char buf[48];
         if (IsShieldMaxed()) {
@@ -1406,16 +1410,16 @@ void Player::DoBonusCollisions(AliensManager* aliens_mgr) {
         } else {
           std::snprintf(buf, sizeof(buf), "+1 SHIELD PROTECTION!");
         }
-        Gfx::Inst().AddFloatingText(Position(), buf,
-                                    50, 255, 130, GameRules::Visuals::kFloatingTextShieldFontSize, 120);
+        sink_.FloatingText(Position(), buf,
+                           50, 255, 130, GameRules::Visuals::kFloatingTextShieldFontSize, 120);
         break;
       }
       case Bonus::extra_nuke:
-        if (audio_) audio_->Play(SoundManager::SFX_NUKE);
-        Gfx::Inst().TriggerFlash(255, 240, 180, 16);
-        Gfx::Inst().AddTrauma(0.95f);
-        Gfx::Inst().AddFloatingText(Position(), "TACTICAL NUKE!", 255, 220, 40,
-                                    GameRules::Visuals::kFloatingTextNukeBannerFontSize, 120);
+        sink_.Sfx(SoundManager::SFX_NUKE, 0.0f);
+        sink_.Flash(255, 240, 180, 16);
+        sink_.Trauma(0.95f);
+        sink_.FloatingText(Position(), "TACTICAL NUKE!", 255, 220, 40,
+                           GameRules::Visuals::kFloatingTextNukeBannerFontSize, 120);
         if (aliens_mgr) aliens_mgr->NukeAll();
         break;
       default:
@@ -1459,7 +1463,7 @@ void Player::Draw(float angle) const {
 }
 
 int Player::PosY() const {
-  return Gfx::Inst().WindowHeight() - 48 - Height() / 2;
+  return metrics_.win_h - GameRules::Player::kPlayerBottomMarginPx - Height() / 2;
 }
 
 void Player::ExtraFire() noexcept {

@@ -114,7 +114,7 @@ void ExplosionsManager::Add(Coord pos, Coord speed, uint8_t r, uint8_t g, uint8_
 }
 
 void ExplosionsManager::TriggerScreenWideNova(Coord epicenter, int win_w, int win_h) {
-  const float s = Gfx::Inst().Scale();
+  const float s = metrics_.scale;
   Add(epicenter, Coord(0, 0), 255, 255, 240, 75);
   Add(epicenter, Coord(0, static_cast<int>(-3.0f * s)), 255, 180, 40, 65);
   Add(epicenter, Coord(0, static_cast<int>(3.0f * s)), 255, 50, 20, 65);

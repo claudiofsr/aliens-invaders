@@ -79,6 +79,8 @@ namespace Player {
   static constexpr float kBaseFireIntervalFrames    = 40.0f;
   /// Hard floor limiting minimum fire cooldown to prevent projectile pool saturation
   static constexpr int   kMinFireIntervalFrames     = 8;
+  /// Fixed clearance in pixels between the player sprite bottom and the window bottom
+  static constexpr int   kPlayerBottomMarginPx      = 48;
 
   /// Starting shield capacity awarded at match launch
   static constexpr int   kInitialShields            = 3;
