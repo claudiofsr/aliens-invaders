@@ -10,6 +10,7 @@
 #include "formation_grid.h"
 #include "gfxinterface.h"
 #include "math_types.h"
+#include "presentation_sink.h"
 #include "sdl_renderer.h"
 #include "trajectory.h"
 
@@ -71,6 +72,7 @@ class Alien {
     bool active{false};
   };
   std::array<WarpGhost, GameRules::SpecialEntities::kAlien14WarpGhostCapacity> warp_ghosts_{};
+  PresentationSink* sink_{nullptr};  // cosmetic-event boundary (session wiring)
 
  public:
   Alien(const Pix* pix, const Trajectory& trajectory, float speed, TextureId texture_id = TextureId::None);
@@ -79,6 +81,9 @@ class Alien {
   /// identical birth-trait rolls of the constructor (Alien 4 electrosphere, Alien 14 warp ...
   void Respawn(const Pix* pix, const Trajectory& trajectory, float speed,
                TextureId texture_id = TextureId::None);
+
+  /// Session wiring injected at acquire time; survives Respawn (not combat state).
+  void SetPresentationSink(PresentationSink* sink) noexcept { sink_ = sink; }
 
   [[nodiscard]] TextureId GetTextureId() const noexcept { return texture_id_; }
   [[nodiscard]] Coord Position() const noexcept { return object_.Position(); }

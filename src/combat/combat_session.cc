@@ -14,6 +14,7 @@
 #include "constants.h"
 #include "embedded_assets.h"
 #include "game_context.h"
+#include "gfx_sink.h"
 #include "highscore.h"
 #include "hitch_monitor.h"
 #include "layout.h"
@@ -34,6 +35,7 @@ namespace {
 
 class CombatSession {
   GameContext& ctx_;
+  GfxPresentationSink sink_;  // cosmetic-event boundary for the armada sim
   Input input_{};
   BulletsManager bullets_{};
   BulletsManager bombs_{};
@@ -76,6 +78,7 @@ class CombatSession {
  public:
   CombatSession(GameContext& ctx)
       : ctx_(ctx),
+        sink_(&ctx_.audio),
         bullets_(ctx_.rng.NextU32()),
         bombs_(ctx_.rng.NextU32()),
         explosions_(ctx_.config),
@@ -264,7 +267,7 @@ class CombatSession {
     const int level = ctx_.score.Level();
     return std::make_unique<AliensManager>(
         &bombs_, &bullets_, &bonuses_, &explosions_,
-        &ctx_.score, &ctx_.audio, level, LevelData::GetConvoyData(static_cast<size_t>(level)),
+        &ctx_.score, sink_, level, LevelData::GetConvoyData(static_cast<size_t>(level)),
         static_cast<int>(LevelData::GetTotalLevels()),
         ctx_.rng.NextU32());
   }

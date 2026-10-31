@@ -18,6 +18,7 @@
 #include "random_stream.h"
 #include "recycle_bin.h"
 
+class PresentationSink;
 class Score;
 class SoundManager;
 
@@ -182,7 +183,7 @@ class AliensManager {
   BonusManager* const bonus_manager_;
   ExplosionsManager* const explosions_manager_;
   Score* const score_{nullptr};
-  SoundManager* const audio_{nullptr};
+  PresentationSink& sink_;  // cosmetic-event boundary (required, non-null)
 
   // Wave-dependent state (AGENT 7, pool/reuse): these members are rebindable so Rebuild() can
   // re-arm the SAME manager in place at every phase transition. The whole session shares one ...
@@ -251,7 +252,7 @@ class AliensManager {
   AliensManager(BulletsManager* bombs_manager, BulletsManager* bullets_manager,
                 BonusManager* bonus_manager,
                 ExplosionsManager* explosions_manager,
-                Score* score, SoundManager* audio,
+                Score* score, PresentationSink& sink,
                 int level_number, const ConvoyData* convoysdata, int max_level,
                 std::uint32_t random_seed = 0x5EED0002u);
   ~AliensManager() = default;

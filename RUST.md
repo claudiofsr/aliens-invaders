@@ -61,6 +61,18 @@
   exata** — ulps de transcendentais variam entre versões de libm, lógica não.
 - A leg `Rust kernel parity` do CI executa tudo a cada push.
 
+### Desacoplamento da camada de entidades (pré-requisito da Fase 3+, fatias)
+
+- **Fatia 1 (fix18)**: `PresentationSink` (fronteira core→shell) injetado em
+  AliensManager/Alien; Fire/DoBulletsCollisions lêem o snapshot `metrics_` em
+  vez de `Gfx::Inst()` ao vivo. Gameplay byte-idêntico; 49 testes + 6 legs validam.
+- **Fatia 2**: `ConvoyData::ConvoySize()`, BulletsManager/BonusManager/Player e
+  ExplosionsManager::TriggerScreenWideNova param de consultar `Gfx::Inst()`
+  (métricas injetadas); `Pix` ganha fonte de dimensões headless.
+- **Fatia 3**: `dump_vectors` ganha seções de entidades (RecordingSink):
+  warp/alpha-decay/kamikaze/bônus/colisões seedados → ports Rust de actors/
+  managers sob contrato dourado.
+
 ## Comandos
 
 ```bash

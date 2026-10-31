@@ -13,6 +13,7 @@
 #include "constants.h"
 #include "score.h"
 #include "math_types.h"
+#include "presentation_sink.h"
 #include "hitch_monitor.h"
 
 int ConvoyData::ConvoySize() const {
@@ -479,7 +480,7 @@ AliensManager::AliensManager(BulletsManager* bombs_manager,
                              BulletsManager* bullets_manager,
                              BonusManager* bonus_manager,
                              ExplosionsManager* explosions_manager,
-                             Score* score, SoundManager* audio,
+                             Score* score, PresentationSink& sink,
                              int level_number, const ConvoyData* convoys_data,
                              int max_level, std::uint32_t random_seed)
     : bombs_manager_(bombs_manager),
@@ -487,7 +488,7 @@ AliensManager::AliensManager(BulletsManager* bombs_manager,
       bonus_manager_(bonus_manager),
       explosions_manager_(explosions_manager),
       score_(score),
-      audio_(audio) {
+      sink_(sink) {
   // AGENT 7 (pool/reuse): size every container ONCE for the whole session. The spawn sites hard-cap
   // the armada at 256 aliens, and the wanderer entry path can transiently hold at most ...
   aliens_.reserve(GameRules::Fleet::kMaxAliensCount);
@@ -565,9 +566,12 @@ std::unique_ptr<Alien> AliensManager::AcquireAlien(const Pix* pix,
   // dive-spline capacity, cache still warm. Only the session's first wave ever pays the cold ...
   if (auto recycled = recycle_bin_.TryAcquire()) {
     recycled->Respawn(pix, trajectory, speed, texture_id);
+    recycled->SetPresentationSink(&sink_);
     return recycled;
   }
-  return std::make_unique<Alien>(pix, trajectory, speed, texture_id);
+  auto fresh = std::make_unique<Alien>(pix, trajectory, speed, texture_id);
+  fresh->SetPresentationSink(&sink_);
+  return fresh;
 }
 
 void AliensManager::RefreshMetrics() noexcept {
@@ -800,9 +804,7 @@ void AliensManager::Move() {
         const int px = (player_ != nullptr) ? player_->Position().x : 0;
         const int py = (player_ != nullptr) ? player_->Position().y : 0;
         alien->TriggerSpacetimeWarp(occ, px, py, nconvoys_);
-        if (audio_) {
-          audio_->Play(SoundManager::SFX_POWERUP_SPEED);
-        }
+        sink_.Sfx(SoundManager::SFX_POWERUP_SPEED, 0.0f);
       }
     }
     alien->Move();
@@ -962,7 +964,7 @@ void AliensManager::Creation() {
           if (alien->ShouldLaunchAttack()) {
             if (alien->IsKamikaze() && player_) {
               alien->BuildKamikazeDive(player_->Position());
-              if (audio_) audio_->Play(SoundManager::SFX_KAMIKAZE_ALERT);
+              sink_.Sfx(SoundManager::SFX_KAMIKAZE_ALERT, 0.0f);
             } else {
               alien->BuildAttack();
             }
@@ -991,12 +993,12 @@ void AliensManager::Fire(Coord player_pos) const {
 
   const int max_bombs = stage_profile_.max_bombs;
   const float cycle_bomb_mult = stage_profile_.cycle_bomb_mult;
-  const float s = Gfx::Inst().Scale();
+  const float s = metrics_.scale;  // injected snapshot: no live Gfx query in the sim
   const int fleet_size = std::max(1, static_cast<int>(aliens_.size()));
   const int fire_chance = std::max(GameRules::Combat::kFireChanceMin, (GameRules::Combat::kFireChanceFleetFactor * fleet_size) / GameRules::Combat::kFireChanceFleetDivisor);
-  const int player_y = player_ ? player_->Position().y : (Gfx::Inst().WindowHeight() - GameRules::Combat::kPlayerYOffsetPixels);
+  const int player_y = player_ ? player_->Position().y : (metrics_.win_h - GameRules::Combat::kPlayerYOffsetPixels);
   const int safe_corridor = static_cast<int>(GameRules::Fleet::kSafeEvasionCorridorPixels * s);
-  const int window_w = Gfx::Inst().WindowWidth();
+  const int window_w = metrics_.win_w;
   const int speed_threshold = FastRound(static_cast<double>(speed_));
 
   for (const auto& alien : aliens_) {
@@ -1088,7 +1090,7 @@ void AliensManager::NukeAll() {
   for (auto& alien : aliens_) {
     explosions_manager_->Add(alien->Position(), Coord(0, 0), 255, 230, 90, 36);
     if (score_) score_->Add(GameRules::Combat::kScorePerAlienNuked);
-    Gfx::Inst().AddFloatingText(alien->Position(), nuke_text, 255, 215, 0, GameRules::Visuals::kFloatingTextNukeHitFontSize, 72);
+    sink_.FloatingText(alien->Position(), nuke_text, 255, 215, 0, GameRules::Visuals::kFloatingTextNukeHitFontSize, 72);
     // AGENT 7: the nuke recycles the whole armada into the pool instead of
     // freeing it; the wave transition re-arms the very same blocks.
     recycle_bin_.Release(std::move(alien));
@@ -1105,7 +1107,7 @@ BulletCollisionSummary AliensManager::DoBulletsCollisions() {
   int max_b_y = 0;
   bullets_manager_->GetYBounds(min_b_y, max_b_y);
 
-  const float half_screen_w = static_cast<float>(Gfx::Inst().WindowWidth()) * 0.5f;
+  const float half_screen_w = static_cast<float>(metrics_.win_w) * 0.5f;
   const float inv_half_w = (half_screen_w > 0.0f) ? (1.0f / half_screen_w) : 1.0f;
 
 
@@ -1142,21 +1144,21 @@ BulletCollisionSummary AliensManager::DoBulletsCollisions() {
         // Emergency warp to another honeycomb cell; the bullet does not
         // annihilate him.
         aliens_[i]->TriggerSpacetimeWarp(occ, px, py, nconvoys_);
-        if (audio_) audio_->Play(SoundManager::SFX_POWERUP_SPEED);
+        sink_.Sfx(SoundManager::SFX_POWERUP_SPEED, 0.0f);
         ++i;
         continue;
       }
       if (aliens_[i]->GetTextureId() == TextureId::Alien4 && aliens_[i]->CanTriggerAlphaDecay()) {
         aliens_[i]->TriggerAlphaDecay();
         const float pan_hit = (static_cast<float>(aliens_[i]->Position().x) - half_screen_w) * inv_half_w;
-        if (audio_) audio_->Play(SoundManager::SFX_ALIEN_POP_LIGHT, pan_hit);
+        sink_.Sfx(SoundManager::SFX_ALIEN_POP_LIGHT, pan_hit);
         explosions_manager_->Add(aliens_[i]->Position(), Coord(0, -2), 45, 255, 95, 26);
         char decay_text[48];
         std::snprintf(decay_text, sizeof(decay_text), "+%llu ALPHA DECAY!",
                       static_cast<unsigned long long>(GameRules::Combat::kScorePerAlienHit));
-        Gfx::Inst().AddFloatingText(aliens_[i]->Position(), decay_text, 50, 255, 120,
-                                    GameRules::Visuals::kFloatingTextHitFontSize, 72);
-        Gfx::Inst().TriggerFlash(40, 255, 100, 6);
+        sink_.FloatingText(aliens_[i]->Position(), decay_text, 50, 255, 120,
+                           GameRules::Visuals::kFloatingTextHitFontSize, 72);
+        sink_.Flash(40, 255, 100, 6);
         summary.regular_hits++;
         summary.score_earned += GameRules::Combat::kScorePerAlienHit;
         summary.total_hits++;
@@ -1167,23 +1169,21 @@ BulletCollisionSummary AliensManager::DoBulletsCollisions() {
 
       const bool is_kamikaze = aliens_[i]->IsKamikaze();
       if (is_kamikaze) {
-        if (audio_) audio_->Play(SoundManager::SFX_KAMIKAZE_EXPLODE, pan);
+        sink_.Sfx(SoundManager::SFX_KAMIKAZE_EXPLODE, pan);
         summary.kamikaze_hits++;
         summary.score_earned += GameRules::Combat::kScorePerKamikazeAlienHit;
-        Gfx::Inst().AddTrauma(0.25f);
+        sink_.Trauma(0.25f);
       } else {
         summary.regular_hits++;
         summary.score_earned += GameRules::Combat::kScorePerAlienHit;
         const TextureId tid = aliens_[i]->GetTextureId();
-        if (audio_) {
-          if (tid == TextureId::Alien15 || tid == TextureId::Alien14 ||
-              tid == TextureId::Alien13 || tid == TextureId::Alien4) {
-            audio_->Play(SoundManager::SFX_ALIEN_POP_HEAVY, pan);
-          } else if (tid >= TextureId::Alien5) {
-            audio_->Play(SoundManager::SFX_ALIEN_POP_MEDIUM, pan);
-          } else {
-            audio_->Play(SoundManager::SFX_ALIEN_POP_LIGHT, pan);
-          }
+        if (tid == TextureId::Alien15 || tid == TextureId::Alien14 ||
+            tid == TextureId::Alien13 || tid == TextureId::Alien4) {
+          sink_.Sfx(SoundManager::SFX_ALIEN_POP_HEAVY, pan);
+        } else if (tid >= TextureId::Alien5) {
+          sink_.Sfx(SoundManager::SFX_ALIEN_POP_MEDIUM, pan);
+        } else {
+          sink_.Sfx(SoundManager::SFX_ALIEN_POP_LIGHT, pan);
         }
       }
 
@@ -1194,26 +1194,26 @@ BulletCollisionSummary AliensManager::DoBulletsCollisions() {
         if (is_kamikaze) {
           std::snprintf(hit_text, sizeof(hit_text), "+%llu RADIUM",
                         static_cast<unsigned long long>(GameRules::Combat::kScorePerKamikazeAlienHit));
-          Gfx::Inst().AddFloatingText(hit_pos, hit_text, 50, 255, 120,
-                                      GameRules::Visuals::kFloatingTextHitFontSize, 72);
+          sink_.FloatingText(hit_pos, hit_text, 50, 255, 120,
+                             GameRules::Visuals::kFloatingTextHitFontSize, 72);
         } else {
           std::snprintf(hit_text, sizeof(hit_text), "+%llu RADIUM",
                         static_cast<unsigned long long>(GameRules::Combat::kScorePerAlienHit));
-          Gfx::Inst().AddFloatingText(hit_pos, hit_text, 50, 255, 120,
-                                      GameRules::Visuals::kFloatingTextHitFontSize, 72);
+          sink_.FloatingText(hit_pos, hit_text, 50, 255, 120,
+                             GameRules::Visuals::kFloatingTextHitFontSize, 72);
         }
       } else {
         explosions_manager_->Add(hit_pos, Coord(0, -4), 255, 255, 200);
         if (is_kamikaze) {
           std::snprintf(hit_text, sizeof(hit_text), "+%llu KAMIKAZE",
                         static_cast<unsigned long long>(GameRules::Combat::kScorePerKamikazeAlienHit));
-          Gfx::Inst().AddFloatingText(hit_pos, hit_text, 255, 140, 40,
-                                      GameRules::Visuals::kFloatingTextHitFontSize, 72);
+          sink_.FloatingText(hit_pos, hit_text, 255, 140, 40,
+                             GameRules::Visuals::kFloatingTextHitFontSize, 72);
         } else {
           std::snprintf(hit_text, sizeof(hit_text), "+%llu",
                         static_cast<unsigned long long>(GameRules::Combat::kScorePerAlienHit));
-          Gfx::Inst().AddFloatingText(hit_pos, hit_text, 255, 215, 0,
-                                      GameRules::Visuals::kFloatingTextHitFontSize, 72);
+          sink_.FloatingText(hit_pos, hit_text, 255, 215, 0,
+                             GameRules::Visuals::kFloatingTextHitFontSize, 72);
         }
       }
 

@@ -159,9 +159,11 @@ void Alien::ExecuteWarp(const GameRules::Fleet::FormationGrid::WarpDecision& dec
   // Priority 4b: single cached destination (consumed strictly by Move)
   warp_dest_ = decision.target_pos;
 
-  Gfx::Inst().AddFloatingText(Position(), "RELATIVISTIC WARP EVASION!", 0, 240, 255,
-                             GameRules::Visuals::kFloatingTextNoticeFontSize, 65);
-  Gfx::Inst().TriggerFlash(0, 200, 255, 6);
+  if (sink_) {
+    sink_->FloatingText(Position(), "RELATIVISTIC WARP EVASION!", 0, 240, 255,
+                        GameRules::Visuals::kFloatingTextNoticeFontSize, 65);
+    sink_->Flash(0, 200, 255, 6);
+  }
 }
 
 void Alien::TriggerSpacetimeWarp(
