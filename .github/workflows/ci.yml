@@ -91,3 +91,12 @@ jobs:
             cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
             cmake --build build --parallel
             ./build/unit_tests
+
+  rust-kernel-parity:
+    name: Rust kernel parity
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      # Golden vectors are committed; the runner's preinstalled stable Rust
+      # only needs cargo test to prove C++/Rust bit-for-bit kernel parity.
+      - run: cargo test --manifest-path rust/Cargo.toml --locked

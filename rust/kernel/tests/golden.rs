@@ -3,7 +3,9 @@
 //! later phases (profile, fleet.*, player.*, score_hash, serialize) are
 //! counted to prove the corpus parses, but not asserted yet.
 
-use kernel::{formation, mathx, pacing, random_stream::RandomStream};
+use kernel::{
+    formation, highscore, mathx, pacing, random_stream::RandomStream, score_hash, stage_catalog,
+};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
@@ -194,11 +196,102 @@ fn pacing_parity() {
 }
 
 #[test]
-fn later_phase_sections_present() {
-    // Proves the whole corpus parses and the future work list is real.
+fn catalog_parity() {
     let rows = load_vectors();
     let g = group(&rows);
-    for key in ["profile", "fleet.speed", "player.speed", "score_hash", "serialize"] {
-        assert!(!g.get(key).map_or(true, Vec::is_empty), "section {key} missing");
+
+    assert_eq!(g["profile"].len(), 75);
+    for row in &g["profile"] {
+        let w = i(row, 1);
+        let p = stage_catalog::get_profile(w, 15);
+        assert_eq!(i(row, 2), p.stage_cycle, "profile {w} stage_cycle");
+        assert_eq!(i(row, 3), p.convoy_count, "profile {w} convoy_count");
+        assert_eq!(i(row, 4), p.max_bombs, "profile {w} max_bombs");
+        assert_eq!(hex32(&row[5]), p.cycle_bomb_mult.to_bits(), "profile {w} bomb_mult");
+        assert_eq!(hex32(&row[6]), p.fleet_speed.to_bits(), "profile {w} fleet_speed");
+        assert_eq!(i(row, 7), p.max_attack_wait_frames, "profile {w} wait");
+        assert_eq!(i(row, 8), p.kamikaze_quota, "profile {w} kamikaze");
+        assert_eq!(i(row, 9), i32::from(p.is_radioactive_wave), "profile {w} radioactive");
+        assert_eq!(i(row, 10), i32::from(p.is_relativistic_wave), "profile {w} relativistic");
+        assert_eq!(i(row, 11), i32::from(p.wanderers_allowed), "profile {w} wanderers");
     }
+
+    for row in &g["fleet.speed"] {
+        let lvl = i(row, 1);
+        assert_eq!(
+            hex32(&row[2]),
+            stage_catalog::fleet_compute_speed(lvl, 15).to_bits(),
+            "fleet.speed({lvl})"
+        );
+    }
+    for row in &g["fleet.attack_wait"] {
+        assert_eq!(i(row, 2), stage_catalog::get_max_attack_wait_frames(i(row, 1)));
+    }
+    for row in &g["fleet.kamikaze_quota"] {
+        assert_eq!(i(row, 2), stage_catalog::get_kamikaze_quota(i(row, 1)));
+    }
+    assert_eq!(i(&g["fleet.wanderer_wait"][0], 1), stage_catalog::WANDERER_MAX_WAIT);
+    for row in &g["player.speed"] {
+        assert_eq!(
+            hex32(&row[2]),
+            stage_catalog::player_compute_speed(i(row, 1)).to_bits(),
+            "player.speed({})",
+            row[1]
+        );
+    }
+    for row in &g["player.fire_interval"] {
+        assert_eq!(
+            i(row, 2),
+            stage_catalog::player_compute_fire_interval(i(row, 1)),
+            "fire_interval({})",
+            row[1]
+        );
+    }
+}
+
+#[test]
+fn score_hash_parity() {
+    let rows = load_vectors();
+    let g = group(&rows);
+    // Payload list is the dump_vectors.cc contract (index-addressed).
+    let payloads = [
+        "4;56;26330;3840;2160;60;1792867111;Claudio",
+        "",
+        "hello",
+        "STAGE;WAVE;SCORE",
+    ];
+    assert_eq!(g["score_hash"].len(), payloads.len());
+    for row in &g["score_hash"] {
+        let idx = i(row, 1) as usize;
+        assert_eq!(row[2], score_hash::line_digest(payloads[idx]), "digest payload {idx}");
+    }
+    // Self-consistency of the verifier against the corpus digests.
+    assert!(score_hash::verify_line(payloads[0], &g["score_hash"][0][2]));
+}
+
+#[test]
+fn serialize_parity() {
+    let rows = load_vectors();
+    let g = group(&rows);
+    let mut table = highscore::HighScoreTable::new();
+    let mk = |value: u64, name: &str, date: i64, w: i32, h: i32, stage: i32, wave: i32| {
+        highscore::HighScore {
+            value,
+            name: name.to_string(),
+            date,
+            width: w,
+            height: h,
+            refresh: 60,
+            stage,
+            wave,
+        }
+    };
+    assert!(table.add(mk(26330, "Claudio", 1792867111, 3840, 2160, 4, 56)));
+    assert!(table.add(mk(2520, "Claudio", 1792933633, 3840, 2160, 1, 6)));
+    assert!(table.add(mk(670, "Ripley", 1792872474, 1280, 720, 1, 2)));
+    // Exact-duplicate rejection (C++ contract).
+    assert!(!table.add(mk(2520, "Claudio", 1792933633, 3840, 2160, 1, 6)));
+
+    let corpus: Vec<String> = g["serialize"].iter().map(|r| r[1].clone()).collect();
+    assert_eq!(table.serialize_lines(), corpus, "ledger serialization diverged");
 }

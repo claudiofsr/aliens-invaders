@@ -2,6 +2,9 @@
 //! Bit-exactness against the C++ is enforced by `tests/golden.rs`.
 
 pub mod formation;
+pub mod highscore;
 pub mod mathx;
 pub mod pacing;
 pub mod random_stream;
+pub mod score_hash;
+pub mod stage_catalog;
