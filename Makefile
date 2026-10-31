@@ -167,7 +167,7 @@ endef
 .DEFAULT_GOAL := all
 .DELETE_ON_ERROR:
 
-.PHONY: all debug sanitize clean install uninstall check-deps help test \
+.PHONY: all debug sanitize clean install uninstall check-deps help test dump_vectors \
         cmake-build cmake-install cmake-uninstall cmake-clean
 
 # ==============================================================================
@@ -242,6 +242,13 @@ test: check-deps $(builddir)/unit_tests
 $(builddir)/unit_tests: tests/unit_tests.cc $(srcdir)/highscore/highscore_table.cc $(srcdir)/entities/formation_grid.cc $(srcdir)/simulation/trajectory.cc $(srcdir)/audio/stage_fanfare.cc $(srcdir)/audio/fanfare_metadata.cc $(srcdir)/musics/music_01.cc $(srcdir)/musics/music_02.cc $(srcdir)/musics/music_03.cc $(srcdir)/musics/music_04.cc $(srcdir)/musics/music_05.cc $(srcdir)/musics/music_06.cc $(srcdir)/musics/music_07.cc $(srcdir)/musics/music_08.cc $(srcdir)/musics/music_09.cc $(srcdir)/musics/music_10.cc $(srcdir)/musics/music_11.cc $(srcdir)/musics/music_12.cc $(srcdir)/musics/music_13.cc $(srcdir)/musics/music_14.cc $(srcdir)/musics/music_15.cc $(srcdir)/audio/soundfont_synth.cc $(srcdir)/cli/audio_export.cc
 	@mkdir -p $(dir $@)
 	@$(CXX) -std=c++20 $(GOAL_OPTS) $(OPTIMISE_OPTS) $(BASE_WARN) $(INC_DIRS) $^ -o $@ $(SDL3_LIBS) -lm
+
+# Golden vectors for the Rust kernel port (RUST.md Phase 1); pure kernel, no SDL.
+dump_vectors: $(builddir)/dump_vectors
+
+$(builddir)/dump_vectors: tools/dump_vectors.cc $(srcdir)/entities/formation_grid.cc $(srcdir)/highscore/highscore_table.cc
+	@mkdir -p $(dir $@)
+	@$(CXX) -std=c++20 $(GOAL_OPTS) $(OPTIMISE_OPTS) $(BASE_WARN) $(INC_DIRS) $^ -o $@ -lm
 
 # ==============================================================================
 # Installation & Packaging

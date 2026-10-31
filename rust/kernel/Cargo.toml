@@ -1,0 +1,8 @@
+[package]
+name = "kernel"
+version = "0.1.0"
+edition = "2021"
+
+# Zero dependencies by design (Phase 2a): the kernel ports are pure logic and
+# the golden test only parses text -- both with the Rust standard library.
+[dependencies]

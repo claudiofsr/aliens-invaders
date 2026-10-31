@@ -101,6 +101,19 @@ set(PROJECT_INCLUDES
 file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc")
 list(APPEND GAME_SOURCES "${EMBEDDED_ASSETS_CC}")
 
+# Golden-vector dumper for the Rust kernel port (RUST.md Phase 1): pure kernel,
+# no SDL; links only the two non-header sources it consumes.
+add_executable(dump_vectors
+    tools/dump_vectors.cc
+    src/entities/formation_grid.cc
+    src/highscore/highscore_table.cc
+)
+target_include_directories(dump_vectors PRIVATE ${PROJECT_INCLUDES})
+set_target_properties(dump_vectors PROPERTIES CXX_STANDARD 20)
+if(UNIX AND NOT APPLE)
+    target_link_libraries(dump_vectors PRIVATE m)
+endif()
+
 add_executable(aliens-invaders ${GAME_SOURCES})
 # Third-party / generated sources should not trigger strict warnings (the
 # -Wno-* spellings are GCC/Clang only; MSVC keeps its own /W4 set above).

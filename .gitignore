@@ -45,6 +45,9 @@ Thumbs.db
 fix*.py
 fix*.sh
 
+# Rust migration workspace (RUST.md)
+rust/target/
+
 __pycache__/
 .fix-backup/
 aliens-perf-timeline.log
