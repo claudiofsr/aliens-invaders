@@ -4,7 +4,11 @@
 //! counted to prove the corpus parses, but not asserted yet.
 
 use kernel::{
-    formation, highscore, mathx, pacing, random_stream::RandomStream, score_hash, stage_catalog,
+    formation, highscore, mathx, pacing,
+    path::{self, Vec2f},
+    random_stream::RandomStream,
+    score_hash, stage_catalog,
+    trajectory::{Trajectory, ViewportMetrics},
 };
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -294,4 +298,109 @@ fn serialize_parity() {
 
     let corpus: Vec<String> = g["serialize"].iter().map(|r| r[1].clone()).collect();
     assert_eq!(table.serialize_lines(), corpus, "ledger serialization diverged");
+}
+
+#[test]
+fn spline_parity() {
+    let rows = load_vectors();
+    let g = group(&rows);
+    assert!(g.contains_key("spline.pt"), "corpus sem secao spline -- regenere golden/vectors-cpp.txt");
+
+    // Same literal control sets dumped by tools/dump_vectors.cc.
+    let cases: [&[[f32; 2]]; 3] = [
+        &[[100.0, -50.0], [260.0, 120.0], [410.0, 90.0], [620.0, 300.0], [700.0, 900.0]],
+        &[[0.0, 0.0], [100.0, 100.0]],
+        &[[512.0, -40.0], [540.0, 300.0], [512.0, 640.0], [512.0, 780.0]],
+    ];
+    for (s, ctrls) in cases.iter().enumerate() {
+        let controls: Vec<Vec2f> = ctrls.iter().map(|p| Vec2f::new(p[0], p[1])).collect();
+        let out = path::generate_smooth_spline(&controls);
+        let meta = g["spline.meta"].iter().find(|r| i(r, 1) == s as i32).unwrap();
+        assert_eq!(i(meta, 2) as usize, out.len(), "spline {s} point count");
+        let pts: Vec<&Vec<String>> = g["spline.pt"].iter().filter(|r| i(r, 1) == s as i32).collect();
+        assert_eq!(pts.len(), out.len(), "spline {s} corpus rows");
+        for row in pts {
+            let j = i(row, 2) as usize;
+            assert_eq!(hex32(&row[3]), out[j].x.to_bits(), "spline {s} pt {j} x bits");
+            assert_eq!(hex32(&row[4]), out[j].y.to_bits(), "spline {s} pt {j} y bits");
+        }
+    }
+}
+
+#[test]
+fn trajectory_parity() {
+    let rows = load_vectors();
+    let g = group(&rows);
+    assert!(g.contains_key("traj.frame"), "corpus sem secao traj -- regenere golden/vectors-cpp.txt");
+
+    // Arrival path straight from the corpus (bit-exact replay inputs).
+    let count = i(&g["traj.path_count"][0], 1) as usize;
+    let path_rows = &g["traj.path"];
+    assert_eq!(path_rows.len(), count);
+    let mut arrival = Vec::with_capacity(count);
+    for row in path_rows {
+        arrival.push(Vec2f::new(
+            f32::from_bits(hex32(&row[2])),
+            f32::from_bits(hex32(&row[3])),
+        ));
+    }
+
+    struct Case {
+        id: i32,
+        mirrored: bool,
+        col: i32,
+        row: i32,
+        seed: u32,
+        cycle: i32,
+        mode: i32,
+    }
+    let cases = [
+        Case { id: 0, mirrored: false, col: 3, row: 2, seed: 777, cycle: 1, mode: 0 },
+        Case { id: 1, mirrored: true, col: 5, row: 3, seed: 778, cycle: 2, mode: 0 },
+        Case { id: 2, mirrored: false, col: 4, row: 1, seed: 999, cycle: 1, mode: 1 },
+        Case { id: 3, mirrored: false, col: 2, row: 4, seed: 4242, cycle: 3, mode: 2 },
+    ];
+    let metrics = ViewportMetrics { win_w: 1280, win_h: 720, scale: 1.0 };
+    // Docking-arc frames go through atan2/cos/sin: ulps differ across libm
+    // versions, so positions carry a tolerance while stages stay exact.
+    const POS_TOL: f32 = 1e-2;
+
+    for c in &cases {
+        let mut t = Trajectory::new(
+            &arrival, c.mirrored, (300, 82), metrics, c.col, c.row, c.seed, c.cycle, 8,
+        );
+        let init = t.init_position();
+        let init_row = g["traj.init"].iter().find(|r| i(r, 1) == c.id).unwrap();
+        assert_eq!(hex32(&init_row[2]), (init.0 as f32).to_bits(), "case {} init x", c.id);
+        assert_eq!(hex32(&init_row[3]), (init.1 as f32).to_bits(), "case {} init y", c.id);
+
+        if c.mode == 1 {
+            t.build_attack((640, 200));
+        } else if c.mode == 2 {
+            t.build_kamikaze_dive((300, 150), (640, 640));
+        }
+        if c.mode != 0 {
+            let ap = g["traj.attack_pts"].iter().find(|r| i(r, 1) == c.id).unwrap();
+            assert_eq!(i(ap, 2) as usize, t.attack_point_count(), "case {} attack points", c.id);
+        }
+
+        let frames: Vec<&Vec<String>> = g["traj.frame"].iter().filter(|r| i(r, 1) == c.id).collect();
+        assert!(!frames.is_empty(), "case {} has no corpus frames", c.id);
+        let mut x = init.0 as f32;
+        let mut y = init.1 as f32;
+        for (f, row) in frames.iter().enumerate() {
+            assert_eq!(i(row, 2), f as i32, "case {} frame index", c.id);
+            let (nx, ny) = t.next_position_f(x, y, 6.0);
+            x = nx;
+            y = ny;
+            assert_eq!(t.stage() as i32, i(row, 3), "case {} frame {f} stage", c.id);
+            let want_x = f32::from_bits(hex32(&row[4]));
+            let want_y = f32::from_bits(hex32(&row[5]));
+            assert!(
+                (x - want_x).abs() <= POS_TOL && (y - want_y).abs() <= POS_TOL,
+                "case {} frame {f} position: rust=({x},{y}) cpp=({want_x},{want_y})",
+                c.id
+            );
+        }
+    }
 }

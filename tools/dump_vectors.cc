@@ -7,6 +7,7 @@
 #include <cstring>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "constants.h"
 #include "formation_grid.h"
@@ -16,6 +17,7 @@
 #include "random_stream.h"
 #include "score_hash.h"
 #include "stage_catalog.h"
+#include "trajectory.h"
 
 namespace {
 
@@ -193,6 +195,82 @@ void DumpHighscore() {
   }
 }
 
+void DumpSplines() {
+  // Fixed literal control sets: arithmetic + sqrt only, so these sections are
+  // bit-exact on every platform (no transcendentals, no libm variance).
+  const std::vector<std::vector<Vec2f>> cases = {
+      {{100.0f, -50.0f}, {260.0f, 120.0f}, {410.0f, 90.0f}, {620.0f, 300.0f}, {700.0f, 900.0f}},
+      {{0.0f, 0.0f}, {100.0f, 100.0f}},
+      {{512.0f, -40.0f}, {540.0f, 300.0f}, {512.0f, 640.0f}, {512.0f, 780.0f}},
+  };
+  for (std::size_t s = 0; s < cases.size(); ++s) {
+    const std::vector<Vec2f> out = FlightPath::GenerateSmoothSplineF(cases[s]);
+    std::printf("spline.meta %d %zu\n", static_cast<int>(s), out.size());
+    for (std::size_t j = 0; j < out.size(); ++j) {
+      std::printf("spline.pt %d %zu %08x %08x\n", static_cast<int>(s), j,
+                  FloatBits(out[j].x), FloatBits(out[j].y));
+    }
+  }
+}
+
+void DumpTrajectories() {
+  // Explicit scale-1 formation: the trajectory reads FormationGrid globals and
+  // the dumper must never depend on whatever a previous section left behind.
+  GameRules::Fleet::FormationGrid::Recompute(1.0f);
+  ViewportMetrics metrics{1280, 720, 1.0f};
+  const Coord base_cruise(300, 82);
+  const FlightPath arrival = FlightPath::Loop(120.0f, -60.0f, 2);
+
+  std::printf("traj.path_count %zu\n", arrival.Size());
+  for (std::size_t j = 0; j < arrival.Size(); ++j) {
+    std::printf("traj.path %zu %08x %08x\n", j, FloatBits(arrival[j].x), FloatBits(arrival[j].y));
+  }
+
+  struct Case {
+    int id;
+    bool mirrored;
+    int col;
+    int row;
+    unsigned seed;
+    int cycle;
+    int mode;  // 0 = arrival/docking, 1 = BuildAttack dive, 2 = kamikaze dive
+  };
+  const Case cases[] = {
+      {0, false, 3, 2, 777u, 1, 0},
+      {1, true, 5, 3, 778u, 2, 0},
+      {2, false, 4, 1, 999u, 1, 1},
+      {3, false, 2, 4, 4242u, 3, 2},
+  };
+  for (const Case& c : cases) {
+    Trajectory t(&arrival, c.mirrored, base_cruise, &metrics, c.col, c.row,
+                 c.seed, c.cycle, 8);
+    const Coord init = t.InitPosition();
+    std::printf("traj.init %d %08x %08x\n", c.id,
+                FloatBits(static_cast<float>(init.x)),
+                FloatBits(static_cast<float>(init.y)));
+    if (c.mode == 1) {
+      t.BuildAttack(Coord(640, 200));
+      std::printf("traj.attack_pts %d %zu\n", c.id, t.AttackPointCount());
+    } else if (c.mode == 2) {
+      t.BuildKamikazeDive(Coord(300, 150), Coord(640, 640));
+      std::printf("traj.attack_pts %d %zu\n", c.id, t.AttackPointCount());
+    }
+    float x = static_cast<float>(init.x);
+    float y = static_cast<float>(init.y);
+    const int max_frames = (c.mode == 0) ? 420 : 1500;
+    for (int f = 0; f < max_frames; ++f) {
+      float nx = x;
+      float ny = y;
+      t.NextPositionF(x, y, 6.0f, nx, ny);
+      x = nx;
+      y = ny;
+      std::printf("traj.frame %d %d %d %08x %08x\n", c.id, f,
+                  static_cast<int>(t.Stage()), FloatBits(x), FloatBits(y));
+      if (c.mode != 0 && t.Stage() != Trajectory::attacking) break;
+    }
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -205,5 +283,7 @@ int main() {
   DumpPacing();
   DumpScoreHash();
   DumpHighscore();
+  DumpSplines();
+  DumpTrajectories();
   return 0;
 }

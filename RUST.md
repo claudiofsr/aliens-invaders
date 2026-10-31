@@ -45,16 +45,21 @@
 | `-Wconversion` discipline | `clippy::as_conversion`, `#[deny(warnings)]` | CI Rust |
 | CMake/Make | Cargo workspace + `cargo-zigbuild` (Win/mac) | FreeBSD tier-2 nativo |
 
-## Estado do scaffold (Fases 1 + 2a/2b)
+## Estado do scaffold (Fases 1 + 2a/2b + 3)
 
 - `tools/dump_vectors.cc` — dumper do kernel puro (sem SDL): rng, math, unit_grid,
   slots (3 scales), slot_edge, profile (waves 1–75), fleet/player functions,
   pacing, score_hash, serialize. Floats como **bits IEEE hex** (`%08x`).
 - `golden/vectors-cpp.txt` — corpus (gerado localmente; ver golden/README.md).
 - `rust/kernel` — ports de RandomStream, mathx, formation (tabela em runtime),
-  pacing, StageCatalog, ScoreHash (SHA-256) e HighScoreTable (serialização
-  byte-idêntica). `tests/golden.rs` asserta TODAS as seções do corpus, e a leg
-  `Rust kernel parity` do CI as executa a cada push.
+  pacing, StageCatalog, ScoreHash (SHA-256), HighScoreTable (serialização
+  byte-idêntica), path (Catmull-Rom + resampler) e trajectory (máquina de
+  estados arriving/joining/cruising/attacking, mergulho e kamikaze).
+- Política de tolerância (Fase 3): seções puramente aritméticas + sqrt são
+  bit-exatas (splines, init, attacking/cruising); quadros do arco de docking
+  (atan2/cos/sin) comparam posição com tol 1e-2 px e **sequência de estágios
+  exata** — ulps de transcendentais variam entre versões de libm, lógica não.
+- A leg `Rust kernel parity` do CI executa tudo a cada push.
 
 ## Comandos
 

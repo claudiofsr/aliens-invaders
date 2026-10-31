@@ -246,7 +246,7 @@ $(builddir)/unit_tests: tests/unit_tests.cc $(srcdir)/highscore/highscore_table.
 # Golden vectors for the Rust kernel port (RUST.md Phase 1); pure kernel, no SDL.
 dump_vectors: $(builddir)/dump_vectors
 
-$(builddir)/dump_vectors: tools/dump_vectors.cc $(srcdir)/entities/formation_grid.cc $(srcdir)/highscore/highscore_table.cc
+$(builddir)/dump_vectors: tools/dump_vectors.cc $(srcdir)/entities/formation_grid.cc $(srcdir)/highscore/highscore_table.cc $(srcdir)/simulation/trajectory.cc
 	@mkdir -p $(dir $@)
 	@$(CXX) -std=c++20 $(GOAL_OPTS) $(OPTIMISE_OPTS) $(BASE_WARN) $(INC_DIRS) $^ -o $@ -lm
 

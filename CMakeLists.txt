@@ -107,6 +107,7 @@ add_executable(dump_vectors
     tools/dump_vectors.cc
     src/entities/formation_grid.cc
     src/highscore/highscore_table.cc
+    src/simulation/trajectory.cc
 )
 target_include_directories(dump_vectors PRIVATE ${PROJECT_INCLUDES})
 set_target_properties(dump_vectors PROPERTIES CXX_STANDARD 20)

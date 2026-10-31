@@ -4371,3 +4371,2856 @@ serialize STAGE;WAVE;SCORE;WIDTH;HEIGHT;REFRESH_RATE;DATE;NAME;HASH
 serialize 4;56;26330;3840;2160;60;1792867111;Claudio;0ff82c2ddcb8d6d6
 serialize 1;6;2520;3840;2160;60;1792933633;Claudio;0fecbc014cc88b38
 serialize 1;2;670;1280;720;60;1792872474;Ripley;547d6e2efecdc2ac
+spline.meta 0 436
+spline.pt 0 0 42c80000 c2480000
+spline.pt 0 1 42cb61ce c23e168c
+spline.pt 0 2 42cec921 c23434a7
+spline.pt 0 3 42d2352d c22a594b
+spline.pt 0 4 42d5a537 c2208380
+spline.pt 0 5 42d91865 c216b21d
+spline.pt 0 6 42dc8e77 c20ce4c9
+spline.pt 0 7 42e00905 c2031dd5
+spline.pt 0 8 42e38503 c1f2b1d6
+spline.pt 0 9 42e705c1 c1df359c
+spline.pt 0 10 42ea87d6 c1cbbd42
+spline.pt 0 11 42ee0e65 c1b851d8
+spline.pt 0 12 42f195fb c1a4e96d
+spline.pt 0 13 42f522b7 c191900c
+spline.pt 0 14 42f8af73 c17c6d56
+spline.pt 0 15 42fc4275 c155df9d
+spline.pt 0 16 42ffd5c1 c12f5398
+spline.pt 0 17 4301b6ab c108e126
+spline.pt 0 18 430383cf c0c4fdae
+spline.pt 0 19 43055183 c0708d52
+spline.pt 0 20 43072261 bfaf70a0
+spline.pt 0 21 4308f33f 3f823964
+spline.pt 0 22 430ac66f 40598002
+spline.pt 0 23 430c9b48 40b8c8f8
+spline.pt 0 24 430e7021 410268f8
+spline.pt 0 25 431048ea 41283c94
+spline.pt 0 26 43122207 414e0c14
+spline.pt 0 27 4313fbfa 4173d107
+spline.pt 0 28 4315d9ab 418cb36c
+spline.pt 0 29 4317b75b 419f7e54
+spline.pt 0 30 431996e7 41b23d53
+spline.pt 0 31 431b7983 41c4e8b3
+spline.pt 0 32 431d5c1f 41d79412
+spline.pt 0 33 431f417d 41ea2d74
+spline.pt 0 34 43212967 41fcb638
+spline.pt 0 35 43231151 42079f7e
+spline.pt 0 36 4324fcce 4210d800
+spline.pt 0 37 4326ea76 421a0950
+spline.pt 0 38 4328d81d 42233aa1
+spline.pt 0 39 432aca1d 422c5d30
+spline.pt 0 40 432cbdfc 42357968
+spline.pt 0 41 432eb1db 423e95a1
+spline.pt 0 42 4330aae3 42479ff2
+spline.pt 0 43 4332a585 4250a4b5
+spline.pt 0 44 4334a026 4259a977
+spline.pt 0 45 4336a0e0 4262988e
+spline.pt 0 46 4338a2e1 426b8318
+spline.pt 0 47 433aa4e2 42746da2
+spline.pt 0 48 433cae2b 427d3d91
+spline.pt 0 49 433eb83c 42830550
+spline.pt 0 50 4340c257 42876bc6
+spline.pt 0 51 4342d543 428bc1a2
+spline.pt 0 52 4344e830 4290177d
+spline.pt 0 53 4346fc82 42946a9f
+spline.pt 0 54 4349192d 4298ad7e
+spline.pt 0 55 434b35d9 429cf05c
+spline.pt 0 56 434d561c 42a12bf8
+spline.pt 0 57 434f7d8e 42a5590c
+spline.pt 0 58 4351a500 42a98620
+spline.pt 0 59 4353d36f 42ada474
+spline.pt 0 60 435606d3 42b1b852
+spline.pt 0 61 43583a38 42b5cc2f
+spline.pt 0 62 435a79b7 42b9c53a
+spline.pt 0 63 435cba65 42bdbba8
+spline.pt 0 64 435effda 42c1a6e3
+spline.pt 0 65 43614f58 42c57a99
+spline.pt 0 66 43639ed7 42c94e4f
+spline.pt 0 67 4365fc10 42ccffad
+spline.pt 0 68 43685c19 42d0aa01
+spline.pt 0 69 436ac454 42d43e31
+spline.pt 0 70 436d36d5 42d7b69a
+spline.pt 0 71 436facdf 42db2481
+spline.pt 0 72 437233e9 42de5ff3
+spline.pt 0 73 4374bb7d 42e19996
+spline.pt 0 74 43775924 42e489a0
+spline.pt 0 75 4379f6e8 42e7793c
+spline.pt 0 76 437cacf4 42ea0adc
+spline.pt 0 77 437f65f8 42ec8e79
+spline.pt 0 78 43811aa3 42eea8bb
+spline.pt 0 79 43828622 42f0936e
+spline.pt 0 80 4383f872 42f229ca
+spline.pt 0 81 438571b6 42f34831
+spline.pt 0 82 4386ede6 42f418c3
+spline.pt 0 83 43886c3e 42f49d3e
+spline.pt 0 84 4389ebf8 42f4d727
+spline.pt 0 85 438b6bcd 42f4aa1a
+spline.pt 0 86 438ceab2 42f43ee0
+spline.pt 0 87 438e6857 42f3998a
+spline.pt 0 88 438fe433 42f2b888
+spline.pt 0 89 43915d08 42f191ce
+spline.pt 0 90 4392d3a8 42f04230
+spline.pt 0 91 4394481b 42eeccd4
+spline.pt 0 92 4395b941 42ed25c0
+spline.pt 0 93 439727d2 42eb5cd0
+spline.pt 0 94 4398946b 42e97b12
+spline.pt 0 95 4399fe68 42e77a83
+spline.pt 0 96 439b65fe 42e55fc8
+spline.pt 0 97 439ccc1f 42e335ae
+spline.pt 0 98 439e305d 42e0f84e
+spline.pt 0 99 439f92eb 42deaa7e
+spline.pt 0 100 43a0f494 42dc5421
+spline.pt 0 101 43a2550f 42d9f2b6
+spline.pt 0 102 43a3b4c5 42d78a32
+spline.pt 0 103 43a5141c 42d51e54
+spline.pt 0 104 43a67314 42d2af16
+spline.pt 0 105 43a7d21f 42d04086
+spline.pt 0 106 43a9314a 42cdd311
+spline.pt 0 107 43aa910f 42cb6b16
+spline.pt 0 108 43abf18e 42c909d1
+spline.pt 0 109 43ad52a6 42c6ae1c
+spline.pt 0 110 43aeb576 42c462b7
+spline.pt 0 111 43b01972 42c222e9
+spline.pt 0 112 43b17e8e 42bfee40
+spline.pt 0 113 43b2e664 42bdd5f7
+spline.pt 0 114 43b44fc1 42bbcec0
+spline.pt 0 115 43b5bac7 42b9da01
+spline.pt 0 116 43b7292b 42b80e3f
+spline.pt 0 117 43b8996d 42b65bbc
+spline.pt 0 118 43ba0b9d 42b4c38f
+spline.pt 0 119 43bb8161 42b3634d
+spline.pt 0 120 43bcf91e 42b2281f
+spline.pt 0 121 43be72c0 42b112b0
+spline.pt 0 122 43bfef0a 42b03db3
+spline.pt 0 123 43c16cf6 42afa2a4
+spline.pt 0 124 43c2ebef 42af3a44
+spline.pt 0 125 43c46bce 42af12ca
+spline.pt 0 126 43c5eb8a 42af4212
+spline.pt 0 127 43c76a58 42afaf31
+spline.pt 0 128 43c8e7e0 42b05ae1
+spline.pt 0 129 43ca61aa 42b16e05
+spline.pt 0 130 43cbd76d 42b2c9ee
+spline.pt 0 131 43cd499f 42b4605d
+spline.pt 0 132 43ceb694 42b63e0f
+spline.pt 0 133 43d022c4 42b8248e
+spline.pt 0 134 43d18a62 42ba3f28
+spline.pt 0 135 43d2f1de 42bc5b19
+spline.pt 0 136 43d453f9 42bead45
+spline.pt 0 137 43d5b614 42c0ff72
+spline.pt 0 138 43d7137a 42c37c59
+spline.pt 0 139 43d86ffb 42c60158
+spline.pt 0 140 43d9c922 42c8a20e
+spline.pt 0 141 43db2001 42cb55a8
+spline.pt 0 142 43dc7544 42ce158e
+spline.pt 0 143 43ddc686 42d0f405
+spline.pt 0 144 43df17c7 42d3d27c
+spline.pt 0 145 43e063ea 42d6d547
+spline.pt 0 146 43e1af98 42d9db4e
+spline.pt 0 147 43e2f891 42dcf34c
+spline.pt 0 148 43e43ebb 42e01df2
+spline.pt 0 149 43e584de 42e348c7
+spline.pt 0 150 43e6c597 42e69577
+spline.pt 0 151 43e80650 42e9e228
+spline.pt 0 152 43e9448a 42ed3d96
+spline.pt 0 153 43ea7fe4 42f0aa05
+spline.pt 0 154 43ebbb3f 42f41675
+spline.pt 0 155 43ecf1ff 42f79cbb
+spline.pt 0 156 43ee280e 42fb26e0
+spline.pt 0 157 43ef5cf2 42feb745
+spline.pt 0 158 43f08dc9 43012eaa
+spline.pt 0 159 43f1bea0 430301b2
+spline.pt 0 160 43f2ecbd 4304dbae
+spline.pt 0 161 43f4186c 4306bbdf
+spline.pt 0 162 43f5441b 43089c10
+spline.pt 0 163 43f66bc8 430a860c
+spline.pt 0 164 43f7925e 430c72b0
+spline.pt 0 165 43f8b8f4 430e5f56
+spline.pt 0 166 43f9da7f 431057cd
+spline.pt 0 167 43fafc0a 43125045
+spline.pt 0 168 43fc1cb7 43144aae
+spline.pt 0 169 43fd3941 43164e69
+spline.pt 0 170 43fe55ca 43185225
+spline.pt 0 171 43ff70ce 431a592b
+spline.pt 0 172 4400442f 431c67ab
+spline.pt 0 173 4400cff7 431e762b
+spline.pt 0 174 44015ac0 432088d3
+spline.pt 0 175 4401e40e 4322a1a8
+spline.pt 0 176 44026d5b 4324ba7d
+spline.pt 0 177 4402f582 4326d7f2
+spline.pt 0 178 44037c57 4328fab7
+spline.pt 0 179 4404032b 432b1d7c
+spline.pt 0 180 440488c4 432d4508
+spline.pt 0 181 44050d1f 432f7165
+spline.pt 0 182 4405917a 43319dc2
+spline.pt 0 183 44061495 4333cec9
+spline.pt 0 184 44069674 4336046f
+spline.pt 0 185 44071854 43383a15
+spline.pt 0 186 440798ff 433a7411
+spline.pt 0 187 4408185f 433cb2ba
+spline.pt 0 188 440897bf 433ef164
+spline.pt 0 189 44091605 434133e4
+spline.pt 0 190 440992e0 43437b54
+spline.pt 0 191 440a0fbb 4345c2c4
+spline.pt 0 192 440a8ba2 43480d68
+spline.pt 0 193 440b05f2 434a5d68
+spline.pt 0 194 440b8042 434cad68
+spline.pt 0 195 440bf9cf 434effde
+spline.pt 0 196 440c718b 4351583f
+spline.pt 0 197 440ce946 4353b09f
+spline.pt 0 198 440d607b 43560aa5
+spline.pt 0 199 440dd598 43586b3c
+spline.pt 0 200 440e4ab4 435acbd3
+spline.pt 0 201 440ebf90 435d2d2f
+spline.pt 0 202 440f3202 435f95d6
+spline.pt 0 203 440fa473 4361fe7e
+spline.pt 0 204 441016e5 43646725
+spline.pt 0 205 441086ab 4366d797
+spline.pt 0 206 4410f664 4369482f
+spline.pt 0 207 4411661c 436bb8c7
+spline.pt 0 208 4411d36d 436e3020
+spline.pt 0 209 4412405c 4370a88f
+spline.pt 0 210 4412ad4a 437320fd
+spline.pt 0 211 4413181b 43759f22
+spline.pt 0 212 4413822e 43781f4a
+spline.pt 0 213 4413ec40 437a9f73
+spline.pt 0 214 44145482 437d2452
+spline.pt 0 215 4414bba4 437fac20
+spline.pt 0 216 441522c5 438119f7
+spline.pt 0 217 44158866 43825fbe
+spline.pt 0 218 4415ec7f 4383a76d
+spline.pt 0 219 44165098 4384ef1d
+spline.pt 0 220 4416b380 43863839
+spline.pt 0 221 44171477 438783a7
+spline.pt 0 222 4417756f 4388cf15
+spline.pt 0 223 4417d584 438a1b86
+spline.pt 0 224 4418333d 438b6aaa
+spline.pt 0 225 441890f6 438cb9cf
+spline.pt 0 226 4418ee19 438e0997
+spline.pt 0 227 44194875 438f5c68
+spline.pt 0 228 4419a2d1 4390af39
+spline.pt 0 229 4419fcde 4392025d
+spline.pt 0 230 441a53bb 439358d1
+spline.pt 0 231 441aaa97 4394af46
+spline.pt 0 232 441b0154 439605d9
+spline.pt 0 233 441b50d0 43976366
+spline.pt 0 234 441ba04b 4398c0f3
+spline.pt 0 235 441befc7 439a1e81
+spline.pt 0 236 441c3f42 439b7c0e
+spline.pt 0 237 441c8a6d 439cdd3f
+spline.pt 0 238 441cd03e 439e42f6
+spline.pt 0 239 441d160f 439fa8ad
+spline.pt 0 240 441d5bdf 43a10e64
+spline.pt 0 241 441da1b0 43a2741b
+spline.pt 0 242 441de398 43a3dcac
+spline.pt 0 243 441e216c 43a54837
+spline.pt 0 244 441e5f41 43a6b3c3
+spline.pt 0 245 441e9d15 43a81f4e
+spline.pt 0 246 441edaea 43a98ad9
+spline.pt 0 247 441f17a5 43aaf719
+spline.pt 0 248 441f4ecf 43ac66e8
+spline.pt 0 249 441f85f9 43add6b7
+spline.pt 0 250 441fbd24 43af4686
+spline.pt 0 251 441ff44e 43b0b655
+spline.pt 0 252 44202b78 43b22624
+spline.pt 0 253 44205fda 43b39787
+spline.pt 0 254 44209164 43b50a86
+spline.pt 0 255 4420c2ed 43b67d86
+spline.pt 0 256 4420f477 43b7f086
+spline.pt 0 257 44212601 43b96385
+spline.pt 0 258 4421578a 43bad685
+spline.pt 0 259 442186a9 43bc4abe
+spline.pt 0 260 4421b366 43bdc02c
+spline.pt 0 261 4421e023 43bf359a
+spline.pt 0 262 44220ce1 43c0ab08
+spline.pt 0 263 4422399e 43c22076
+spline.pt 0 264 4422665b 43c395e4
+spline.pt 0 265 44229230 43c50bbc
+spline.pt 0 266 4422bacb 43c6830c
+spline.pt 0 267 4422e365 43c7fa5d
+spline.pt 0 268 44230c00 43c971ae
+spline.pt 0 269 4423349b 43cae8fe
+spline.pt 0 270 44235d35 43cc604f
+spline.pt 0 271 442385d0 43cdd7a0
+spline.pt 0 272 4423ac04 43cf4fee
+spline.pt 0 273 4423d106 43d0c8ba
+spline.pt 0 274 4423f609 43d24187
+spline.pt 0 275 44241b0b 43d3ba53
+spline.pt 0 276 4424400e 43d53320
+spline.pt 0 277 44246510 43d6abec
+spline.pt 0 278 44248a12 43d824b8
+spline.pt 0 279 4424ac4f 43d99e90
+spline.pt 0 280 4424ce2b 43db188b
+spline.pt 0 281 4424f008 43dc9286
+spline.pt 0 282 442511e5 43de0c81
+spline.pt 0 283 442533c1 43df867c
+spline.pt 0 284 4425559e 43e10077
+spline.pt 0 285 4425777a 43e27a72
+spline.pt 0 286 442596df 43e3f546
+spline.pt 0 287 4425b5f3 43e57036
+spline.pt 0 288 4425d508 43e6eb25
+spline.pt 0 289 4425f41c 43e86615
+spline.pt 0 290 44261331 43e9e104
+spline.pt 0 291 44263246 43eb5bf4
+spline.pt 0 292 4426515a 43ecd6e3
+spline.pt 0 293 44266ea8 43ee5262
+spline.pt 0 294 44268b44 43efce18
+spline.pt 0 295 4426a7e0 43f149cf
+spline.pt 0 296 4426c47d 43f2c585
+spline.pt 0 297 4426e119 43f4413c
+spline.pt 0 298 4426fdb5 43f5bcf2
+spline.pt 0 299 44271a51 43f738a9
+spline.pt 0 300 44273608 43f8b4a1
+spline.pt 0 301 4427506f 43fa30fc
+spline.pt 0 302 44276ad6 43fbad56
+spline.pt 0 303 4427853c 43fd29b0
+spline.pt 0 304 44279fa3 43fea60a
+spline.pt 0 305 4427ba0a 44001132
+spline.pt 0 306 4427d471 4400cf5f
+spline.pt 0 307 4427eed7 44018d8c
+spline.pt 0 308 4428074c 44024bfc
+spline.pt 0 309 44281fb6 44030a6d
+spline.pt 0 310 44283821 4403c8de
+spline.pt 0 311 4428508b 4404874f
+spline.pt 0 312 442868f5 440545c0
+spline.pt 0 313 44288160 44060431
+spline.pt 0 314 442899ca 4406c2a2
+spline.pt 0 315 4428b15b 4407812e
+spline.pt 0 316 4428c7fa 44083fd7
+spline.pt 0 317 4428de98 4408fe81
+spline.pt 0 318 4428f537 4409bd2b
+spline.pt 0 319 44290bd6 440a7bd4
+spline.pt 0 320 44292274 440b3a7e
+spline.pt 0 321 44293913 440bf928
+spline.pt 0 322 44294fb2 440cb7d2
+spline.pt 0 323 442964d3 440d76a7
+spline.pt 0 324 442979d0 440e3580
+spline.pt 0 325 44298ece 440ef45a
+spline.pt 0 326 4429a3cb 440fb333
+spline.pt 0 327 4429b8c9 4410720c
+spline.pt 0 328 4429cdc7 441130e6
+spline.pt 0 329 4429e2c4 4411efbf
+spline.pt 0 330 4429f740 4412aea6
+spline.pt 0 331 442a0ac1 44136da8
+spline.pt 0 332 442a1e43 44142caa
+spline.pt 0 333 442a31c4 4414ebab
+spline.pt 0 334 442a4545 4415aaad
+spline.pt 0 335 442a58c7 441669af
+spline.pt 0 336 442a6c48 441728b0
+spline.pt 0 337 442a7fca 4417e7b2
+spline.pt 0 338 442a923a 4418a6cf
+spline.pt 0 339 442aa460 441965f3
+spline.pt 0 340 442ab685 441a2517
+spline.pt 0 341 442ac8ab 441ae43b
+spline.pt 0 342 442adad0 441ba35f
+spline.pt 0 343 442aecf6 441c6283
+spline.pt 0 344 442aff1b 441d21a7
+spline.pt 0 345 442b10e9 441de0d3
+spline.pt 0 346 442b21cf 441ea014
+spline.pt 0 347 442b32b5 441f5f55
+spline.pt 0 348 442b439a 44201e97
+spline.pt 0 349 442b5480 4420ddd8
+spline.pt 0 350 442b6565 44219d19
+spline.pt 0 351 442b764b 44225c5a
+spline.pt 0 352 442b8730 44231b9c
+spline.pt 0 353 442b971e 4423daf2
+spline.pt 0 354 442ba6dc 44249a4d
+spline.pt 0 355 442bb69b 442559a7
+spline.pt 0 356 442bc65a 44261902
+spline.pt 0 357 442bd619 4426d85c
+spline.pt 0 358 442be5d7 442797b6
+spline.pt 0 359 442bf596 44285711
+spline.pt 0 360 442c04c6 44291677
+spline.pt 0 361 442c1374 4429d5e7
+spline.pt 0 362 442c2223 442a9557
+spline.pt 0 363 442c30d1 442b54c7
+spline.pt 0 364 442c3f80 442c1437
+spline.pt 0 365 442c4e2f 442cd3a7
+spline.pt 0 366 442c5cdd 442d9317
+spline.pt 0 367 442c6b32 442e528e
+spline.pt 0 368 442c78e4 442f1211
+spline.pt 0 369 442c8696 442fd194
+spline.pt 0 370 442c9448 44309116
+spline.pt 0 371 442ca1fa 44315099
+spline.pt 0 372 442cafac 4432101c
+spline.pt 0 373 442cbd5e 4432cf9f
+spline.pt 0 374 442ccabb 44338f27
+spline.pt 0 375 442cd782 44344eba
+spline.pt 0 376 442ce449 44350e4e
+spline.pt 0 377 442cf110 4435cde1
+spline.pt 0 378 442cfdd7 44368d74
+spline.pt 0 379 442d0a9f 44374d07
+spline.pt 0 380 442d1766 44380c9a
+spline.pt 0 381 442d23ae 4438cc35
+spline.pt 0 382 442d2f9a 44398bd6
+spline.pt 0 383 442d3b86 443a4b77
+spline.pt 0 384 442d4772 443b0b18
+spline.pt 0 385 442d535f 443bcab9
+spline.pt 0 386 442d5f4b 443c8a5b
+spline.pt 0 387 442d6b2e 443d49fc
+spline.pt 0 388 442d764e 443e09aa
+spline.pt 0 389 442d816e 443ec957
+spline.pt 0 390 442d8c8e 443f8904
+spline.pt 0 391 442d97af 444048b2
+spline.pt 0 392 442da2cf 4441085f
+spline.pt 0 393 442dadef 4441c80d
+spline.pt 0 394 442db879 444287c3
+spline.pt 0 395 442dc2da 4443477b
+spline.pt 0 396 442dcd3b 44440733
+spline.pt 0 397 442dd79b 4444c6eb
+spline.pt 0 398 442de1fc 444586a3
+spline.pt 0 399 442dec5d 4446465b
+spline.pt 0 400 442df628 4447061b
+spline.pt 0 401 442dffd5 4447c5dd
+spline.pt 0 402 442e0982 4448859e
+spline.pt 0 403 442e1330 44494560
+spline.pt 0 404 442e1cdd 444a0521
+spline.pt 0 405 442e2664 444ac4e5
+spline.pt 0 406 442e2f68 444b84af
+spline.pt 0 407 442e386d 444c4478
+spline.pt 0 408 442e4171 444d0442
+spline.pt 0 409 442e4a76 444dc40c
+spline.pt 0 410 442e537b 444e83d6
+spline.pt 0 411 442e5be1 444f43a6
+spline.pt 0 412 442e6447 44500377
+spline.pt 0 413 442e6cae 4450c348
+spline.pt 0 414 442e7514 44518319
+spline.pt 0 415 442e7d5f 445242eb
+spline.pt 0 416 442e8530 445302c3
+spline.pt 0 417 442e8d00 4453c29a
+spline.pt 0 418 442e94d0 44548271
+spline.pt 0 419 442e9ca0 44554248
+spline.pt 0 420 442ea400 44560224
+spline.pt 0 421 442eab43 4456c201
+spline.pt 0 422 442eb286 445781de
+spline.pt 0 423 442eb9c9 445841bb
+spline.pt 0 424 442ec094 4459019c
+spline.pt 0 425 442ec752 4459c17e
+spline.pt 0 426 442ece10 445a815f
+spline.pt 0 427 442ed48e 445b4143
+spline.pt 0 428 442edace 445c0129
+spline.pt 0 429 442ee10e 445cc10f
+spline.pt 0 430 442ee6ff 445d80f7
+spline.pt 0 431 442eecc8 445e40e1
+spline.pt 0 432 442ef266 445f00cc
+spline.pt 0 433 442ef7c0 445fc0b9
+spline.pt 0 434 442efcd0 446080a8
+spline.pt 0 435 442f0000 44610000
+spline.meta 1 48
+spline.pt 1 0 00000000 00000000
+spline.pt 1 1 4007c3b7 4007c3b7
+spline.pt 1 2 4087c3b7 4087c3b7
+spline.pt 1 3 40cba592 40cba592
+spline.pt 1 4 4107c3b6 4107c3b6
+spline.pt 1 5 4129b4a4 4129b4a4
+spline.pt 1 6 414ba592 414ba592
+spline.pt 1 7 416d967f 416d967f
+spline.pt 1 8 4187c3b6 4187c3b6
+spline.pt 1 9 4198bc2d 4198bc2d
+spline.pt 1 10 41a9b4a4 41a9b4a4
+spline.pt 1 11 41baad1b 41baad1b
+spline.pt 1 12 41cba592 41cba592
+spline.pt 1 13 41dc9e08 41dc9e08
+spline.pt 1 14 41ed967f 41ed967f
+spline.pt 1 15 41fe8ef6 41fe8ef6
+spline.pt 1 16 4207c3b6 4207c3b6
+spline.pt 1 17 42103ff2 42103ff2
+spline.pt 1 18 4218bc2d 4218bc2d
+spline.pt 1 19 42213868 42213868
+spline.pt 1 20 4229b4a4 4229b4a4
+spline.pt 1 21 423230df 423230df
+spline.pt 1 22 423aad1b 423aad1b
+spline.pt 1 23 42432956 42432956
+spline.pt 1 24 424ba592 424ba592
+spline.pt 1 25 425421cd 425421cd
+spline.pt 1 26 425c9e08 425c9e08
+spline.pt 1 27 42651a44 42651a44
+spline.pt 1 28 426d967f 426d967f
+spline.pt 1 29 427612bb 427612bb
+spline.pt 1 30 427e8ef6 427e8ef6
+spline.pt 1 31 42838599 42838599
+spline.pt 1 32 4287c3b6 4287c3b6
+spline.pt 1 33 428c01d4 428c01d4
+spline.pt 1 34 42903ff2 42903ff2
+spline.pt 1 35 42947e0f 42947e0f
+spline.pt 1 36 4298bc2d 4298bc2d
+spline.pt 1 37 429cfa4b 429cfa4b
+spline.pt 1 38 42a13869 42a13869
+spline.pt 1 39 42a57686 42a57686
+spline.pt 1 40 42a9b4a4 42a9b4a4
+spline.pt 1 41 42adf2c2 42adf2c2
+spline.pt 1 42 42b230df 42b230df
+spline.pt 1 43 42b66efd 42b66efd
+spline.pt 1 44 42baad1b 42baad1b
+spline.pt 1 45 42beeb39 42beeb39
+spline.pt 1 46 42c32956 42c32956
+spline.pt 1 47 42c76774 42c76774
+spline.meta 2 276
+spline.pt 2 0 44000000 c2200000
+spline.pt 2 1 4400173a c2141690
+spline.pt 2 2 44002e3d c2082cb5
+spline.pt 2 3 44004518 c1f8851a
+spline.pt 2 4 44005bd4 c1e0b051
+spline.pt 2 5 44007261 c1c8dad9
+spline.pt 2 6 440088e0 c1b10529
+spline.pt 2 7 44009f32 c1992ed2
+spline.pt 2 8 4400b579 c1815852
+spline.pt 2 9 4400cb93 c1530251
+spline.pt 2 10 4400e1ad c12353fe
+spline.pt 2 11 4400f78d c0e74809
+spline.pt 2 12 44010d6c c087e7fd
+spline.pt 2 13 4401232a bfa2187a
+spline.pt 2 14 440138ca 3fdb7604
+spline.pt 2 15 44014e6a 40964121
+spline.pt 2 16 440163d4 40f5a7d1
+spline.pt 2 17 44017932 412a8792
+spline.pt 2 18 44018e90 415a3b3c
+spline.pt 2 19 4401a3ad 4184f85c
+spline.pt 2 20 4401b8c6 419cd328
+spline.pt 2 21 4401cddf 41b4adf4
+spline.pt 2 22 4401e2b8 41cc89a1
+spline.pt 2 23 4401f786 41e46571
+spline.pt 2 24 44020c55 41fc4142
+spline.pt 2 25 440220f5 420a0edb
+spline.pt 2 26 44023576 4215fd49
+spline.pt 2 27 440249f7 4221ebb8
+spline.pt 2 28 44025e68 422dda42
+spline.pt 2 29 44027296 4239c93e
+spline.pt 2 30 440286c5 4245b839
+spline.pt 2 31 44029af3 4251a735
+spline.pt 2 32 4402aee9 425d968e
+spline.pt 2 33 4402c2c0 4269861d
+spline.pt 2 34 4402d697 427575ac
+spline.pt 2 35 4402ea6e 4280b29d
+spline.pt 2 36 4402fdec 4286aaad
+spline.pt 2 37 44031165 428ca2c1
+spline.pt 2 38 440324df 42929ad6
+spline.pt 2 39 4403384a 429892f5
+spline.pt 2 40 44034b5f 429e8b5a
+spline.pt 2 41 44035e75 42a483bf
+spline.pt 2 42 4403718b 42aa7c23
+spline.pt 2 43 44038487 42b0749c
+spline.pt 2 44 44039732 42b66d55
+spline.pt 2 45 4403a9de 42bc660d
+spline.pt 2 46 4403bc89 42c25ec6
+spline.pt 2 47 4403cf19 42c85794
+spline.pt 2 48 4403e152 42ce50a5
+spline.pt 2 49 4403f38b 42d449b5
+spline.pt 2 50 440405c5 42da42c6
+spline.pt 2 51 440417e9 42e03be7
+spline.pt 2 52 440429a8 42e63554
+spline.pt 2 53 44043b67 42ec2ec0
+spline.pt 2 54 44044d26 42f2282d
+spline.pt 2 55 44045ede 42f8219f
+spline.pt 2 56 4404701a 42fe1b6c
+spline.pt 2 57 44048155 43020a9d
+spline.pt 2 58 44049290 43050783
+spline.pt 2 59 4404a3cc 4308046a
+spline.pt 2 60 4404b48a 430b017d
+spline.pt 2 61 4404c537 430dfe96
+spline.pt 2 62 4404d5e4 4310fbaf
+spline.pt 2 63 4404e692 4313f8c8
+spline.pt 2 64 4404f6d5 4316f605
+spline.pt 2 65 440506e9 4319f352
+spline.pt 2 66 440516fc 431cf0a0
+spline.pt 2 67 44052710 431fedee
+spline.pt 2 68 440536d3 4322eb55
+spline.pt 2 69 44054640 4325e8da
+spline.pt 2 70 440555ac 4328e65f
+spline.pt 2 71 44056518 432be3e3
+spline.pt 2 72 44057454 432ee177
+spline.pt 2 73 4405830a 4331df35
+spline.pt 2 74 440591c0 4334dcf4
+spline.pt 2 75 4405a076 4337dab2
+spline.pt 2 76 4405af1d 433ad874
+spline.pt 2 77 4405bd0c 433dd66e
+spline.pt 2 78 4405cafb 4340d467
+spline.pt 2 79 4405d8ea 4343d261
+spline.pt 2 80 4405e6d9 4346d05a
+spline.pt 2 81 4405f400 4349ce8c
+spline.pt 2 82 44060114 434cccc4
+spline.pt 2 83 44060e28 434fcafb
+spline.pt 2 84 44061b3c 4352c932
+spline.pt 2 85 44062790 4355c79c
+spline.pt 2 86 440633b2 4358c613
+spline.pt 2 87 44063fd5 435bc48a
+spline.pt 2 88 44064bf7 435ec301
+spline.pt 2 89 44065754 4361c1a8
+spline.pt 2 90 4406626b 4364c060
+spline.pt 2 91 44066d81 4367bf18
+spline.pt 2 92 44067898 436abdd0
+spline.pt 2 93 440682cc 436dbcb9
+spline.pt 2 94 44068cb8 4370bbb2
+spline.pt 2 95 440696a4 4373baac
+spline.pt 2 96 4406a090 4376b9a5
+spline.pt 2 97 4406a95a 4379b8d6
+spline.pt 2 98 4406b1f7 437cb811
+spline.pt 2 99 4406ba93 437fb74b
+spline.pt 2 100 4406c314 43815b45
+spline.pt 2 101 4406ca36 4382db01
+spline.pt 2 102 4406d157 43845abd
+spline.pt 2 103 4406d879 4385da79
+spline.pt 2 104 4406deee 43875a41
+spline.pt 2 105 4406e45f 4388da19
+spline.pt 2 106 4406e9d1 438a59f2
+spline.pt 2 107 4406ef43 438bd9ca
+spline.pt 2 108 4406f30b 438d59b6
+spline.pt 2 109 4406f68d 438ed9a6
+spline.pt 2 110 4406fa0f 43905996
+spline.pt 2 111 4406fc84 4391d98c
+spline.pt 2 112 4406fdc7 4393598a
+spline.pt 2 113 4406ff09 4394d988
+spline.pt 2 114 4406ffbd 43965986
+spline.pt 2 115 4406fe9e 4397d984
+spline.pt 2 116 4406fd80 43995982
+spline.pt 2 117 4406fc3d 439ad980
+spline.pt 2 118 4406f8fe 439c5972
+spline.pt 2 119 4406f5bf 439dd964
+spline.pt 2 120 4406f281 439f5956
+spline.pt 2 121 4406ed8e 43a0d934
+spline.pt 2 122 4406e857 43a25910
+spline.pt 2 123 4406e320 43a3d8ec
+spline.pt 2 124 4406dcc3 43a558b5
+spline.pt 2 125 4406d5b9 43a6d873
+spline.pt 2 126 4406ceb0 43a85831
+spline.pt 2 127 4406c708 43a9d7e2
+spline.pt 2 128 4406be4f 43ab577c
+spline.pt 2 129 4406b597 43acd717
+spline.pt 2 130 4406acc0 43ae56ae
+spline.pt 2 131 4406a279 43afd621
+spline.pt 2 132 44069831 43b15594
+spline.pt 2 133 44068dea 43b2d507
+spline.pt 2 134 4406828b 43b4545a
+spline.pt 2 135 440676d5 43b5d3a3
+spline.pt 2 136 44066b1e 43b752ec
+spline.pt 2 137 44065ed8 43b8d223
+spline.pt 2 138 440651d1 43ba5140
+spline.pt 2 139 440644ca 43bbd05d
+spline.pt 2 140 440637ac 43bd4f78
+spline.pt 2 141 4406296f 43bece69
+spline.pt 2 142 44061b33 43c04d5a
+spline.pt 2 143 44060cf6 43c1cc4c
+spline.pt 2 144 4405fdf2 43c34b1e
+spline.pt 2 145 4405ee9b 43c4c9e4
+spline.pt 2 146 4405df44 43c648aa
+spline.pt 2 147 4405cf99 43c7c762
+spline.pt 2 148 4405bf42 43c945fd
+spline.pt 2 149 4405aeeb 43cac498
+spline.pt 2 150 44059e94 43cc4334
+spline.pt 2 151 44058d63 43cdc1a9
+spline.pt 2 152 44057c25 43cf401c
+spline.pt 2 153 44056ae7 43d0be8f
+spline.pt 2 154 44055937 43d23cec
+spline.pt 2 155 4405472a 43d3bb39
+spline.pt 2 156 4405351d 43d53985
+spline.pt 2 157 440522f2 43d6b7cc
+spline.pt 2 158 4405102d 43d835f5
+spline.pt 2 159 4404fd68 43d9b41f
+spline.pt 2 160 4404eaa4 43db3248
+spline.pt 2 161 4404d763 43dcb058
+spline.pt 2 162 4404c3fe 43de2e61
+spline.pt 2 163 4404b099 43dfac6b
+spline.pt 2 164 44049cfe 43e12a69
+spline.pt 2 165 4404890e 43e2a855
+spline.pt 2 166 4404751f 43e42642
+spline.pt 2 167 4404612e 43e5a42e
+spline.pt 2 168 44044ccc 43e72203
+spline.pt 2 169 44043869 43e89fd7
+spline.pt 2 170 44042407 43ea1dac
+spline.pt 2 171 44040f67 43eb9b73
+spline.pt 2 172 4403faa7 43ed1933
+spline.pt 2 173 4403e5e6 43ee96f3
+spline.pt 2 174 4403d110 43f014ae
+spline.pt 2 175 4403bc09 43f1925f
+spline.pt 2 176 4403a702 43f31010
+spline.pt 2 177 440391fa 43f48dc0
+spline.pt 2 178 44037cc3 43f60b66
+spline.pt 2 179 4403678b 43f7890c
+spline.pt 2 180 44035253 43f906b2
+spline.pt 2 181 44033d09 43fa8454
+spline.pt 2 182 440327b7 43fc01f4
+spline.pt 2 183 44031264 43fd7f94
+spline.pt 2 184 4402fd10 43fefd33
+spline.pt 2 185 4402e7bb 44003d69
+spline.pt 2 186 4402d265 4400fc39
+spline.pt 2 187 4402bd12 4401bb09
+spline.pt 2 188 4402a7d1 440279db
+spline.pt 2 189 44029290 440338ad
+spline.pt 2 190 44027d50 4403f77f
+spline.pt 2 191 44026838 4404b655
+spline.pt 2 192 44025324 4405752c
+spline.pt 2 193 44023e10 44063403
+spline.pt 2 194 4402292f 4406f2df
+spline.pt 2 195 44021462 4407b1be
+spline.pt 2 196 4401ff95 4408709d
+spline.pt 2 197 4401eaff 44092f82
+spline.pt 2 198 4401d693 4409ee6b
+spline.pt 2 199 4401c227 440aad54
+spline.pt 2 200 4401adf6 440b6c43
+spline.pt 2 201 44019a08 440c2b3a
+spline.pt 2 202 44018619 440cea30
+spline.pt 2 203 4401726b 440da92d
+spline.pt 2 204 44015f17 440e6834
+spline.pt 2 205 44014bc4 440f273a
+spline.pt 2 206 440138bb 440fe648
+spline.pt 2 207 44012623 4410a561
+spline.pt 2 208 4401138b 4411647a
+spline.pt 2 209 44010155 4412239c
+spline.pt 2 210 4400ef99 4412e2ca
+spline.pt 2 211 4400ddde 4413a1f8
+spline.pt 2 212 4400ccae 44146132
+spline.pt 2 213 4400bbf5 44152077
+spline.pt 2 214 4400ab3c 4415dfbd
+spline.pt 2 215 44009b53 44169f13
+spline.pt 2 216 44008bc5 44175e72
+spline.pt 2 217 44007c37 44181dd0
+spline.pt 2 218 44006de2 4418dd47
+spline.pt 2 219 44005faa 44199cc0
+spline.pt 2 220 440051c0 441a5c3f
+spline.pt 2 221 44004511 441b1bd3
+spline.pt 2 222 44003861 441bdb68
+spline.pt 2 223 44002ca6 441c9b0c
+spline.pt 2 224 440021b5 441d5abc
+spline.pt 2 225 440016c3 441e1a6c
+spline.pt 2 226 44000dbd 441eda35
+spline.pt 2 227 440004c5 441f9a00
+spline.pt 2 228 43fff91b 442059d2
+spline.pt 2 229 43ffea61 442119ae
+spline.pt 2 230 43ffdd58 4421d992
+spline.pt 2 231 43ffd0fa 44229978
+spline.pt 2 232 43ffc5f5 44235964
+spline.pt 2 233 43ffbbdb 44241953
+spline.pt 2 234 43ffb270 4424d944
+spline.pt 2 235 43ffaa4f 44259939
+spline.pt 2 236 43ffa294 4426592f
+spline.pt 2 237 43ff9bf9 44271928
+spline.pt 2 238 43ff95e8 4427d921
+spline.pt 2 239 43ff9089 4428991d
+spline.pt 2 240 43ff8bf5 44295919
+spline.pt 2 241 43ff87bb 442a1916
+spline.pt 2 242 43ff8481 442ad914
+spline.pt 2 243 43ff8185 442b9913
+spline.pt 2 244 43ff7f57 442c5912
+spline.pt 2 245 43ff7d8e 442d1911
+spline.pt 2 246 43ff7c4b 442dd911
+spline.pt 2 247 43ff7b9e 442e9911
+spline.pt 2 248 43ff7b35 442f5911
+spline.pt 2 249 43ff7b8f 44301911
+spline.pt 2 250 43ff7c21 4430d911
+spline.pt 2 251 43ff7d45 44319911
+spline.pt 2 252 43ff7eca 44325910
+spline.pt 2 253 43ff80a3 44331910
+spline.pt 2 254 43ff830f 4433d90f
+spline.pt 2 255 43ff85b4 4434990e
+spline.pt 2 256 43ff88d8 4435590c
+spline.pt 2 257 43ff8c58 4436190a
+spline.pt 2 258 43ff9018 4436d908
+spline.pt 2 259 43ff9462 44379904
+spline.pt 2 260 43ff98f2 44385901
+spline.pt 2 261 43ff9dc8 443918fd
+spline.pt 2 262 43ffa31a 4439d8f8
+spline.pt 2 263 43ffa8b7 443a98f3
+spline.pt 2 264 43ffaea1 443b58ed
+spline.pt 2 265 43ffb4e3 443c18e7
+spline.pt 2 266 43ffbb8c 443cd8df
+spline.pt 2 267 43ffc286 443d98d7
+spline.pt 2 268 43ffc9d5 443e58ce
+spline.pt 2 269 43ffd17f 443f18c5
+spline.pt 2 270 43ffd985 443fd8ba
+spline.pt 2 271 43ffe1ee 444098ae
+spline.pt 2 272 43ffeabb 444158a1
+spline.pt 2 273 43fff405 44421893
+spline.pt 2 274 43fffddf 4442d883
+spline.pt 2 275 44000000 44430000
+traj.path_count 760
+traj.path 0 42f00000 c2700000
+traj.path 1 42f5d1f5 c272ea78
+traj.path 2 42fba751 c275b93b
+traj.path 3 4300bf7a c27874cc
+traj.path 4 4303ac4a c27b1f26
+traj.path 5 430699f1 c27dba97
+traj.path 6 43098894 c280220d
+traj.path 7 430c7811 c2815ed2
+traj.path 8 430f681b c2829645
+traj.path 9 43125912 c283c4b9
+traj.path 10 43154ab7 c284ec43
+traj.path 11 43183ce1 c2860e80
+traj.path 12 431b3004 c2872663
+traj.path 13 431e2368 c2883b9b
+traj.path 14 432117ee c289441d
+traj.path 15 43240c8f c28a4b71
+traj.path 16 4327025d c28b44de
+traj.path 17 4329f840 c28c3d57
+traj.path 18 432cef3a c28d2804
+traj.path 19 432fe65f c28e1096
+traj.path 20 4332de6d c28eecda
+traj.path 21 4335d6d4 c28fc459
+traj.path 22 4338cfdc c2909297
+traj.path 23 433bc982 c29157b8
+traj.path 24 433ec36f c2921856
+traj.path 25 4341be4d c292c9ab
+traj.path 26 4344b92a c2937b00
+traj.path 27 4347b515 c2941904
+traj.path 28 434ab11d c294b4f5
+traj.path 29 434dadbc c295446f
+traj.path 30 4350aadc c295c933
+traj.path 31 4353a820 c2964a62
+traj.path 32 4356a63d c296b5f9
+traj.path 33 4359a45b c2972190
+traj.path 34 435ca314 c2977942
+traj.path 35 435fa208 c297c96f
+traj.path 36 4362a12c c29810b4
+traj.path 37 4365a0c3 c29842f2
+traj.path 38 4368a05a c298752f
+traj.path 39 436ba040 c2988b04
+traj.path 40 436ea034 c2989c78
+traj.path 41 4371a026 c2989e06
+traj.path 42 4374a018 c2988b77
+traj.path 43 4377a006 c29877af
+traj.path 44 437a9f78 c2983d75
+traj.path 45 437d9eeb c298033c
+traj.path 46 43804ed1 c297acdb
+traj.path 47 4381cdf8 c29746d0
+traj.path 48 43834cd6 c296d2f9
+traj.path 49 4384cafc c2963c67
+traj.path 50 43864923 c295a5d5
+traj.path 51 4387c5c7 c294db61
+traj.path 52 4389425c c2940ef3
+traj.path 53 438abd5c c293196e
+traj.path 54 438c37a1 c292111b
+traj.path 55 438db064 c290ea3f
+traj.path 56 438f275f c28f9f43
+traj.path 57 43909d0c c28e3f32
+traj.path 58 43920f73 c28caa0c
+traj.path 59 439380cd c28b070d
+traj.path 60 4394ecf2 c2891f90
+traj.path 61 43965827 c2872de7
+traj.path 62 4397bbe1 c284eb6b
+traj.path 63 43991e50 c2829d6b
+traj.path 64 439a76db c27fee71
+traj.path 65 439bcccd c27a7bca
+traj.path 66 439d16b5 c27457b2
+traj.path 67 439e59c2 c26de204
+traj.path 68 439f8c41 c266a754
+traj.path 69 43a0bec0 c25f6ca4
+traj.path 70 43a1eae8 c257f615
+traj.path 71 43a30162 c24fb2eb
+traj.path 72 43a417dd c2476fc1
+traj.path 73 43a52e58 c23f2c97
+traj.path 74 43a62e58 c2363c67
+traj.path 75 43a72bcc c22d3899
+traj.path 76 43a82940 c22434cb
+traj.path 77 43a9205a c21b078d
+traj.path 78 43aa0824 c2117651
+traj.path 79 43aaefee c207e515
+traj.path 80 43abd7b7 c1fca7b1
+traj.path 81 43acb7f6 c1e92f57
+traj.path 82 43ad8d3f c1d53a36
+traj.path 83 43ae6288 c1c14515
+traj.path 84 43af37d0 c1ad4ff4
+traj.path 85 43b00934 c199335b
+traj.path 86 43b0cebf c1849eb3
+traj.path 87 43b1944b c1601418
+traj.path 88 43b259d6 c136eaca
+traj.path 89 43b31f61 c10dc17b
+traj.path 90 43b3d9e6 c0c79c14
+traj.path 91 43b4920c c066bcb0
+traj.path 92 43b54a32 bf7904e8
+traj.path 93 43b60258 3fd47480
+traj.path 94 43b6b8c8 40899461
+traj.path 95 43b76580 40df51fe
+traj.path 96 43b81239 411a87ce
+traj.path 97 43b8bef2 4145669c
+traj.path 98 43b96baa 4170456a
+traj.path 99 43ba15fc 418da4c7
+traj.path 100 43bab8ec 41a36042
+traj.path 101 43bb5bdc 41b91bbd
+traj.path 102 43bbfecc 41ced738
+traj.path 103 43bca1bc 41e492b4
+traj.path 104 43bd4395 41fa5618
+traj.path 105 43bdde1f 4208274b
+traj.path 106 43be78a9 4213238a
+traj.path 107 43bf1333 421e1fc9
+traj.path 108 43bfadbc 42291c08
+traj.path 109 43c04846 42341846
+traj.path 110 43c0dcdc 423f28e3
+traj.path 111 43c1702b 424a3dd8
+traj.path 112 43c2037b 425552ce
+traj.path 113 43c296cb 426067c4
+traj.path 114 43c32a1b 426b7cba
+traj.path 115 43c3bb3b 427698c5
+traj.path 116 43c44851 4280e0f4
+traj.path 117 43c4d567 42867586
+traj.path 118 43c5627e 428c0a17
+traj.path 119 43c5ef94 42919ea9
+traj.path 120 43c67caa 4297333a
+traj.path 121 43c705d1 429ccde1
+traj.path 122 43c78d8b 42a26abb
+traj.path 123 43c81545 42a80795
+traj.path 124 43c89d00 42ada46f
+traj.path 125 43c924ba 42b34149
+traj.path 126 43c9ac74 42b8de24
+traj.path 127 43ca2f97 42be81cc
+traj.path 128 43cab2b7 42c42578
+traj.path 129 43cb35d8 42c9c924
+traj.path 130 43cbb8f9 42cf6cd0
+traj.path 131 43cc3c19 42d5107c
+traj.path 132 43ccbe92 42dab517
+traj.path 133 43cd3dc5 42e05e60
+traj.path 134 43cdbcf7 42e607a9
+traj.path 135 43ce3c2a 42ebb0f1
+traj.path 136 43cebb5d 42f15a3a
+traj.path 137 43cf3a90 42f70383
+traj.path 138 43cfb8e1 42fcae04
+traj.path 139 43d034c1 43012df3
+traj.path 140 43d0b0a1 430404e4
+traj.path 141 43d12c81 4306dbd5
+traj.path 142 43d1a862 4309b2c6
+traj.path 143 43d22442 430c89b7
+traj.path 144 43d29f3f 430f6140
+traj.path 145 43d3185b 43123a0e
+traj.path 146 43d39177 431512dc
+traj.path 147 43d40a92 4317eba9
+traj.path 148 43d483ae 431ac477
+traj.path 149 43d4fcca 431d9d45
+traj.path 150 43d57519 43207699
+traj.path 151 43d5ebf5 432350e2
+traj.path 152 43d662d1 43262b2b
+traj.path 153 43d6d9ad 43290574
+traj.path 154 43d75088 432bdfbc
+traj.path 155 43d7c764 432eba05
+traj.path 156 43d83d8d 433194c1
+traj.path 157 43d8b2a7 4334702c
+traj.path 158 43d927c2 43374b97
+traj.path 159 43d99cdc 433a2702
+traj.path 160 43da11f6 433d026d
+traj.path 161 43da8710 433fddd8
+traj.path 162 43dafb90 4342b9a5
+traj.path 163 43db6f64 434595e0
+traj.path 164 43dbe337 4348721b
+traj.path 165 43dc570b 434b4e56
+traj.path 166 43dccade 434e2a91
+traj.path 167 43dd3eb2 435106cc
+traj.path 168 43ddb20a 4353e354
+traj.path 169 43de2512 4356c010
+traj.path 170 43de981a 43599ccb
+traj.path 171 43df0b22 435c7986
+traj.path 172 43df7e2a 435f5642
+traj.path 173 43dff131 436232fd
+traj.path 174 43e063f9 43650fe1
+traj.path 175 43e0d6b3 4367eccd
+traj.path 176 43e1496c 436ac9b9
+traj.path 177 43e1bc26 436da6a5
+traj.path 178 43e22ee0 43708392
+traj.path 179 43e2a1a2 43736079
+traj.path 180 43e31493 43763d43
+traj.path 181 43e38783 43791a0c
+traj.path 182 43e3fa74 437bf6d6
+traj.path 183 43e46d64 437ed3a0
+traj.path 184 43e4e055 4380d835
+traj.path 185 43e553c1 43824673
+traj.path 186 43e5c777 4383b49a
+traj.path 187 43e63b2d 438522c1
+traj.path 188 43e6aee3 438690e8
+traj.path 189 43e72299 4387ff0f
+traj.path 190 43e796ab 43896d18
+traj.path 191 43e80bc6 438adacd
+traj.path 192 43e880e1 438c4882
+traj.path 193 43e8f5fd 438db638
+traj.path 194 43e96b18 438f23ed
+traj.path 195 43e9e05e 43909194
+traj.path 196 43ea5796 4391fe9a
+traj.path 197 43eacecd 43936ba1
+traj.path 198 43eb4605 4394d8a7
+traj.path 199 43ebbd3c 439645ae
+traj.path 200 43ec34cd 4397b296
+traj.path 201 43ecaef9 43991ea2
+traj.path 202 43ed2925 439a8aae
+traj.path 203 43eda351 439bf6ba
+traj.path 204 43ee1d7d 439d62c6
+traj.path 205 43ee993f 439ece48
+traj.path 206 43ef1766 43a038f8
+traj.path 207 43ef958c 43a1a3a8
+traj.path 208 43f013b3 43a30e58
+traj.path 209 43f091d9 43a47908
+traj.path 210 43f114fc 43a5e1f1
+traj.path 211 43f19867 43a74ac1
+traj.path 212 43f21bd2 43a8b391
+traj.path 213 43f29f3c 43aa1c61
+traj.path 214 43f3281d 43ab8324
+traj.path 215 43f3b275 43ace95b
+traj.path 216 43f43ccc 43ae4f92
+traj.path 217 43f4c724 43afb5c9
+traj.path 218 43f55a27 43b11886
+traj.path 219 43f5eda5 43b27b11
+traj.path 220 43f68122 43b3dd9d
+traj.path 221 43f71a1d 43b53dc3
+traj.path 222 43f7b9d5 43b69af8
+traj.path 223 43f8598e 43b7f82d
+traj.path 224 43f8fe7f 43b952d7
+traj.path 225 43f9aee3 43baa7ee
+traj.path 226 43fa5f46 43bbfd06
+traj.path 227 43fb1cbc 43bd4ac4
+traj.path 228 43fbe46e 43be92c2
+traj.path 229 43fcb313 43bfd5ff
+traj.path 230 43fd9c43 43c10716
+traj.path 231 43fe91fb 43c22cc8
+traj.path 232 43ffaba0 43c331cd
+traj.path 233 4400717f 43c40ffb
+traj.path 234 4401210c 43c4a9b7
+traj.path 235 4401dcb4 43c4f73c
+traj.path 236 44029c77 43c4f8f8
+traj.path 237 44035ad7 43c4c82f
+traj.path 238 44041820 43c487d5
+traj.path 239 4404d6da 43c45d7a
+traj.path 240 44059650 43c46ee1
+traj.path 241 44065356 43c4b21a
+traj.path 242 44070f82 43c4fe60
+traj.path 243 4407cac9 43c552fc
+traj.path 244 44088513 43c5afe7
+traj.path 245 44093e4b 43c61508
+traj.path 246 4409f657 43c6825d
+traj.path 247 440aad1d 43c6f7f0
+traj.path 248 440b627e 43c775dc
+traj.path 249 440c1665 43c7fc01
+traj.path 250 440cc8be 43c88a30
+traj.path 251 440d7975 43c92050
+traj.path 252 440e2873 43c9be4c
+traj.path 253 440ed59c 43ca642a
+traj.path 254 440f80d8 43cb11d7
+traj.path 255 44102a0a 43cbc756
+traj.path 256 4410d116 43cc84a2
+traj.path 257 441175eb 43cd4988
+traj.path 258 44121874 43ce15ef
+traj.path 259 4412b8a0 43cee9a9
+traj.path 260 44135658 43cfc4a3
+traj.path 261 4413f181 43d0a6cc
+traj.path 262 441489fe 43d1901d
+traj.path 263 44151fac 43d28099
+traj.path 264 4415b27a 43d37814
+traj.path 265 4416425d 43d4764f
+traj.path 266 4416cf45 43d57b23
+traj.path 267 4417591c 43d6866f
+traj.path 268 4417dfcc 43d79817
+traj.path 269 44186337 43d8b008
+traj.path 270 4418e338 43d9ce39
+traj.path 271 44195fbb 43daf286
+traj.path 272 4419d8b9 43dc1cac
+traj.path 273 441a4e28 43dd4c74
+traj.path 274 441abff7 43de81b6
+traj.path 275 441b2e12 43dfbc49
+traj.path 276 441b9860 43e0fc0a
+traj.path 277 441bfec2 43e240e0
+traj.path 278 441c611b 43e38aab
+traj.path 279 441cbf63 43e4d92b
+traj.path 280 441d1997 43e62c25
+traj.path 281 441d6fb0 43e7835c
+traj.path 282 441dc19e 43e8dea1
+traj.path 283 441e0f4f 43ea3dc8
+traj.path 284 441e58a9 43eba0a4
+traj.path 285 441e9d8f 43ed070e
+traj.path 286 441eddf6 43ee70cc
+traj.path 287 441f19e1 43efdd9b
+traj.path 288 441f5153 43f14d3c
+traj.path 289 441f8442 43f2bf77
+traj.path 290 441fb2a3 43f43416
+traj.path 291 441fdc63 43f5aae3
+traj.path 292 4420016b 43f723ab
+traj.path 293 442021a9 43f89e34
+traj.path 294 44203d29 43fa1a3c
+traj.path 295 442053f1 43fb9783
+traj.path 296 44206604 43fd15cc
+traj.path 297 44207360 43fe94db
+traj.path 298 44207bfc 44000a3b
+traj.path 299 44207fc9 4400ca30
+traj.path 300 44207eb6 44018a2e
+traj.path 301 442078c9 44024a15
+traj.path 302 44206e14 440309c7
+traj.path 303 44205ea5 4403c926
+traj.path 304 44204a7f 44048816
+traj.path 305 442031a5 44054677
+traj.path 306 44201412 4406042b
+traj.path 307 441ff1b9 4406c111
+traj.path 308 441fca9c 44077d09
+traj.path 309 441f9ed3 440837f8
+traj.path 310 441f6e73 4408f1c5
+traj.path 311 441f3986 4409aa54
+traj.path 312 441f001c 440a618a
+traj.path 313 441ec237 440b1748
+traj.path 314 441e7fd8 440bcb70
+traj.path 315 441e38f9 440c7de0
+traj.path 316 441dedb2 440d2e7f
+traj.path 317 441d9e21 440ddd3b
+traj.path 318 441d4a5b 440e89fc
+traj.path 319 441cf272 440f34ac
+traj.path 320 441c9672 440fdd30
+traj.path 321 441c3662 4410836c
+traj.path 322 441bd244 4411273f
+traj.path 323 441b6a26 4411c88f
+traj.path 324 441afe27 4412674e
+traj.path 325 441a8e69 4413036e
+traj.path 326 441a1afe 44139cdd
+traj.path 327 4419a3fc 44143386
+traj.path 328 44192970 4414c753
+traj.path 329 4418ab64 44155825
+traj.path 330 441829e0 4415e5e1
+traj.path 331 4417a503 4416707b
+traj.path 332 44171ced 4416f7ea
+traj.path 333 441691b9 44177c25
+traj.path 334 4416037f 4417fd1d
+traj.path 335 44157251 44187ac1
+traj.path 336 4414de3f 4418f4f9
+traj.path 337 44144754 44196ba8
+traj.path 338 4413ada6 4419debe
+traj.path 339 44131159 441a4e3e
+traj.path 340 44127289 441aba22
+traj.path 341 4411d14f 441b2264
+traj.path 342 44112dc3 441b86f6
+traj.path 343 441087f4 441be7c2
+traj.path 344 440fdff4 441c44b3
+traj.path 345 440f35d7 441c9db8
+traj.path 346 440e89be 441cf2d5
+traj.path 347 440ddbc5 441d440c
+traj.path 348 440d2c03 441d9153
+traj.path 349 440c7a91 441ddaa4
+traj.path 350 440bc786 441e1ff8
+traj.path 351 440b12f7 441e613e
+traj.path 352 440a5cf7 441e9e61
+traj.path 353 4409a59e 441ed75a
+traj.path 354 4408ed0a 441f0c35
+traj.path 355 44083356 441f3cf6
+traj.path 356 4407789a 441f699b
+traj.path 357 4406bced 441f9218
+traj.path 358 44060063 441fb661
+traj.path 359 44054316 441fd66b
+traj.path 360 4404851b 441ff22f
+traj.path 361 4403c68f 442009b9
+traj.path 362 44030789 44201d01
+traj.path 363 44024822 44202c18
+traj.path 364 44018872 442036fb
+traj.path 365 4400c891 44203da3
+traj.path 366 44000895 44203ffb
+traj.path 367 43fe9132 44203e01
+traj.path 368 43fd1168 442037be
+traj.path 369 43fb91fd 44202d41
+traj.path 370 43fa1321 44201e88
+traj.path 371 43f89502 44200b98
+traj.path 372 43f717d1 441ff475
+traj.path 373 43f59bbf 441fd917
+traj.path 374 43f42103 441fb96d
+traj.path 375 43f2a7cd 441f9580
+traj.path 376 43f13049 441f6d61
+traj.path 377 43efbaa2 441f4120
+traj.path 378 43ee4708 441f10c0
+traj.path 379 43ecd5ae 441edc3e
+traj.path 380 43eb66c4 441ea39f
+traj.path 381 43e9fa80 441e66e0
+traj.path 382 43e8911b 441e25fc
+traj.path 383 43e72abf 441de103
+traj.path 384 43e5c795 441d9807
+traj.path 385 43e467c2 441d4b1a
+traj.path 386 43e30b78 441cfa42
+traj.path 387 43e1b2e9 441ca582
+traj.path 388 43e05e58 441c4cd2
+traj.path 389 43df0df8 441bf037
+traj.path 390 43ddc1f6 441b8fc1
+traj.path 391 43dc7a70 441b2b88
+traj.path 392 43db378d 441ac39e
+traj.path 393 43d9f97d 441a580c
+traj.path 394 43d8c073 4419e8da
+traj.path 395 43d78ca1 44197613
+traj.path 396 43d65e47 4418ffb8
+traj.path 397 43d5359c 441885d2
+traj.path 398 43d412b5 4418087f
+traj.path 399 43d2f5b8 441787d2
+traj.path 400 43d1deca 441703de
+traj.path 401 43d0ce12 44167cb5
+traj.path 402 43cfc3c3 4415f263
+traj.path 403 43cec01c 441564f1
+traj.path 404 43cdc35e 4414d466
+traj.path 405 43cccda1 441440de
+traj.path 406 43cbdef7 4413aa76
+traj.path 407 43caf782 44131143
+traj.path 408 43ca1760 4412755e
+traj.path 409 43c93ebc 4411d6d9
+traj.path 410 43c86dcc 441135c3
+traj.path 411 43c7a4d3 4410922a
+traj.path 412 43c6e3f6 440fec24
+traj.path 413 43c62b3a 440f43d3
+traj.path 414 43c57aa7 440e9955
+traj.path 415 43c4d258 440decc4
+traj.path 416 43c43274 440d3e35
+traj.path 417 43c39b25 440c8dbe
+traj.path 418 43c30c9d 440bdb77
+traj.path 419 43c28712 440b2774
+traj.path 420 43c20a7f 440a71d8
+traj.path 421 43c196e1 4409bac2
+traj.path 422 43c12c3f 44090251
+traj.path 423 43c0caaa 440848a0
+traj.path 424 43c07242 44078dca
+traj.path 425 43c0232e 4406d1e9
+traj.path 426 43bfdda0 44061517
+traj.path 427 43bfa19c 44055774
+traj.path 428 43bf6f0e 44049922
+traj.path 429 43bf45e9 4403da3e
+traj.path 430 43bf262e 44031ae7
+traj.path 431 43bf0fea 44025b3b
+traj.path 432 43bf0335 44019b57
+traj.path 433 43bf0030 4400db5a
+traj.path 434 43bf06ef 44001b63
+traj.path 435 43bf174f 43feb722
+traj.path 436 43bf3131 43fd3804
+traj.path 437 43bf5485 43fbb9a8
+traj.path 438 43bf8140 43fa3c47
+traj.path 439 43bfb769 43f8c021
+traj.path 440 43bff70c 43f74573
+traj.path 441 43c04042 43f5cc81
+traj.path 442 43c092ea 43f45584
+traj.path 443 43c0eed7 43f2e0b1
+traj.path 444 43c153e2 43f16e3c
+traj.path 445 43c1c1f3 43effe5c
+traj.path 446 43c238fd 43ee9149
+traj.path 447 43c2b8fa 43ed2741
+traj.path 448 43c341f6 43ebc087
+traj.path 449 43c3d3de 43ea5d57
+traj.path 450 43c46e7f 43e8fddc
+traj.path 451 43c511a1 43e7a23e
+traj.path 452 43c5bd19 43e64aaa
+traj.path 453 43c670cb 43e4f750
+traj.path 454 43c72ca3 43e3a868
+traj.path 455 43c7f098 43e25e2e
+traj.path 456 43c8bca2 43e118e4
+traj.path 457 43c99089 43dfd8a9
+traj.path 458 43ca6c0e 43de9d9b
+traj.path 459 43cb4f00 43dd67db
+traj.path 460 43cc393f 43dc3796
+traj.path 461 43cd2a9e 43db0cf2
+traj.path 462 43ce2307 43d9e821
+traj.path 463 43cf226e 43d8c964
+traj.path 464 43d028a7 43d7b0e0
+traj.path 465 43d1356d 43d69ea3
+traj.path 466 43d2488a 43d592c0
+traj.path 467 43d361d0 43d48d57
+traj.path 468 43d48115 43d38e89
+traj.path 469 43d5a630 43d29678
+traj.path 470 43d6d10a 43d1a55a
+traj.path 471 43d80182 43d0bb5f
+traj.path 472 43d93758 43cfd88b
+traj.path 473 43da7254 43cefceb
+traj.path 474 43dbb243 43ce2893
+traj.path 475 43dcf6ef 43cd5b8a
+traj.path 476 43de402f 43cc95f2
+traj.path 477 43df8dde 43cbd7ef
+traj.path 478 43e0dfdd 43cb21b5
+traj.path 479 43e23600 43ca735e
+traj.path 480 43e39001 43c9ccd8
+traj.path 481 43e4eda9 43c92e22
+traj.path 482 43e64ec7 43c89746
+traj.path 483 43e7b32e 43c8085c
+traj.path 484 43e91aba 43c78188
+traj.path 485 43ea853c 43c702e6
+traj.path 486 43ebf288 43c68c8d
+traj.path 487 43ed6266 43c61e72
+traj.path 488 43eed4a3 43c5b899
+traj.path 489 43f0490c 43c55afd
+traj.path 490 43f1bf6e 43c5059f
+traj.path 491 43f3379c 43c4b890
+traj.path 492 43f4b16c 43c473f3
+traj.path 493 43f62cb1 43c437ee
+traj.path 494 43f7a937 43c4046d
+traj.path 495 43f926c8 43c3d95a
+traj.path 496 43faa535 43c3b6af
+traj.path 497 43fc244e 43c39c7e
+traj.path 498 43fda3e2 43c38abb
+traj.path 499 43ff23c4 43c38176
+traj.path 500 440051e1 43c380cb
+traj.path 501 440111d5 43c388d1
+traj.path 502 4401d1a6 43c3995b
+traj.path 503 4402913d 43c3b255
+traj.path 504 44035082 43c3d3b5
+traj.path 505 44040f5c 43c3fd8b
+traj.path 506 4404cdb4 43c42fd4
+traj.path 507 44058b70 43c46a9b
+traj.path 508 44064875 43c4adf0
+traj.path 509 440704ad 43c4f9bc
+traj.path 510 4407c001 43c54de9
+traj.path 511 44087a5b 43c5aa54
+traj.path 512 440933a4 43c60ef6
+traj.path 513 4409ebc3 43c67bcd
+traj.path 514 440aa29a 43c6f0f5
+traj.path 515 440b5811 43c76e64
+traj.path 516 440c0c0f 43c7f40b
+traj.path 517 440cbe80 43c881bf
+traj.path 518 440d6f50 43c9176c
+traj.path 519 440e1e65 43c9b500
+traj.path 520 440ecbab 43ca5a66
+traj.path 521 440f7706 43cb079a
+traj.path 522 44102058 43cbbca0
+traj.path 523 4410c783 43cc797d
+traj.path 524 44116c77 43cd3dfe
+traj.path 525 44120f22 43ce09f5
+traj.path 526 4412af73 43cedd40
+traj.path 527 44134d51 43cfb7cb
+traj.path 528 4413e8a3 43d09987
+traj.path 529 44148145 43d18278
+traj.path 530 4415171b 43d2728f
+traj.path 531 4415aa14 43d369a1
+traj.path 532 44163a25 43d46776
+traj.path 533 4416c73a 43d56be7
+traj.path 534 44175141 43d676d1
+traj.path 535 4417d81e 43d78820
+traj.path 536 44185bb7 43d89fbb
+traj.path 537 4418dbeb 43d9bd90
+traj.path 538 441958a2 43dae183
+traj.path 539 4419d1d6 43dc0b51
+traj.path 540 441a477c 43dd3ac6
+traj.path 541 441ab982 43de6fb6
+traj.path 542 441b27d6 43dfa9f9
+traj.path 543 441b925b 43e0e972
+traj.path 544 441bf8f5 43e22e02
+traj.path 545 441c5b87 43e37787
+traj.path 546 441cba0b 43e4c5c4
+traj.path 547 441d147d 43e6187b
+traj.path 548 441d6ad4 43e76f74
+traj.path 549 441dbd02 43e8ca7e
+traj.path 550 441e0af2 43ea296b
+traj.path 551 441e548f 43eb8c10
+traj.path 552 441e99b8 43ecf246
+traj.path 553 441eda61 43ee5bd5
+traj.path 554 441f1690 43efc878
+traj.path 555 441f4e43 43f137f2
+traj.path 556 441f8172 43f2aa0a
+traj.path 557 441fb014 43f41e88
+traj.path 558 441fda17 43f59537
+traj.path 559 441fff65 43f70de3
+traj.path 560 44201fea 43f88854
+traj.path 561 44203bb0 43fa0447
+traj.path 562 442052bf 43fb817d
+traj.path 563 44206517 43fcffb9
+traj.path 564 442072bb 43fe7ebe
+traj.path 565 44207b9e 43fffe52
+traj.path 566 44207fb3 4400bf1c
+traj.path 567 44207ee8 44017f1a
+traj.path 568 44207943 44023f04
+traj.path 569 44206ed6 4402feba
+traj.path 570 44205fad 4403be1f
+traj.path 571 44204bcd 44047d16
+traj.path 572 4420333a 44053b81
+traj.path 573 442015eb 4405f93f
+traj.path 574 441ff3d8 4406b632
+traj.path 575 441fccff 44077238
+traj.path 576 441fa178 44082d37
+traj.path 577 441f7158 4408e714
+traj.path 578 441f3caf 44099fb6
+traj.path 579 441f0388 440a5701
+traj.path 580 441ec5e7 440b0cd6
+traj.path 581 441e83ca 440bc117
+traj.path 582 441e3d2e 440c73a1
+traj.path 583 441df228 440d245c
+traj.path 584 441da2d7 440dd334
+traj.path 585 441d4f50 440e8014
+traj.path 586 441cf7a5 440f2ae4
+traj.path 587 441c9be0 440fd388
+traj.path 588 441c3c09 441079e5
+traj.path 589 441bd824 44111ddc
+traj.path 590 441b703f 4411bf50
+traj.path 591 441b047a 44125e36
+traj.path 592 441a94f4 4412fa7e
+traj.path 593 441a21c1 44139416
+traj.path 594 4419aaf5 44142aea
+traj.path 595 4419309e 4414bee3
+traj.path 596 4418b2c4 44154fe2
+traj.path 597 4418316f 4415ddc8
+traj.path 598 4417acc1 4416688f
+traj.path 599 441724db 4416f02e
+traj.path 600 441699d6 4417749a
+traj.path 601 44160bc9 4417f5c5
+traj.path 602 44157ac8 4418739c
+traj.path 603 4414e6df 4418ee05
+traj.path 604 4414501a 441964e5
+traj.path 605 4413b694 4419d831
+traj.path 606 44131a6e 441a47e7
+traj.path 607 44127bc4 441ab404
+traj.path 608 4411daaf 441b1c7e
+traj.path 609 44113742 441b8142
+traj.path 610 44109192 441be244
+traj.path 611 440fe9b3 441c3f70
+traj.path 612 440f3fb6 441c98b2
+traj.path 613 440e93bb 441cee0b
+traj.path 614 440de5db 441d3f77
+traj.path 615 440d3631 441d8cf6
+traj.path 616 440c84d8 441dd684
+traj.path 617 440bd1e6 441e1c16
+traj.path 618 440b1d6d 441e5d9b
+traj.path 619 440a677f 441e9af5
+traj.path 620 4409b039 441ed42b
+traj.path 621 4408f7b8 441f0945
+traj.path 622 44083e15 441f3a46
+traj.path 623 44078367 441f6724
+traj.path 624 4406c7c6 441f8fdc
+traj.path 625 44060b49 441fb465
+traj.path 626 44054e07 441fd4b2
+traj.path 627 44049016 441ff0b6
+traj.path 628 4403d190 44200876
+traj.path 629 44031291 44201c00
+traj.path 630 4402532f 44202b58
+traj.path 631 44019383 4420367b
+traj.path 632 4400d3a3 44203d5b
+traj.path 633 440013a9 44203ff4
+traj.path 634 43fea758 44203e3d
+traj.path 635 43fd278a 4420383d
+traj.path 636 43fba818 44202df8
+traj.path 637 43fa2933 44201f7c
+traj.path 638 43f8ab07 44200cce
+traj.path 639 43f72dc6 441ff5ec
+traj.path 640 43f5b1a3 441fdac8
+traj.path 641 43f436d3 441fbb5b
+traj.path 642 43f2bd85 441f97af
+traj.path 643 43f145e5 441f6fd2
+traj.path 644 43efd022 441f43cd
+traj.path 645 43ee5c6b 441f13a3
+traj.path 646 43eceaed 441edf60
+traj.path 647 43eb7bdc 441ea701
+traj.path 648 43ea0f6d 441e6a83
+traj.path 649 43e8a5e1 441e29d5
+traj.path 650 43e73f59 441de516
+traj.path 651 43e5dbfb 441d9c58
+traj.path 652 43e47bf4 441d4fa8
+traj.path 653 43e31f73 441cff0a
+traj.path 654 43e1c6b2 441caa7d
+traj.path 655 43e071e3 441c5208
+traj.path 656 43df2142 441bf5a9
+traj.path 657 43ddd4fd 441b956d
+traj.path 658 43dc8d30 441b316e
+traj.path 659 43db4a0e 441ac9b5
+traj.path 660 43da0bb8 441a5e57
+traj.path 661 43d8d260 4419ef5c
+traj.path 662 43d79e3c 44197ccc
+traj.path 663 43d66f8c 441906a8
+traj.path 664 43d5468d 44188cf5
+traj.path 665 43d42357 44180fd0
+traj.path 666 43d30604 44178f52
+traj.path 667 43d1eeb9 44170b90
+traj.path 668 43d0dda1 44168497
+traj.path 669 43cfd2ef 4415fa75
+traj.path 670 43cecee0 44156d32
+traj.path 671 43cdd1be 4414dcd3
+traj.path 672 43ccdb9f 44144974
+traj.path 673 43cbec91 4413b334
+traj.path 674 43cb04af 44131a2b
+traj.path 675 43ca241d 44127e6e
+traj.path 676 43c94b05 4411e010
+traj.path 677 43c879a0 44113f21
+traj.path 678 43c7b02d 44109bad
+traj.path 679 43c6eed7 440ff5cb
+traj.path 680 43c635a3 440f4d9a
+traj.path 681 43c5849d 440ea33a
+traj.path 682 43c4dbda 440df6c5
+traj.path 683 43c43b7a 440d4852
+traj.path 684 43c3a3a9 440c97f8
+traj.path 685 43c3149d 440be5cb
+traj.path 686 43c28e8b 440b31e2
+traj.path 687 43c21172 440a7c5d
+traj.path 688 43c19d4e 4409c55c
+traj.path 689 43c13224 44090cfe
+traj.path 690 43c0d007 4408535f
+traj.path 691 43c07714 44079899
+traj.path 692 43c02774 4406dcc7
+traj.path 693 43bfe157 44062002
+traj.path 694 43bfa4c7 4405626b
+traj.path 695 43bf71b2 4404a421
+traj.path 696 43bf4807 4403e544
+traj.path 697 43bf27c5 440325f3
+traj.path 698 43bf10f9 4402664b
+traj.path 699 43bf03b7 4401a66a
+traj.path 700 43bf0022 4400e66e
+traj.path 701 43bf0650 44002675
+traj.path 702 43bf1621 43fecd41
+traj.path 703 43bf2f76 43fd4e1a
+traj.path 704 43bf523c 43fbcfb0
+traj.path 705 43bf7e6b 43fa5240
+traj.path 706 43bfb407 43f8d605
+traj.path 707 43bff31c 43f75b40
+traj.path 708 43c03bc4 43f5e232
+traj.path 709 43c08de1 43f46b17
+traj.path 710 43c0e943 43f2f622
+traj.path 711 43c14dc7 43f18388
+traj.path 712 43c1bb53 43f0137f
+traj.path 713 43c231dd 43eea643
+traj.path 714 43c2b15a 43ed3c0d
+traj.path 715 43c339d4 43ebd523
+traj.path 716 43c3cb3f 43ea71bf
+traj.path 717 43c4655f 43e9120b
+traj.path 718 43c50802 43e7b632
+traj.path 719 43c5b2fe 43e65e60
+traj.path 720 43c66634 43e50ac6
+traj.path 721 43c72192 43e3bb99
+traj.path 722 43c7e50d 43e27117
+traj.path 723 43c8b09f 43e12b80
+traj.path 724 43c98413 43dfeafa
+traj.path 725 43ca5f31 43deafa3
+traj.path 726 43cb41bd 43dd7999
+traj.path 727 43cc2b8f 43dc4901
+traj.path 728 43cd1c83 43db1e06
+traj.path 729 43ce1482 43d9f8dc
+traj.path 730 43cf137f 43d8d9c1
+traj.path 731 43d01953 43d7c0df
+traj.path 732 43d125bb 43d6ae44
+traj.path 733 43d23883 43d5a20b
+traj.path 734 43d35171 43d49c43
+traj.path 735 43d4705b 43d39d10
+traj.path 736 43d5951f 43d2a497
+traj.path 737 43d6bfa2 43d1b30e
+traj.path 738 43d7efc6 43d0c8a5
+traj.path 739 43d92554 43cfe570
+traj.path 740 43da600a 43cf096b
+traj.path 741 43db9faf 43ce34a3
+traj.path 742 43dce413 43cd6729
+traj.path 743 43de2d0d 43cca11d
+traj.path 744 43df7a7d 43cbe2ac
+traj.path 745 43e0cc45 43cb2c09
+traj.path 746 43e22229 43ca7d3b
+traj.path 747 43e37bf0 43c9d63c
+traj.path 748 43e4d961 43c9370d
+traj.path 749 43e63a50 43c89fc1
+traj.path 750 43e79e8c 43c8106a
+traj.path 751 43e905e8 43c7891a
+traj.path 752 43ea70bb 43c70b6c
+traj.path 753 43ebe04b 43c69c56
+traj.path 754 43ed5277 43c6363d
+traj.path 755 43eec632 43c5d5f6
+traj.path 756 43f03afd 43c579dd
+traj.path 757 43f1b098 43c52123
+traj.path 758 43f326e2 43c4cb51
+traj.path 759 43f49dd2 43c47865
+traj.init 0 43160000 c2c00000
+traj.frame 0 0 0 43160000 c2b40000
+traj.frame 0 1 0 43160000 c2a80000
+traj.frame 0 2 0 43160000 c29c0000
+traj.frame 0 3 0 43160000 c2900000
+traj.frame 0 4 0 43160000 c2840000
+traj.frame 0 5 0 43160000 c2700000
+traj.frame 0 6 0 43160000 c2580000
+traj.frame 0 7 0 43160000 c2400000
+traj.frame 0 8 0 43162f88 c228daca
+traj.frame 0 9 0 431c20fc c22c2630
+traj.frame 0 10 0 432213d8 c22f480d
+traj.frame 0 11 0 432807b5 c2324aca
+traj.frame 0 12 0 432dfca2 c2352b2c
+traj.frame 0 13 0 4333f24a c237f2ec
+traj.frame 0 14 0 4339e8ce c23a9c93
+traj.frame 0 15 0 433fe004 c23d2cd0
+traj.frame 0 16 0 4345d7dd c23fa4f9
+traj.frame 0 17 0 434bd085 c241fd1f
+traj.frame 0 18 0 4351c9d4 c24439cd
+traj.frame 0 19 0 4357c3bc c2465c57
+traj.frame 0 20 0 435dbe3e c2486342
+traj.frame 0 21 0 4363b959 c24a4d4a
+traj.frame 0 22 0 4369b515 c24c16d6
+traj.frame 0 23 0 436fb14e c24dc520
+traj.frame 0 24 0 4375ae08 c24f55f4
+traj.frame 0 25 0 437bab70 c250bad4
+traj.frame 0 26 0 4380d49c c252045b
+traj.frame 0 27 0 4383d3b8 c2532c07
+traj.frame 0 28 0 4386d314 c25425fd
+traj.frame 0 29 0 4389d29a c254fd8c
+traj.frame 0 30 0 438cd24b c255ab80
+traj.frame 0 31 0 438fd220 c2562993
+traj.frame 0 32 0 4392d20c c2567c31
+traj.frame 0 33 0 4395d209 c2569cd4
+traj.frame 0 34 0 4398d206 c256851a
+traj.frame 0 35 0 439bd1f3 c2563a3a
+traj.frame 0 36 0 439ed1c1 c255b0ab
+traj.frame 0 37 0 43a1d14c c254dd2f
+traj.frame 0 38 0 43a4d084 c253ca75
+traj.frame 0 39 0 43a7cf57 c252768f
+traj.frame 0 40 0 43aacd33 c250ac85
+traj.frame 0 41 0 43adca39 c24e923d
+traj.frame 0 42 0 43b0c613 c24c157e
+traj.frame 0 43 0 43b3c026 c2491ca0
+traj.frame 0 44 0 43b6b7f7 c245a05a
+traj.frame 0 45 0 43b9acc3 c2418e42
+traj.frame 0 46 0 43bc9db6 c23cd770
+traj.frame 0 47 0 43bf8973 c2375ea0
+traj.frame 0 48 0 43c26cb8 c230de1a
+traj.frame 0 49 0 43c54444 c22931f8
+traj.frame 0 50 0 43c80aed c2201d21
+traj.frame 0 51 0 43cac677 c2163b52
+traj.frame 0 52 0 43cd6be9 c20aecfc
+traj.frame 0 53 0 43d0009f c1fd70ce
+traj.frame 0 54 0 43d28657 c1e374e0
+traj.frame 0 55 0 43d4f69c c1c78567
+traj.frame 0 56 0 43d75c69 c1aaacf0
+traj.frame 0 57 0 43d9abe0 c18c10f3
+traj.frame 0 58 0 43dbf4ab c159e7e7
+traj.frame 0 59 0 43de25bb c1185b0b
+traj.frame 0 60 0 43e051ed c0ac5858
+traj.frame 0 61 0 43e26a2c bf8b9990
+traj.frame 0 62 0 43e47ed9 404ecd93
+traj.frame 0 63 0 43e67f21 40f67261
+traj.frame 0 64 0 43e87d9f 4142f1cd
+traj.frame 0 65 0 43ea6a1d 41864d66
+traj.frame 0 66 0 43ec5501 41ab3785
+traj.frame 0 67 0 43ee300b 41d0ee39
+traj.frame 0 68 0 43f008f7 41f6c021
+traj.frame 0 69 0 43f1d549 420e95c8
+traj.frame 0 70 0 43f39d87 4221e41e
+traj.frame 0 71 0 43f55da7 4235616e
+traj.frame 0 72 0 43f7170b 42490558
+traj.frame 0 73 0 43f8cc74 425cbf41
+traj.frame 0 74 0 43fa78b2 4270ab6d
+traj.frame 0 75 0 43fc2493 42824cc0
+traj.frame 0 76 0 43fdc545 428c6141
+traj.frame 0 77 0 43ff65da 4296760f
+traj.frame 0 78 0 44007f9e 42a09d2a
+traj.frame 0 79 0 44014aee 42aacb3f
+traj.frame 0 80 0 44021464 42b50278
+traj.frame 0 81 0 4402db60 42bf45d8
+traj.frame 0 82 0 4403a1eb 42c98b59
+traj.frame 0 83 0 44046546 42d3e017
+traj.frame 0 84 0 4405288d 42de3533
+traj.frame 0 85 0 4405e988 42e89510
+traj.frame 0 86 0 4406a9dd 42f2f7f4
+traj.frame 0 87 0 44076902 42fd604f
+traj.frame 0 88 0 440826fb 4303e704
+traj.frame 0 89 0 4408e492 43091ec0
+traj.frame 0 90 0 4409a0d0 430e5988
+traj.frame 0 91 0 440a5cfa 4313947c
+traj.frame 0 92 0 440b1840 4318d16f
+traj.frame 0 93 0 440bd369 431e0ea3
+traj.frame 0 94 0 440c8e43 43234c88
+traj.frame 0 95 0 440d4901 43288aab
+traj.frame 0 96 0 440e03ea 432dc86f
+traj.frame 0 97 0 440ebef3 433305ec
+traj.frame 0 98 0 440f7a73 4338425d
+traj.frame 0 99 0 44103689 433d7d7f
+traj.frame 0 100 0 4410f357 4342b702
+traj.frame 0 101 0 4411b150 4347eddf
+traj.frame 0 102 0 44127062 434d2237
+traj.frame 0 103 0 44133132 4352528d
+traj.frame 0 104 0 4413f3d8 43577e90
+traj.frame 0 105 0 4414b897 435ca5a4
+traj.frame 0 106 0 441580a5 4361c4b1
+traj.frame 0 107 0 44164a9a 4366df1b
+traj.frame 0 108 0 44171a9e 436bea30
+traj.frame 0 109 0 4417edaf 4370ed43
+traj.frame 0 110 0 4418c6f0 4375dfcb
+traj.frame 0 111 0 4419a856 437abb22
+traj.frame 0 112 0 441a9128 437f8061
+traj.frame 0 113 0 441b8533 4382111b
+traj.frame 0 114 0 441c8876 4384477f
+traj.frame 0 115 0 441d9ffd 438655cd
+traj.frame 0 116 0 441ed1cf 438824bf
+traj.frame 0 117 0 4420254a 43898748
+traj.frame 0 118 0 44219651 438a51ca
+traj.frame 0 119 0 4423150a 438a7ed1
+traj.frame 0 120 0 442493f9 438a49ef
+traj.frame 0 121 0 442612e0 438a120d
+traj.frame 0 122 0 4427920d 438a3c00
+traj.frame 0 123 0 44290f9d 438a922a
+traj.frame 0 124 0 442a8c31 438af858
+traj.frame 0 125 0 442c0789 438b6f71
+traj.frame 0 126 0 442d818c 438bf667
+traj.frame 0 127 0 442ef9e4 438c8ee4
+traj.frame 0 128 0 4430704f 438d3941
+traj.frame 0 129 0 4431e4ab 438df4cc
+traj.frame 0 130 0 4433569d 438ec296
+traj.frame 0 131 0 4434c598 438fa49d
+traj.frame 0 132 0 44363169 43909a35
+traj.frame 0 133 0 443799a7 4391a406
+traj.frame 0 134 0 4438fdd2 4392c2ff
+traj.frame 0 135 0 443a5d23 4393f8f9
+traj.frame 0 136 0 443bb6d6 4395473e
+traj.frame 0 137 0 443d0a50 4396ae15
+traj.frame 0 138 0 443e5696 43982eeb
+traj.frame 0 139 0 443f9a54 4399cbca
+traj.frame 0 140 0 4440d432 439b861d
+traj.frame 0 141 0 44420284 439d5f7f
+traj.frame 0 142 0 444322e8 439f5a65
+traj.frame 0 143 0 44443308 43a17802
+traj.frame 0 144 0 44453073 43a3b8c8
+traj.frame 0 145 0 44461621 43a61ff6
+traj.frame 0 146 0 4446e14a 43a8ab55
+traj.frame 0 147 0 44478b8b 43ab5b5a
+traj.frame 0 148 0 4448112d 43ae2ad0
+traj.frame 0 149 0 44486cc2 43b1141d
+traj.frame 0 150 0 44489af8 43b40e10
+traj.frame 0 151 0 44489827 43b70d8a
+traj.frame 0 152 0 4448657a 43ba0645
+traj.frame 0 153 0 444805c2 43bced74
+traj.frame 0 154 0 44477c78 43bfba32
+traj.frame 0 155 0 4446ce4f 43c2664a
+traj.frame 0 156 0 4446009d 43c4ee6e
+traj.frame 0 157 0 44451828 43c7516a
+traj.frame 0 158 0 4444191c 43c98f4a
+traj.frame 0 159 0 4443070b 43cba8fc
+traj.frame 0 160 0 4441e50d 43cda030
+traj.frame 0 161 0 4440b5a9 43cf76cd
+traj.frame 0 162 0 443f7aeb 43d12ea4
+traj.frame 0 163 0 443e3650 43d2c8d8
+traj.frame 0 164 0 443ce93c 43d446f1
+traj.frame 0 165 0 443b9503 43d5aaf8
+traj.frame 0 166 0 443a3a9d 43d6f651
+traj.frame 0 167 0 4438dac6 43d829de
+traj.frame 0 168 0 4437763d 43d946f9
+traj.frame 0 169 0 44360dae 43da4f13
+traj.frame 0 170 0 4434a198 43db431b
+traj.frame 0 171 0 4433322a 43dc2234
+traj.frame 0 172 0 4431bffd 43dcee4d
+traj.frame 0 173 0 44304b79 43dda89a
+traj.frame 0 174 0 442ed4d4 43de5103
+traj.frame 0 175 0 442d5c46 43dee764
+traj.frame 0 176 0 442be22b 43df6d4a
+traj.frame 0 177 0 442a66aa 43dfe25c
+traj.frame 0 178 0 4428e9fb 43e046e8
+traj.frame 0 179 0 44276c5f 43e09c4c
+traj.frame 0 180 0 4425ede9 43e0e0cf
+traj.frame 0 181 0 44246ed8 43e11600
+traj.frame 0 182 0 4422ef53 43e13c21
+traj.frame 0 183 0 44216f7e 43e1521e
+traj.frame 0 184 0 441fef85 43e159a8
+traj.frame 0 185 0 441e6f8d 43e150e8
+traj.frame 0 186 0 441cefbf 43e1391b
+traj.frame 0 187 0 441b703e 43e11270
+traj.frame 0 188 0 4419f13d 43e0db69
+traj.frame 0 189 0 441872d8 43e09583
+traj.frame 0 190 0 4416f54b 43e03f10
+traj.frame 0 191 0 441578bc 43dfd8a9
+traj.frame 0 192 0 4413fd4a 43df62d9
+traj.frame 0 193 0 44128355 43dedb39
+traj.frame 0 194 0 44110afa 43de42e5
+traj.frame 0 195 0 440f946c 43dd99b3
+traj.frame 0 196 0 440e201e 43dcddab
+traj.frame 0 197 0 440cae39 43dc0f8f
+traj.frame 0 198 0 440b3f16 43db2e94
+traj.frame 0 199 0 4409d321 43da39c4
+traj.frame 0 200 0 44086af2 43d92f98
+traj.frame 0 201 0 440706da 43d81049
+traj.frame 0 202 0 4405a783 43d6da7d
+traj.frame 0 203 0 44044da8 43d58ced
+traj.frame 0 204 0 4402fa0e 43d42696
+traj.frame 0 205 0 4401adaf 43d2a61b
+traj.frame 0 206 0 440069db 43d10982
+traj.frame 0 207 0 43fe5ff1 43cf4f46
+traj.frame 0 208 0 43fc031b 43cd762f
+traj.frame 0 209 0 43f9c14a 43cb7c7c
+traj.frame 0 210 0 43f7a036 43c95fad
+traj.frame 0 211 0 43f5a639 43c71e2e
+traj.frame 0 212 0 43f3d86f 43c4b8d1
+traj.frame 0 213 0 43f2435b 43c22caf
+traj.frame 0 214 0 43f0ec6b 43bf7ded
+traj.frame 0 215 0 43efdfe5 43bcaed5
+traj.frame 0 216 0 43ef28bf 43b9c583
+traj.frame 0 217 0 43eecc17 43b6cbbb
+traj.frame 0 218 0 43eecf82 43b3cc63
+traj.frame 0 219 0 43ef32a6 43b0d35f
+traj.frame 0 220 0 43eff063 43adeba2
+traj.frame 0 221 0 43f10382 43ab1f0d
+traj.frame 0 222 0 43f25eb8 43a87276
+traj.frame 0 223 0 43f3f8a9 43a5e95e
+traj.frame 0 224 0 43f5c999 43a38669
+traj.frame 0 225 0 43f7c729 43a14812
+traj.frame 0 226 0 43f9e9e4 439f2cec
+traj.frame 0 227 0 43fc2e20 439d35f4
+traj.frame 0 228 0 43fe8cf6 439b5f6b
+traj.frame 0 229 0 44008131 4399a78a
+traj.frame 0 230 0 4401c5b3 43980d1b
+traj.frame 0 231 0 440312a0 43968e8e
+traj.frame 0 232 0 440466b0 439529fb
+traj.frame 0 233 0 4405c0ed 4393de01
+traj.frame 0 234 0 44072098 4392a9ad
+traj.frame 0 235 0 440884fb 43918bc6
+traj.frame 0 236 0 4409eda1 4390841f
+traj.frame 0 237 0 440b59cb 438f909b
+traj.frame 0 238 0 440cc915 438eb0a3
+traj.frame 0 239 0 440e3b1d 438de377
+traj.frame 0 240 0 440fafb8 438d29da
+traj.frame 0 241 0 4411265b 438c8171
+traj.frame 0 242 0 44129eca 438be9d7
+traj.frame 0 243 0 441418f3 438b647d
+traj.frame 0 244 0 44159471 438aef4e
+traj.frame 0 245 0 4417110e 438a89a5
+traj.frame 0 246 0 44188eb7 438a352d
+traj.frame 0 247 0 441a0d22 4389efd5
+traj.frame 0 248 0 441b8c32 4389ba6b
+traj.frame 0 249 0 441d0bb9 438994b9
+traj.frame 0 250 0 441e8b8a 43897d67
+traj.frame 0 251 0 44200b84 438976bc
+traj.frame 0 252 0 44218b7c 43897ec7
+traj.frame 0 253 0 44230b4c 4389964b
+traj.frame 0 254 0 44248ac9 4389bd74
+traj.frame 0 255 0 442609d6 4389f325
+traj.frame 0 256 0 44278833 438a39cc
+traj.frame 0 257 0 442905c6 438a8fc1
+traj.frame 0 258 0 442a8262 438af578
+traj.frame 0 259 0 442bfdc2 438b6c27
+traj.frame 0 260 0 442d77cd 438bf2bf
+traj.frame 0 261 0 442ef033 438c8ab3
+traj.frame 0 262 0 443066ab 438d34a0
+traj.frame 0 263 0 4431db14 438defc5
+traj.frame 0 264 0 44334d1b 438ebcfb
+traj.frame 0 265 0 4434bc29 438f9e83
+traj.frame 0 266 0 4436280e 439093a2
+traj.frame 0 267 0 44379066 43919ce8
+traj.frame 0 268 0 4438f4ae 4392bb4d
+traj.frame 0 269 0 443a5422 4393f0aa
+traj.frame 0 270 0 443badfc 43953e4a
+traj.frame 0 271 0 443d01a3 4396a476
+traj.frame 0 272 0 443e4e1a 439824a3
+traj.frame 0 273 0 443f9215 4399c0c3
+traj.frame 0 274 0 4440cc3b 439b7a48
+traj.frame 0 275 0 4441fae1 439d52d5
+traj.frame 0 276 0 44431ba5 439f4ce2
+traj.frame 0 277 0 44442c38 43a16998
+traj.frame 0 278 0 44452a2c 43a3a96c
+traj.frame 0 279 0 44461086 43a60f99
+traj.frame 0 280 0 4446dc7b 43a899fb
+traj.frame 0 281 0 4447878f 43ab492f
+traj.frame 0 282 0 44480e3b 43ae17df
+traj.frame 0 283 0 44486afb 43b1009a
+traj.frame 0 284 0 44489a56 43b3fa45
+traj.frame 0 285 0 444898ce 43b6f9c0
+traj.frame 0 286 0 4448675d 43b9f2cc
+traj.frame 0 287 0 444808cb 43bcda90
+traj.frame 0 288 0 44478084 43bfa814
+traj.frame 0 289 0 4446d332 43c25506
+traj.frame 0 290 0 44460649 43c4de27
+traj.frame 0 291 0 44451e77 43c7421a
+traj.frame 0 292 0 44441ff8 43c980f2
+traj.frame 0 293 0 44430e55 43cb9b85
+traj.frame 0 294 0 4441ecb7 43cd9398
+traj.frame 0 295 0 4440bda7 43cf6b0e
+traj.frame 0 296 0 443f8331 43d123b3
+traj.frame 0 297 0 443e3ed0 43d2be9f
+traj.frame 0 298 0 443cf1ef 43d43d6a
+traj.frame 0 299 0 443b9de3 43d5a21c
+traj.frame 0 300 0 443a43a3 43d6ee15
+traj.frame 0 301 0 4438e3ec 43d82233
+traj.frame 0 302 0 44377f81 43d93fe2
+traj.frame 0 303 0 4436170b 43da4884
+traj.frame 0 304 0 4434ab09 43db3d02
+traj.frame 0 305 0 44333bb2 43dc1cb4
+traj.frame 0 306 0 4431c996 43dce944
+traj.frame 0 307 0 4430551f 43dda3fa
+traj.frame 0 308 0 442ede8a 43de4cee
+traj.frame 0 309 0 442d6607 43dee3b9
+traj.frame 0 310 0 442bebf5 43df6a01
+traj.frame 0 311 0 442a707e 43dfdf95
+traj.frame 0 312 0 4428f3d5 43e0447d
+traj.frame 0 313 0 4427763f 43e09a43
+traj.frame 0 314 0 4425f7cf 43e0df44
+traj.frame 0 315 0 442478c1 43e114c8
+traj.frame 0 316 0 4422f93f 43e13b65
+traj.frame 0 317 0 4421796b 43e151bb
+traj.frame 0 318 0 441ff973 43e1599f
+traj.frame 0 319 0 441e797b 43e1515d
+traj.frame 0 320 0 441cf9ac 43e139e3
+traj.frame 0 321 0 441b7a28 43e113b0
+traj.frame 0 322 0 4419fb24 43e0dd07
+traj.frame 0 323 0 44187cbb 43e0977c
+traj.frame 0 324 0 4416ff27 43e04189
+traj.frame 0 325 0 44158292 43dfdb7f
+traj.frame 0 326 0 44140718 43df6611
+traj.frame 0 327 0 44128d17 43dedef9
+traj.frame 0 328 0 441114b2 43de4707
+traj.frame 0 329 0 440f9e17 43dd9e46
+traj.frame 0 330 0 440e29b8 43dce2c9
+traj.frame 0 331 0 440cb7c3 43dc151b
+traj.frame 0 332 0 440b488c 43db34a2
+traj.frame 0 333 0 4409dc7d 43da406d
+traj.frame 0 334 0 44087437 43d936bb
+traj.frame 0 335 0 44071001 43d817ff
+traj.frame 0 336 0 4405b087 43d6e2d1
+traj.frame 0 337 0 44045688 43d595d6
+traj.frame 0 338 0 440302c1 43d43028
+traj.frame 0 339 0 4401b62c 43d2b066
+traj.frame 0 340 0 4400721c 43d1148c
+traj.frame 0 341 0 43fe6feb 43cf5b10
+traj.frame 0 342 0 43fc126c 43cd82d2
+traj.frame 0 343 0 43f9cfd1 43cb8a05
+traj.frame 0 344 0 43f7add1 43c96e24
+traj.frame 0 345 0 43f5b2cf 43c72d89
+traj.frame 0 346 0 43f3e3bf 43c4c921
+traj.frame 0 347 0 43f24d17 43c23dfb
+traj.frame 0 348 0 43f0f453 43bf9022
+traj.frame 0 349 0 43efe5d1 43bcc1c8
+traj.frame 0 350 0 43ef2c65 43b9d907
+traj.frame 0 351 0 43eecd56 43b6df8b
+traj.frame 0 352 0 43eece2f 43b3e030
+traj.frame 0 353 0 43ef2edd 43b0e6d9
+traj.frame 0 354 0 43efea70 43adfe90
+traj.frame 0 355 0 43f0fb73 43ab312f
+traj.frame 0 356 0 43f254dd 43a883b0
+traj.frame 0 357 0 43f3ed5d 43a5f9b0
+traj.frame 0 358 0 43f5bd01 43a395c0
+traj.frame 0 359 0 43f7b97f 43a15677
+traj.frame 0 360 0 43f9db4d 439f3a61
+traj.frame 0 361 0 43fc1ec5 439d4288
+traj.frame 0 362 0 43fe7d01 439b6b38
+traj.frame 0 363 0 440078ef 4399b28a
+traj.frame 0 364 0 4401bd33 43981756
+traj.frame 0 365 0 440309ee 4396981a
+traj.frame 0 366 0 44045dd4 439532e5
+traj.frame 0 367 0 4405b7ea 4393e648
+traj.frame 0 368 0 44071773 4392b158
+traj.frame 0 369 0 44087bb8 439192dc
+traj.frame 0 370 0 4409e445 43908aaa
+traj.frame 0 371 0 440b5059 438f96a0
+traj.frame 0 372 0 440cbf91 438eb635
+traj.frame 0 373 0 440e3188 438de88c
+traj.frame 0 374 0 440fa613 438d2e69
+traj.frame 0 375 0 44111cab 438c8599
+traj.frame 0 376 0 44129532 438bef05
+traj.frame 0 377 0 44141026 438b730c
+traj.frame 0 378 0 44158c1e 438b0423
+traj.frame 0 379 0 441708a0 438a9cd6
+traj.frame 0 380 0 4418858c 438a3bd0
+traj.frame 0 381 1 4419ffe3 4389b9fa
+traj.frame 0 382 1 441b7455 4388fefe
+traj.frame 0 383 1 441ce260 438816e2
+traj.frame 0 384 1 441e48a6 43870283
+traj.frame 0 385 1 441fa5d2 4385c2ea
+traj.frame 0 386 1 4420f896 43845947
+traj.frame 0 387 1 44223fae 4382c6f4
+traj.frame 0 388 1 442379e2 43810d72
+traj.frame 0 389 1 4424a606 437e5ccb
+traj.frame 0 390 1 4425c2fb 437a5730
+traj.frame 0 391 1 4426cfb1 43760deb
+traj.frame 0 392 1 4427cb28 43718514
+traj.frame 0 393 1 4428b46f 436cc0ff
+traj.frame 0 394 1 44298aa8 4367c63a
+traj.frame 0 395 1 442a4d06 43629986
+traj.frame 0 396 1 442afacf 435d3fd4
+traj.frame 0 397 1 442b935e 4357be40
+traj.frame 0 398 1 442c1621 43521a0c
+traj.frame 0 399 1 442c829a 434c589b
+traj.frame 0 400 1 442cd863 43467f6d
+traj.frame 0 401 1 442d1729 43409417
+traj.frame 0 402 1 442d3eb1 433a9c40
+traj.frame 0 403 1 442d4ed4 43349d9b
+traj.frame 0 404 1 442d4784 432e9de2
+traj.frame 0 405 1 442d28c7 4328a2d0
+traj.frame 0 406 1 442cf2ba 4322b21b
+traj.frame 0 407 1 442ca592 431cd16e
+traj.frame 0 408 1 442c4198 43170667
+traj.frame 0 409 1 442bc72b 4311568e
+traj.frame 0 410 1 442b36c0 430bc752
+traj.frame 0 411 1 442a90e2 43065e01
+traj.frame 0 412 1 4429d62e 43011fc7
+traj.frame 0 413 1 44290757 42f8234b
+traj.frame 0 414 1 44282523 42ee70e0
+traj.frame 0 415 1 44273069 42e53190
+traj.frame 0 416 1 44262a13 42dc6e30
+traj.frame 0 417 1 4425131c 42d42f1e
+traj.frame 0 418 1 4423ec8e 42cc7c3a
+traj.frame 0 419 1 4422b783 42c55cdf
+traj.init 1 448d4000 c2c00000
+traj.frame 1 0 0 448d4000 c2b40000
+traj.frame 1 1 0 448d4000 c2a80000
+traj.frame 1 2 0 448d4000 c29c0000
+traj.frame 1 3 0 448d4000 c2900000
+traj.frame 1 4 0 448d4000 c2840000
+traj.frame 1 5 0 448d4000 c2700000
+traj.frame 1 6 0 448d4000 c2580000
+traj.frame 1 7 0 448d4000 c2400000
+traj.frame 1 8 0 448d3a0f c228daca
+traj.frame 1 9 0 448c7be0 c22c2631
+traj.frame 1 10 0 448bbd85 c22f480f
+traj.frame 1 11 0 448aff09 c2324ac9
+traj.frame 1 12 0 448a406b c2352b2f
+traj.frame 1 13 0 448981b6 c237f2f0
+traj.frame 1 14 0 4488c2e5 c23a9c95
+traj.frame 1 15 0 448803fe c23d2cd4
+traj.frame 1 16 0 44874503 c23fa4fe
+traj.frame 1 17 0 448685ee c241fd23
+traj.frame 1 18 0 4485c6c4 c24439d2
+traj.frame 1 19 0 44850787 c2465c5b
+traj.frame 1 20 0 44844837 c2486346
+traj.frame 1 21 0 448388d4 c24a4d4d
+traj.frame 1 22 0 4482c95d c24c16d8
+traj.frame 1 23 0 448209d6 c24dc520
+traj.frame 1 24 0 44814a3f c24f55f5
+traj.frame 1 25 0 44808a92 c250bad5
+traj.frame 1 26 0 447f95b2 c252045b
+traj.frame 1 27 0 447e1624 c2532c07
+traj.frame 1 28 0 447c9676 c25425fd
+traj.frame 1 29 0 447b16b3 c254fd8c
+traj.frame 1 30 0 447996db c255ab80
+traj.frame 1 31 0 447816f0 c2562993
+traj.frame 1 32 0 447696fa c2567c31
+traj.frame 1 33 0 447516fc c2569cd4
+traj.frame 1 34 0 447396fd c256851a
+traj.frame 1 35 0 44721707 c2563a3a
+traj.frame 1 36 0 44709720 c255b0ab
+traj.frame 1 37 0 446f175b c254dd30
+traj.frame 1 38 0 446d97bf c253ca76
+traj.frame 1 39 0 446c1856 c2527690
+traj.frame 1 40 0 446a9968 c250ac88
+traj.frame 1 41 0 44691ae5 c24e9240
+traj.frame 1 42 0 44679cf8 c24c1580
+traj.frame 1 43 0 44661fef c2491ca4
+traj.frame 1 44 0 4464a406 c245a05f
+traj.frame 1 45 0 446329a0 c2418e46
+traj.frame 1 46 0 4461b126 c23cd776
+traj.frame 1 47 0 44603b48 c2375ea5
+traj.frame 1 48 0 445ec9a5 c230de22
+traj.frame 1 49 0 445d5ddf c22931fc
+traj.frame 1 50 0 445bfa8b c2201d26
+traj.frame 1 51 0 445a9cc6 c2163b5d
+traj.frame 1 52 0 44594a0d c20aed09
+traj.frame 1 53 0 4457ffb2 c1fd70ed
+traj.frame 1 54 0 4456bcd6 c1e374ff
+traj.frame 1 55 0 445584b4 c1c78584
+traj.frame 1 56 0 445451cd c1aaad1f
+traj.frame 1 57 0 44532a12 c18c1120
+traj.frame 1 58 0 445205ad c159e83e
+traj.frame 1 59 0 4450ed24 c1185b9f
+traj.frame 1 60 0 444fd70b c0ac5939
+traj.frame 1 61 0 444ecaec bf8b9cfa
+traj.frame 1 62 0 444dc095 404ecba0
+traj.frame 1 63 0 444cc071 40f67187
+traj.frame 1 64 0 444bc132 4142f153
+traj.frame 1 65 0 444acaf3 41864d22
+traj.frame 1 66 0 4449d581 41ab374e
+traj.frame 1 67 0 4448e7fc 41d0ee06
+traj.frame 1 68 0 4447fb86 41f6bfe7
+traj.frame 1 69 0 4447155c 420e95a2
+traj.frame 1 70 0 4446313d 4221e3fa
+traj.frame 1 71 0 4445512e 42356156
+traj.frame 1 72 0 4444747c 4249053e
+traj.frame 1 73 0 444399c8 425cbf27
+traj.frame 1 74 0 4442c3a9 4270ab4f
+traj.frame 1 75 0 4441edb8 42824caf
+traj.frame 1 76 0 44411d5f 428c612f
+traj.frame 1 77 0 44404d15 429675fe
+traj.frame 1 78 0 443f8063 42a09d14
+traj.frame 1 79 0 443eb513 42aacb2b
+traj.frame 1 80 0 443deb9e 42b5026a
+traj.frame 1 81 0 443d24a2 42bf45c9
+traj.frame 1 82 0 443c5e15 42c98b44
+traj.frame 1 83 0 443b9abb 42d3e006
+traj.frame 1 84 0 443ad774 42de3523
+traj.frame 1 85 0 443a1679 42e89504
+traj.frame 1 86 0 44395624 42f2f7e7
+traj.frame 1 87 0 443896fe 42fd603e
+traj.frame 1 88 0 4437d906 4303e6fe
+traj.frame 1 89 0 44371b6f 43091eba
+traj.frame 1 90 0 44365f30 430e5980
+traj.frame 1 91 0 4435a307 43139476
+traj.frame 1 92 0 4434e7c1 4318d169
+traj.frame 1 93 0 44342c98 431e0e9e
+traj.frame 1 94 0 443371be 43234c82
+traj.frame 1 95 0 4432b700 43288aa5
+traj.frame 1 96 0 4431fc17 432dc868
+traj.frame 1 97 0 4431410e 433305e5
+traj.frame 1 98 0 4430858e 43384256
+traj.frame 1 99 0 442fc978 433d7d78
+traj.frame 1 100 0 442f0caa 4342b6fb
+traj.frame 1 101 0 442e4eb1 4347edd8
+traj.frame 1 102 0 442d8f9f 434d2230
+traj.frame 1 103 0 442cced0 43525287
+traj.frame 1 104 0 442c0c2a 43577e8a
+traj.frame 1 105 0 442b476b 435ca59c
+traj.frame 1 106 0 442a7f5c 4361c4a7
+traj.frame 1 107 0 4429b568 4366df13
+traj.frame 1 108 0 4428e563 436bea25
+traj.frame 1 109 0 44281253 4370ed39
+traj.frame 1 110 0 44273912 4375dfc1
+traj.frame 1 111 0 442657ac 437abb1a
+traj.frame 1 112 0 44256eda 437f8059
+traj.frame 1 113 0 44247ace 43821115
+traj.frame 1 114 0 4423778c 4384477b
+traj.frame 1 115 0 44226005 438655c9
+traj.frame 1 116 0 44212e33 438824bc
+traj.frame 1 117 0 441fdab8 43898747
+traj.frame 1 118 0 441e69b1 438a51ca
+traj.frame 1 119 0 441ceaf8 438a7ed1
+traj.frame 1 120 0 441b6c09 438a49ef
+traj.frame 1 121 0 4419ed22 438a120d
+traj.frame 1 122 0 44186df5 438a3bff
+traj.frame 1 123 0 4416f065 438a922a
+traj.frame 1 124 0 441573d1 438af857
+traj.frame 1 125 0 4413f879 438b6f71
+traj.frame 1 126 0 44127e76 438bf667
+traj.frame 1 127 0 4411061d 438c8ee3
+traj.frame 1 128 0 440f8fb2 438d3941
+traj.frame 1 129 0 440e1b56 438df4cc
+traj.frame 1 130 0 440ca964 438ec296
+traj.frame 1 131 0 440b3a69 438fa49c
+traj.frame 1 132 0 4409ce98 43909a34
+traj.frame 1 133 0 4408665a 4391a405
+traj.frame 1 134 0 44070230 4392c2fe
+traj.frame 1 135 0 4405a2df 4393f8f8
+traj.frame 1 136 0 4404492c 4395473c
+traj.frame 1 137 0 4402f5b2 4396ae13
+traj.frame 1 138 0 4401a96c 43982ee9
+traj.frame 1 139 0 440065ad 4399cbc7
+traj.frame 1 140 0 43fe579f 439b861b
+traj.frame 1 141 0 43fbfafa 439d5f7c
+traj.frame 1 142 0 43f9ba31 439f5a62
+traj.frame 1 143 0 43f799f2 43a17800
+traj.frame 1 144 0 43f59f1d 43a3b8c6
+traj.frame 1 145 0 43f3d3c0 43a61ff3
+traj.frame 1 146 0 43f23d6d 43a8ab52
+traj.frame 1 147 0 43f0e8eb 43ab5b57
+traj.frame 1 148 0 43efdda6 43ae2acc
+traj.frame 1 149 0 43ef267d 43b11419
+traj.frame 1 150 0 43eeca11 43b40e0c
+traj.frame 1 151 0 43eecfb2 43b70d86
+traj.frame 1 152 0 43ef350a 43ba0641
+traj.frame 1 153 0 43eff47a 43bced70
+traj.frame 1 154 0 43f1070f 43bfba2e
+traj.frame 1 155 0 43f26360 43c26647
+traj.frame 1 156 0 43f3fec3 43c4ee6b
+traj.frame 1 157 0 43f5cfae 43c75167
+traj.frame 1 158 0 43f7cdc4 43c98f48
+traj.frame 1 159 0 43f9f1e7 43cba8fa
+traj.frame 1 160 0 43fc35e4 43cda02e
+traj.frame 1 161 0 43fe94ac 43cf76cb
+traj.frame 1 162 0 44008514 43d12ea2
+traj.frame 1 163 0 4401c9af 43d2c8d6
+traj.frame 1 164 0 440316c2 43d446f0
+traj.frame 1 165 0 44046afc 43d5aaf6
+traj.frame 1 166 0 4405c562 43d6f650
+traj.frame 1 167 0 44072539 43d829dd
+traj.frame 1 168 0 440889c1 43d946f8
+traj.frame 1 169 0 4409f250 43da4f12
+traj.frame 1 170 0 440b5e66 43db431a
+traj.frame 1 171 0 440ccdd4 43dc2233
+traj.frame 1 172 0 440e4001 43dcee4c
+traj.frame 1 173 0 440fb485 43dda899
+traj.frame 1 174 0 44112b2a 43de5102
+traj.frame 1 175 0 4412a3b8 43dee763
+traj.frame 1 176 0 44141dd3 43df6d4a
+traj.frame 1 177 0 44159954 43dfe25b
+traj.frame 1 178 0 44171603 43e046e8
+traj.frame 1 179 0 4418939f 43e09c4c
+traj.frame 1 180 0 441a1215 43e0e0cf
+traj.frame 1 181 0 441b9126 43e11600
+traj.frame 1 182 0 441d10ab 43e13c21
+traj.frame 1 183 0 441e9080 43e1521e
+traj.frame 1 184 0 44201079 43e159a8
+traj.frame 1 185 0 44219071 43e150e8
+traj.frame 1 186 0 4423103f 43e1391b
+traj.frame 1 187 0 44248fc0 43e11270
+traj.frame 1 188 0 44260ec1 43e0db6a
+traj.frame 1 189 0 44278d26 43e09584
+traj.frame 1 190 0 44290ab3 43e03f10
+traj.frame 1 191 0 442a8742 43dfd8aa
+traj.frame 1 192 0 442c02b4 43df62d9
+traj.frame 1 193 0 442d7ca9 43dedb3a
+traj.frame 1 194 0 442ef504 43de42e5
+traj.frame 1 195 0 44306b92 43dd99b4
+traj.frame 1 196 0 4431dfe0 43dcddac
+traj.frame 1 197 0 443351c5 43dc0f91
+traj.frame 1 198 0 4434c0e8 43db2e95
+traj.frame 1 199 0 44362cdd 43da39c5
+traj.frame 1 200 0 4437950c 43d92f99
+traj.frame 1 201 0 4438f924 43d8104b
+traj.frame 1 202 0 443a587b 43d6da7f
+traj.frame 1 203 0 443bb256 43d58cef
+traj.frame 1 204 0 443d05f0 43d42699
+traj.frame 1 205 0 443e524f 43d2a61d
+traj.frame 1 206 0 443f9623 43d10985
+traj.frame 1 207 0 4440d006 43cf4f49
+traj.frame 1 208 0 4441fe71 43cd7632
+traj.frame 1 209 0 44431f5a 43cb7c7e
+traj.frame 1 210 0 44442fe4 43c95faf
+traj.frame 1 211 0 44452ce3 43c71e30
+traj.frame 1 212 0 444613c8 43c4b8d3
+traj.frame 1 213 0 4446de52 43c22cb1
+traj.frame 1 214 0 444789ca 43bf7def
+traj.frame 1 215 0 4448100d 43bcaed7
+traj.frame 1 216 0 44486ba0 43b9c585
+traj.frame 1 217 0 444899f5 43b6cbbd
+traj.frame 1 218 0 4448983f 43b3cc65
+traj.frame 1 219 0 444866ae 43b0d360
+traj.frame 1 220 0 444807ce 43adeba4
+traj.frame 1 221 0 44477e3f 43ab1f0f
+traj.frame 1 222 0 4446d0a5 43a87277
+traj.frame 1 223 0 444603ac 43a5e95f
+traj.frame 1 224 0 44451b34 43a3866b
+traj.frame 1 225 0 44441c6c 43a14815
+traj.frame 1 226 0 44430b0f 439f2cee
+traj.frame 1 227 0 4441e8f1 439d35f6
+traj.frame 1 228 0 4440b986 439b5f6d
+traj.frame 1 229 0 443f7ed0 4399a78b
+traj.frame 1 230 0 443e3a4e 43980d1d
+traj.frame 1 231 0 443ced61 43968e8f
+traj.frame 1 232 0 443b9951 439529fb
+traj.frame 1 233 0 443a3f14 4393de02
+traj.frame 1 234 0 4438df69 4392a9ae
+traj.frame 1 235 0 44377b06 43918bc7
+traj.frame 1 236 0 44361260 43908420
+traj.frame 1 237 0 4434a636 438f909c
+traj.frame 1 238 0 443336ec 438eb0a3
+traj.frame 1 239 0 4431c4e4 438de377
+traj.frame 1 240 0 44305049 438d29db
+traj.frame 1 241 0 442ed9a6 438c8172
+traj.frame 1 242 0 442d6137 438be9d8
+traj.frame 1 243 0 442be70e 438b647e
+traj.frame 1 244 0 442a6b91 438aef4e
+traj.frame 1 245 0 4428eef4 438a89a5
+traj.frame 1 246 0 4427714b 438a352d
+traj.frame 1 247 0 4425f2e0 4389efd5
+traj.frame 1 248 0 442473d0 4389ba6b
+traj.frame 1 249 0 4422f449 438994b9
+traj.frame 1 250 0 44217478 43897d68
+traj.frame 1 251 0 441ff47e 438976bc
+traj.frame 1 252 0 441e7486 43897ec7
+traj.frame 1 253 0 441cf4b6 4389964b
+traj.frame 1 254 0 441b7539 4389bd74
+traj.frame 1 255 0 4419f62c 4389f325
+traj.frame 1 256 0 441877cf 438a39cb
+traj.frame 1 257 0 4416fa3c 438a8fc0
+traj.frame 1 258 0 44157da0 438af577
+traj.frame 1 259 0 44140240 438b6c26
+traj.frame 1 260 0 44128835 438bf2be
+traj.frame 1 261 0 44110fcf 438c8ab2
+traj.frame 1 262 0 440f9957 438d349f
+traj.frame 1 263 0 440e24ee 438defc4
+traj.frame 1 264 0 440cb2e7 438ebcfa
+traj.frame 1 265 0 440b43d9 438f9e81
+traj.frame 1 266 0 4409d7f4 439093a0
+traj.frame 1 267 0 44086f9c 43919ce6
+traj.frame 1 268 0 44070b54 4392bb4b
+traj.frame 1 269 0 4405abe1 4393f0a8
+traj.frame 1 270 0 44045206 43953e48
+traj.frame 1 271 0 4402fe5f 4396a474
+traj.frame 1 272 0 4401b1e8 439824a0
+traj.frame 1 273 0 44006ded 4399c0c0
+traj.frame 1 274 0 43fe678e 439b7a45
+traj.frame 1 275 0 43fc0a43 439d52d2
+traj.frame 1 276 0 43f9c8bb 439f4cde
+traj.frame 1 277 0 43f7a794 43a16994
+traj.frame 1 278 0 43f5abab 43a3a968
+traj.frame 1 279 0 43f3def6 43a60f95
+traj.frame 1 280 0 43f2470c 43a899f7
+traj.frame 1 281 0 43f0f0e4 43ab492b
+traj.frame 1 282 0 43efe38c 43ae17db
+traj.frame 1 283 0 43ef2a0c 43b10095
+traj.frame 1 284 0 43eecb55 43b3fa40
+traj.frame 1 285 0 43eece64 43b6f9bb
+traj.frame 1 286 0 43ef3145 43b9f2c7
+traj.frame 1 287 0 43efee68 43bcda8c
+traj.frame 1 288 0 43f0fef6 43bfa810
+traj.frame 1 289 0 43f2599b 43c25502
+traj.frame 1 290 0 43f3f36c 43c4de24
+traj.frame 1 291 0 43f5c311 43c74217
+traj.frame 1 292 0 43f7c00f 43c980f0
+traj.frame 1 293 0 43f9e354 43cb9b83
+traj.frame 1 294 0 43fc268f 43cd9396
+traj.frame 1 295 0 43fe84af 43cf6b0c
+traj.frame 1 296 0 44007ccd 43d123b1
+traj.frame 1 297 0 4401c12e 43d2be9c
+traj.frame 1 298 0 44030e0f 43d43d68
+traj.frame 1 299 0 4404621b 43d5a21a
+traj.frame 1 300 0 4405bc5b 43d6ee13
+traj.frame 1 301 0 44071c12 43d82232
+traj.frame 1 302 0 4408807d 43d93fe0
+traj.frame 1 303 0 4409e8f3 43da4882
+traj.frame 1 304 0 440b54f5 43db3d01
+traj.frame 1 305 0 440cc44c 43dc1cb3
+traj.frame 1 306 0 440e3668 43dce943
+traj.frame 1 307 0 440faadf 43dda3f9
+traj.frame 1 308 0 44112174 43de4ced
+traj.frame 1 309 0 441299f7 43dee3b8
+traj.frame 1 310 0 44141409 43df6a01
+traj.frame 1 311 0 44158f80 43dfdf95
+traj.frame 1 312 0 44170c29 43e0447d
+traj.frame 1 313 0 441889bf 43e09a42
+traj.frame 1 314 0 441a082f 43e0df44
+traj.frame 1 315 0 441b873d 43e114c8
+traj.frame 1 316 0 441d06bf 43e13b65
+traj.frame 1 317 0 441e8693 43e151bb
+traj.frame 1 318 0 4420068b 43e1599f
+traj.frame 1 319 0 44218683 43e1515d
+traj.frame 1 320 0 44230652 43e139e3
+traj.frame 1 321 0 442485d6 43e113b0
+traj.frame 1 322 0 442604da 43e0dd08
+traj.frame 1 323 0 44278343 43e0977c
+traj.frame 1 324 0 442900d7 43e0418a
+traj.frame 1 325 0 442a7d6c 43dfdb80
+traj.frame 1 326 0 442bf8e6 43df6612
+traj.frame 1 327 0 442d72e7 43dedef9
+traj.frame 1 328 0 442eeb4c 43de4708
+traj.frame 1 329 0 443061e7 43dd9e46
+traj.frame 1 330 0 4431d646 43dce2ca
+traj.frame 1 331 0 4433483b 43dc151c
+traj.frame 1 332 0 4434b772 43db34a3
+traj.frame 1 333 0 44362381 43da406f
+traj.frame 1 334 0 44378bc7 43d936bd
+traj.frame 1 335 0 4438effc 43d81801
+traj.frame 1 336 0 443a4f76 43d6e2d4
+traj.frame 1 337 0 443ba975 43d595d9
+traj.frame 1 338 0 443cfd3c 43d4302d
+traj.frame 1 339 0 443e49d1 43d2b06a
+traj.frame 1 340 0 443f8de1 43d11490
+traj.frame 1 341 0 4440c808 43cf5b15
+traj.frame 1 342 0 4441f6c7 43cd82d7
+traj.frame 1 343 0 44431814 43cb8a0a
+traj.frame 1 344 0 44442915 43c96e2b
+traj.frame 1 345 0 44452696 43c72d90
+traj.frame 1 346 0 44460e1e 43c4c928
+traj.frame 1 347 0 4446d972 43c23e03
+traj.frame 1 348 0 444785d4 43bf902a
+traj.frame 1 349 0 44480d16 43bcc1d1
+traj.frame 1 350 0 444869cc 43b9d910
+traj.frame 1 351 0 44489955 43b6df94
+traj.frame 1 352 0 444898e9 43b3e039
+traj.frame 1 353 0 44486892 43b0e6e2
+traj.frame 1 354 0 44480ac9 43adfe99
+traj.frame 1 355 0 44478248 43ab3137
+traj.frame 1 356 0 4446d594 43a883b7
+traj.frame 1 357 0 44460954 43a5f9b7
+traj.frame 1 358 0 44452182 43a395c7
+traj.frame 1 359 0 44442344 43a1567d
+traj.frame 1 360 0 4443125d 439f3a67
+traj.frame 1 361 0 4441f0a1 439d428d
+traj.frame 1 362 0 4440c183 439b6b3d
+traj.frame 1 363 0 443f8715 4399b28e
+traj.frame 1 364 0 443e42d1 4398175b
+traj.frame 1 365 0 443cf616 4396981f
+traj.frame 1 366 0 443ba230 439532e9
+traj.frame 1 367 0 443a481a 4393e64c
+traj.frame 1 368 0 4438e891 4392b15b
+traj.frame 1 369 0 4437844c 439192e0
+traj.frame 1 370 0 44361bbf 43908aad
+traj.frame 1 371 0 4434afab 438f96a3
+traj.frame 1 372 0 44334073 438eb637
+traj.frame 1 373 0 4431ce7c 438de88e
+traj.frame 1 374 0 443059f2 438d2e6a
+traj.frame 1 375 0 442ee35a 438c859b
+traj.frame 1 376 0 442d6ad3 438bef07
+traj.frame 1 377 0 442befdf 438b730e
+traj.frame 1 378 0 442a73e7 438b0425
+traj.frame 1 379 0 4428f765 438a9cd7
+traj.frame 1 380 0 44277a79 438a3bd2
+traj.frame 1 381 1 4425fbc3 438a004d
+traj.frame 1 382 1 44247bc3 4389ff13
+traj.frame 1 383 1 4422fc71 438a2cbd
+traj.frame 1 384 1 44217f3b 438a891e
+traj.frame 1 385 1 4420058d 438b13df
+traj.frame 1 386 1 441e90cf 438bcc7a
+traj.frame 1 387 1 441d2266 438cb240
+traj.frame 1 388 1 441bbbaf 438dc455
+traj.frame 1 389 1 441a5e01 438f01b3
+traj.frame 1 390 1 44190aaa 4390692c
+traj.frame 1 391 1 4417c2ee 4391f968
+traj.frame 1 392 1 44168806 4393b0e9
+traj.frame 1 393 1 44155b1f 43958e0b
+traj.frame 1 394 1 44143d58 43978f06
+traj.frame 1 395 1 44132fc2 4399b1f1
+traj.frame 1 396 1 4412335e 439bf4c1
+traj.frame 1 397 1 4411491e 439e554d
+traj.frame 1 398 1 441071e1 43a0d151
+traj.frame 1 399 1 440fae75 43a3666d
+traj.frame 1 400 1 440eff94 43a61229
+traj.frame 1 401 1 440e65e6 43a8d1f9
+traj.frame 1 402 1 440de1fd 43aba33d
+traj.frame 1 403 1 440d7457 43ae8343
+traj.frame 1 404 1 440d1d5d 43b16f4d
+traj.frame 1 405 1 440cdd61 43b46491
+traj.frame 1 406 1 440cb4a1 43b7603b
+traj.frame 1 407 1 440ca344 43ba5f72
+traj.frame 1 408 1 440ca95b 43bd5f59
+traj.frame 1 409 1 440cc6e0 43c05d13
+traj.frame 1 410 1 440cfbb6 43c355c5
+traj.frame 1 411 1 440d47ab 43c64698
+traj.frame 1 412 1 440daa77 43c92cbe
+traj.frame 1 413 1 440e23bb 43cc0571
+traj.frame 1 414 1 440eb303 43cecdfa
+traj.frame 1 415 1 440f57c6 43d183b0
+traj.frame 1 416 1 44101168 43d423fd
+traj.frame 1 417 1 4410df36 43d6ac5f
+traj.frame 1 418 1 4411c06d 43d91a6a
+traj.frame 1 419 1 4412b435 43db6bcd
+traj.init 2 43160000 c2c00000
+traj.attack_pts 2 325
+traj.frame 2 0 3 431a9f43 c2ba6a6d
+traj.frame 2 1 3 431f3e86 c2b4d4da
+traj.frame 2 2 3 4323ddc9 c2af3f47
+traj.frame 2 3 3 43287d0c c2a9a9b4
+traj.frame 2 4 3 432d1c4f c2a41421
+traj.frame 2 5 3 4331bb92 c29e7e8e
+traj.frame 2 6 3 43365ad5 c298e8fb
+traj.frame 2 7 3 433afa18 c2935368
+traj.frame 2 8 3 433f995b c28dbdd5
+traj.frame 2 9 3 4344389e c2882842
+traj.frame 2 10 3 4348d7e1 c28292af
+traj.frame 2 11 3 434d7724 c279fa38
+traj.frame 2 12 3 43521667 c26ecf12
+traj.frame 2 13 3 4356b5aa c263a3ec
+traj.frame 2 14 3 435b54ed c25878c6
+traj.frame 2 15 3 435ff430 c24d4da0
+traj.frame 2 16 3 43649373 c242227a
+traj.frame 2 17 3 436932b6 c236f754
+traj.frame 2 18 3 436dd1f9 c22bcc2e
+traj.frame 2 19 3 4372713c c220a108
+traj.frame 2 20 3 4377107f c21575e2
+traj.frame 2 21 3 437bafc2 c20a4abc
+traj.frame 2 22 3 43802783 c1fe3f2c
+traj.frame 2 23 3 43827725 c1e7e8e0
+traj.frame 2 24 3 4384c6c7 c1d19294
+traj.frame 2 25 3 43871669 c1bb3c48
+traj.frame 2 26 3 4389660b c1a4e5fc
+traj.frame 2 27 3 438bb5ad c18e8fb0
+traj.frame 2 28 3 438e054f c17072c9
+traj.frame 2 29 3 439054f1 c143c632
+traj.frame 2 30 3 4392a493 c117199a
+traj.frame 2 31 3 4394f435 c0d4da04
+traj.frame 2 32 3 439743d7 c07701a9
+traj.frame 2 33 3 43999379 bf889e92
+traj.frame 2 34 3 439be31b 3fdcc62c
+traj.frame 2 35 3 439e32bd 40908abb
+traj.frame 2 36 3 43a0825f 40e9e3eb
+traj.frame 2 37 3 43a2d201 41219e8e
+traj.frame 2 38 3 43a521a3 414e4b26
+traj.frame 2 39 3 43a77145 417af7be
+traj.frame 2 40 3 43a9c0e7 4193d22b
+traj.frame 2 41 3 43ac1089 41aa2877
+traj.frame 2 42 3 43ae602b 41c07ec3
+traj.frame 2 43 3 43b0afcd 41d6d50f
+traj.frame 2 44 3 43b2ff6f 41ed2b5b
+traj.frame 2 45 3 43b54f11 4201c0d4
+traj.frame 2 46 3 43b79eb2 420cebfa
+traj.frame 2 47 3 43b9ee54 42181720
+traj.frame 2 48 3 43bc3df6 42234246
+traj.frame 2 49 3 43be8d98 422e6d6c
+traj.frame 2 50 3 43c0dd3a 42399892
+traj.frame 2 51 3 43c32cdc 4244c3b8
+traj.frame 2 52 3 43c57c7e 424feede
+traj.frame 2 53 3 43c7cc1f 425b1a04
+traj.frame 2 54 3 43ca1bc0 4266452a
+traj.frame 2 55 3 43cc6b62 42717050
+traj.frame 2 56 3 43cebb03 427c9b76
+traj.frame 2 57 3 43d10aa4 4283e34e
+traj.frame 2 58 3 43d35a46 428978e1
+traj.frame 2 59 3 43d5a9e8 428f0e74
+traj.frame 2 60 3 43d7f98a 4294a407
+traj.frame 2 61 3 43da492b 429a399a
+traj.frame 2 62 3 43dc98cc 429fcf2d
+traj.frame 2 63 3 43dee86e 42a564c0
+traj.frame 2 64 3 43e1380f 42aafa53
+traj.frame 2 65 3 43e387b0 42b08fe6
+traj.frame 2 66 3 43e5d752 42b62579
+traj.frame 2 67 3 43e826f3 42bbbb0c
+traj.frame 2 68 3 43ea7694 42c1509f
+traj.frame 2 69 3 43ecc636 42c6e632
+traj.frame 2 70 3 43ef15d7 42cc7bc5
+traj.frame 2 71 3 43f16578 42d21158
+traj.frame 2 72 3 43f3b51a 42d7a6eb
+traj.frame 2 73 3 43f604bb 42dd3c7e
+traj.frame 2 74 3 43f8545c 42e2d211
+traj.frame 2 75 3 43faa3fe 42e867a4
+traj.frame 2 76 3 43fcf39f 42edfd37
+traj.frame 2 77 3 43ff4340 42f392ca
+traj.frame 2 78 3 4400c971 42f9285d
+traj.frame 2 79 3 4401f142 42febdf0
+traj.frame 2 80 3 44031913 430229c2
+traj.frame 2 81 3 440440e4 4304f48c
+traj.frame 2 82 3 440568b5 4307bf56
+traj.frame 2 83 3 44069086 430a8a20
+traj.frame 2 84 3 4407b857 430d54ea
+traj.frame 2 85 3 4408e028 43101fb4
+traj.frame 2 86 3 440a07f9 4312ea7e
+traj.frame 2 87 3 440b2fca 4315b548
+traj.frame 2 88 3 440c579b 43188012
+traj.frame 2 89 3 440d7f6c 431b4adc
+traj.frame 2 90 3 440ea73d 431e15a6
+traj.frame 2 91 3 440fcf0e 4320e070
+traj.frame 2 92 3 4410f6df 4323ab3a
+traj.frame 2 93 3 44121eb0 43267604
+traj.frame 2 94 3 44134681 432940ce
+traj.frame 2 95 3 44146e52 432c0b98
+traj.frame 2 96 3 44159623 432ed662
+traj.frame 2 97 3 4416bdf4 4331a12c
+traj.frame 2 98 3 4417e5c5 43346bf6
+traj.frame 2 99 3 44190d96 433736c0
+traj.frame 2 100 3 441a3567 433a018a
+traj.frame 2 101 3 441b5d38 433ccc54
+traj.frame 2 102 3 441c8509 433f971f
+traj.frame 2 103 3 441dacda 434261ea
+traj.frame 2 104 3 441ed4ab 43452cb5
+traj.frame 2 105 3 441ffc7b 4347f781
+traj.frame 2 106 3 4420e055 434af82d
+traj.frame 2 107 3 4421d15d 434e2c44
+traj.frame 2 108 3 4422c469 43516a11
+traj.frame 2 109 3 4423b937 4354b0a3
+traj.frame 2 110 3 4424af9a 4357feea
+traj.frame 2 111 3 4425a749 435b5486
+traj.frame 2 112 3 442688f1 435e6075
+traj.frame 2 113 3 44277806 43619d10
+traj.frame 2 114 3 44286902 4364e2de
+traj.frame 2 115 3 44295ba1 43683114
+traj.frame 2 116 3 442a4fa6 436b8700
+traj.frame 2 117 3 442b44d9 436ee408
+traj.frame 2 118 3 442c3b02 437247ac
+traj.frame 2 119 3 442d1ba2 4375626b
+traj.frame 2 120 3 442e0895 4378ac08
+traj.frame 2 121 3 442ef711 437bfeb7
+traj.frame 2 122 3 442fe6ce 437f59e0
+traj.frame 2 123 3 4430d789 43815e7b
+traj.frame 2 124 3 4431c900 438313c7
+traj.frame 2 125 3 4432baf4 4384ccaa
+traj.frame 2 126 3 443396a6 43865fa5
+traj.frame 2 127 3 44347d8f 43880a20
+traj.frame 2 128 3 4435669e 4389bc0d
+traj.frame 2 129 3 44365029 438b72f3
+traj.frame 2 130 3 443739cb 438d2ec5
+traj.frame 2 131 3 44382313 438eef98
+traj.frame 2 132 3 44390b7c 4390b5ac
+traj.frame 2 133 3 4439f271 43928152
+traj.frame 2 134 3 443ad738 4394531b
+traj.frame 2 135 3 443bb7bc 43962e10
+traj.frame 2 136 3 443c9126 439815d6
+traj.frame 2 137 3 443d60cd 439a0cb8
+traj.frame 2 138 3 443e2824 439c0e38
+traj.frame 2 139 3 443ee6d7 439e1959
+traj.frame 2 140 3 443f9e7c 43a02aa5
+traj.frame 2 141 3 44404faf 43a240a1
+traj.frame 2 142 3 4440fbe9 43a458f2
+traj.frame 2 143 3 44419ecf 43a65fa2
+traj.frame 2 144 3 44423fc1 43a86614
+traj.frame 2 145 3 4442e031 43aa6adb
+traj.frame 2 146 3 444381ad 43ac6c8f
+traj.frame 2 147 3 444425a7 43ae6a11
+traj.frame 2 148 3 4444cd89 43b06245
+traj.frame 2 149 3 44457b6b 43b25328
+traj.frame 2 150 3 44463088 43b43bda
+traj.frame 2 151 3 4446ee6e 43b61b1f
+traj.frame 2 152 3 4447bd47 43b7fc33
+traj.frame 2 153 3 4448975d 43b9ca45
+traj.frame 2 154 3 44497d61 43bb8406
+traj.frame 2 155 3 444a7030 43bd2799
+traj.frame 2 156 3 444b7070 43beb371
+traj.frame 2 157 3 444c7ffe 43c0221f
+traj.frame 2 158 3 444d8fee 43c15aa5
+traj.frame 2 159 3 444eaf2a 43c27a8a
+traj.frame 2 160 3 444fdda6 43c381ce
+traj.frame 2 161 3 445105f0 43c4679e
+traj.frame 2 162 3 44523c4c 43c54079
+traj.frame 2 163 3 44536a81 43c603c8
+traj.frame 2 164 3 4454a628 43c6c2a6
+traj.frame 2 165 3 4455d881 43c7741d
+traj.frame 2 166 3 445717ab 43c827c7
+traj.frame 2 167 3 44584c7d 43c8d4e0
+traj.frame 2 168 3 44598cf8 43c98b80
+traj.frame 2 169 3 445ac20d 43ca410d
+traj.frame 2 170 3 445bec15 43cafa17
+traj.frame 2 171 3 445d205f 43cbc669
+traj.frame 2 172 3 445e47ab 43cc9be8
+traj.frame 2 173 3 445f7627 43cd8b8b
+traj.frame 2 174 3 446094ee 43ce8a3a
+traj.frame 2 175 3 4461b697 43cfa9d0
+traj.frame 2 176 3 4462d516 43d0f362
+traj.frame 2 177 3 4463dcbd 43d25194
+traj.frame 2 178 3 4464da70 43d3dd16
+traj.frame 2 179 3 4465cd6c 43d58b82
+traj.frame 2 180 3 4466b0af 43d75eb0
+traj.frame 2 181 3 446785b1 43d94c0f
+traj.frame 2 182 3 44684c71 43db4e70
+traj.frame 2 183 3 44690587 43dd6123
+traj.frame 2 184 3 4469b1ac 43df8074
+traj.frame 2 185 3 446a5295 43e1a85c
+traj.frame 2 186 3 446ae4c1 43e3c281
+traj.frame 2 187 3 446b6ee3 43e5df54
+traj.frame 2 188 3 446bf231 43e7fd66
+traj.frame 2 189 3 446c6fce 43ea1bb3
+traj.frame 2 190 3 446ce8d7 43ec3975
+traj.frame 2 191 3 446d5e47 43ee562c
+traj.frame 2 192 3 446ddd6f 43f0abba
+traj.frame 2 193 3 446e59df 43f2fb03
+traj.frame 2 194 3 446ed04e 43f52f08
+traj.frame 2 195 3 446f45c9 43f75b43
+traj.frame 2 196 3 446fbb60 43f98087
+traj.frame 2 197 3 44703209 43fb9f76
+traj.frame 2 198 3 4470aab3 43fdb880
+traj.frame 2 199 3 447133de 44000298
+traj.frame 2 200 3 4471c088 44012346
+traj.frame 2 201 3 44724eba 440238a7
+traj.frame 2 202 3 4472dfaa 44034409
+traj.frame 2 203 3 44737693 44044a0c
+traj.frame 2 204 3 44741482 44054ad2
+traj.frame 2 205 3 4474ba89 44064651
+traj.frame 2 206 3 44756a08 44073c1f
+traj.frame 2 207 3 447623fb 44082bf9
+traj.frame 2 208 3 4476ea81 440916ff
+traj.frame 2 209 3 4477c22c 4409fffc
+traj.frame 2 210 3 4478a555 440adf4d
+traj.frame 2 211 3 4479948b 440bb474
+traj.frame 2 212 3 447a8e17 440c815a
+traj.frame 2 213 3 447b90c1 440d47ce
+traj.frame 2 214 3 447c8398 440df5f5
+traj.frame 2 215 3 447d8a76 440ea8eb
+traj.frame 2 216 3 447e9971 440f5963
+traj.frame 2 217 3 447fb126 4410061f
+traj.frame 2 218 3 44805fca 4410a779
+traj.frame 2 219 3 4480eb2f 44114851
+traj.frame 2 220 3 44817a91 4411e88a
+traj.frame 2 221 3 448204e6 44127f8d
+traj.frame 2 222 3 4482935f 441317a1
+traj.frame 2 223 3 4483259e 4413b0f0
+traj.frame 2 224 3 4483b273 4414428b
+traj.frame 2 225 3 44844334 4414d6a3
+traj.frame 2 226 3 4484ce15 441563ca
+traj.frame 2 227 3 44855d73 4415f50b
+traj.frame 2 228 3 4485f04c 441689eb
+traj.frame 2 229 3 44867d3e 44171971
+traj.frame 2 230 3 44870da2 4417adb5
+traj.frame 2 231 3 448794ef 44183a5c
+traj.frame 2 232 3 448822f2 4418d084
+traj.frame 2 233 3 4488b38d 44196c8f
+traj.frame 2 234 3 44893d5e 441a05df
+traj.frame 2 235 3 4489c989 441aa601
+traj.frame 2 236 3 448a56b5 441b4f24
+traj.frame 2 237 3 448adc67 441bf636
+traj.frame 2 238 3 448b626c 441ca7bf
+traj.frame 2 239 3 448be7d7 441d63ae
+traj.frame 2 240 3 448c5e9f 441e1a48
+traj.frame 2 241 3 448cd891 441ee5c2
+traj.frame 2 242 3 448d4d36 441fc18b
+traj.frame 2 243 3 448db9ef 4420aecb
+traj.frame 2 244 3 448e1b2b 4421af0a
+traj.frame 2 245 3 448e6fbc 4422bf08
+traj.frame 2 246 3 448eb63c 4423d606
+traj.frame 2 247 3 448ef018 4424ee49
+traj.frame 2 248 3 448f2091 4426097e
+traj.frame 2 249 3 448f49b1 44272559
+traj.frame 2 250 3 448f71a0 44285f48
+traj.frame 2 251 3 448f961d 442990c5
+traj.frame 2 252 3 448fb9c1 442ab5cf
+traj.frame 2 253 3 448fe029 442bd453
+traj.frame 2 254 3 4490118c 442d094e
+traj.frame 2 255 3 44904ce0 442e3263
+traj.frame 2 256 3 449091ff 442f41f4
+traj.frame 2 257 3 4490e491 44303fe2
+traj.frame 2 258 3 44914572 443129f2
+traj.frame 2 259 3 4491b809 443204af
+traj.frame 2 260 3 4492371c 4432c5fb
+traj.frame 2 261 3 4492c066 44337233
+traj.frame 2 262 3 449351b4 44340f5e
+traj.frame 2 263 3 4493e002 44349b76
+traj.frame 2 264 3 44947452 443522c5
+traj.frame 2 265 3 449504aa 44359e4d
+traj.frame 2 266 3 44959aeb 44361825
+traj.frame 2 267 3 44962ce2 443688d5
+traj.frame 2 268 3 4496c4bf 4436f9fb
+traj.frame 2 269 3 4497581c 443763a9
+traj.frame 2 270 3 4497f195 4437ce08
+traj.frame 2 271 3 44988664 44383231
+traj.frame 2 272 3 44992154 443897db
+traj.frame 2 273 3 4499b790 4438f79f
+traj.frame 2 274 3 449a5405 443958fc
+traj.frame 2 275 3 449aeba2 4439b546
+traj.frame 2 276 3 449b8984 443a1338
+traj.frame 2 277 3 449c227c 443a6c5f
+traj.frame 2 278 3 449cc1c7 443ac714
+traj.frame 2 279 3 449d5c15 443b1d41
+traj.frame 2 280 3 449dfcc1 443b74de
+traj.frame 2 281 3 449e9866 443bc7e9
+traj.frame 2 282 3 449f2f9e 443c1640
+traj.frame 2 283 1 449f2f9e c2a80000
+traj.init 3 43160000 c2c00000
+traj.attack_pts 3 298
+traj.frame 3 0 3 4318cfb0 c2b6c76d
+traj.frame 3 1 3 431b9f60 c2ad8eda
+traj.frame 3 2 3 431e6f10 c2a45647
+traj.frame 3 3 3 43213ec0 c29b1db4
+traj.frame 3 4 3 43240e70 c291e521
+traj.frame 3 5 3 4326de20 c288ac8e
+traj.frame 3 6 3 4329add0 c27ee7f5
+traj.frame 3 7 3 432c7d80 c26c76ce
+traj.frame 3 8 3 432f4d30 c25a05a7
+traj.frame 3 9 3 43321ce0 c2479480
+traj.frame 3 10 3 4334ec90 c2352359
+traj.frame 3 11 3 4337bc40 c222b232
+traj.frame 3 12 3 433a8bf0 c210410b
+traj.frame 3 13 3 433d5ba0 c1fb9fc9
+traj.frame 3 14 3 43402b50 c1d6bd7c
+traj.frame 3 15 3 4342fb00 c1b1db2e
+traj.frame 3 16 3 4345cab0 c18cf8e1
+traj.frame 3 17 3 43489a60 c1502d28
+traj.frame 3 18 3 434b6a10 c106688e
+traj.frame 3 19 3 434e39c0 c0728fce
+traj.frame 3 20 3 43510970 3f520a70
+traj.frame 3 21 3 4353d920 40adca83
+traj.frame 3 22 3 4356a8d0 4120a9dc
+traj.frame 3 23 3 43597880 416a6e76
+traj.frame 3 24 3 435c4830 419a1988
+traj.frame 3 25 3 435f17e0 41befbd5
+traj.frame 3 26 3 4361e790 41e3de22
+traj.frame 3 27 3 4364b740 42046038
+traj.frame 3 28 3 436786f0 4216d15f
+traj.frame 3 29 3 436a56a0 42294286
+traj.frame 3 30 3 436d2650 423bb3ad
+traj.frame 3 31 3 436ff600 424e24d4
+traj.frame 3 32 3 4372c5b0 426095fb
+traj.frame 3 33 3 43759560 42730722
+traj.frame 3 34 3 43786510 4282bc24
+traj.frame 3 35 3 437b34c0 428bf4b7
+traj.frame 3 36 3 437e0470 42952d4a
+traj.frame 3 37 3 43806a10 429e65dd
+traj.frame 3 38 3 4381d1e8 42a79e70
+traj.frame 3 39 3 438339c0 42b0d703
+traj.frame 3 40 3 4384a198 42ba0f96
+traj.frame 3 41 3 43860970 42c34829
+traj.frame 3 42 3 43877148 42cc80bc
+traj.frame 3 43 3 4388d920 42d5b94f
+traj.frame 3 44 3 438a40f8 42def1e2
+traj.frame 3 45 3 438ba8d0 42e82a75
+traj.frame 3 46 3 438d10a8 42f16308
+traj.frame 3 47 3 438e7880 42fa9b9b
+traj.frame 3 48 3 438fe058 4301ea17
+traj.frame 3 49 3 43914830 43068661
+traj.frame 3 50 3 4392b008 430b22ab
+traj.frame 3 51 3 439417e0 430fbef4
+traj.frame 3 52 3 43957fb8 43145b3e
+traj.frame 3 53 3 4396bd96 4318c127
+traj.frame 3 54 3 4397edf5 431d28d1
+traj.frame 3 55 3 439914d1 4321690e
+traj.frame 3 56 3 439a3776 4325967d
+traj.frame 3 57 3 439b58d7 4329bc53
+traj.frame 3 58 3 439c7944 432ddc05
+traj.frame 3 59 3 439d9911 4331f6ac
+traj.frame 3 60 3 439eb87f 43360d2e
+traj.frame 3 61 3 439fd79f 433a2069
+traj.frame 3 62 3 43a0f694 433e3102
+traj.frame 3 63 3 43a215c7 43423f1e
+traj.frame 3 64 3 43a33503 43464b7b
+traj.frame 3 65 3 43a45464 434a5666
+traj.frame 3 66 3 43a57448 434e5fc4
+traj.frame 3 67 3 43a6944e 4352684d
+traj.frame 3 68 3 43a7b4f4 43566fa9
+traj.frame 3 69 3 43a8d5ee 435a7659
+traj.frame 3 70 3 43a9f76d 435e7c53
+traj.frame 3 71 3 43ab1983 43628197
+traj.frame 3 72 3 43ac3c04 4366867a
+traj.frame 3 73 3 43ad5f51 436a8a98
+traj.frame 3 74 3 43ae82f3 436e8e95
+traj.frame 3 75 3 43afa791 437291b5
+traj.frame 3 76 3 43b0cc76 437694df
+traj.frame 3 77 3 43b1f279 437a971c
+traj.frame 3 78 3 43b318bc 437e9982
+traj.frame 3 79 3 43b44038 43814d75
+traj.frame 3 80 3 43b567f7 43834e45
+traj.frame 3 81 3 43b69105 43854e90
+traj.frame 3 82 3 43b7ba5c 43874ef9
+traj.frame 3 83 3 43b8e515 43894ed8
+traj.frame 3 84 3 43ba1027 438b4ed4
+traj.frame 3 85 3 43bb3ca4 438d4e46
+traj.frame 3 86 3 43bc6992 438f4dcd
+traj.frame 3 87 3 43bd97f6 43914cc8
+traj.frame 3 88 3 43bec6e9 43934bcf
+traj.frame 3 89 3 43bff75e 43954a48
+traj.frame 3 90 3 43c12882 439748c2
+traj.frame 3 91 3 43c25b35 439946ad
+traj.frame 3 92 3 43c38ebc 439b448c
+traj.frame 3 93 3 43c4c3eb 439d41d4
+traj.frame 3 94 3 43c5fa0c 439f3f08
+traj.frame 3 95 3 43c73201 43a13b93
+traj.frame 3 96 3 43c86afe 43a33809
+traj.frame 3 97 3 43c9a611 43a533b8
+traj.frame 3 98 3 43cae236 43a72f5a
+traj.frame 3 99 3 43cc20db 43a92a00
+traj.frame 3 100 3 43cd6081 43ab24b6
+traj.frame 3 101 3 43cea346 43ad1e1b
+traj.frame 3 102 3 43cfe72c 43af1791
+traj.frame 3 103 3 43d12e74 43b10fa3
+traj.frame 3 104 3 43d27779 43b30775
+traj.frame 3 105 3 43d3c3cd 43b4fe15
+traj.frame 3 106 3 43d51304 43b6f3ca
+traj.frame 3 107 3 43d6651f 43b8e8c3
+traj.frame 3 108 3 43d7be1c 43bada4d
+traj.frame 3 109 3 43d919f6 43bccb8d
+traj.frame 3 110 3 43da7e0c 43beb8c4
+traj.frame 3 111 3 43dbe575 43c0a5c3
+traj.frame 3 112 3 43dd54d3 43c290ef
+traj.frame 3 113 3 43decb7d 43c4816a
+traj.frame 3 114 3 43e04943 43c67070
+traj.frame 3 115 3 43e1c956 43c85ea2
+traj.frame 3 116 3 43e34fb4 43ca4ba9
+traj.frame 3 117 3 43e4d7ed 43cc37e6
+traj.frame 3 118 3 43e665b1 43ce231c
+traj.frame 3 119 3 43e7f4fa 43d00da9
+traj.frame 3 120 3 43e988f1 43d1f713
+traj.frame 3 121 3 43eb1dee 43d3dfba
+traj.frame 3 122 3 43ecb5e9 43d5c60d
+traj.frame 3 123 3 43ee4ed5 43d7abf5
+traj.frame 3 124 3 43efea72 43d98ffb
+traj.frame 3 125 3 43f186ef 43db73d5
+traj.frame 3 126 3 43f325ca 43dd5632
+traj.frame 3 127 3 43f4c577 43df388b
+traj.frame 3 128 3 43f66726 43e119c7
+traj.frame 3 129 3 43f809b5 43e2fb01
+traj.frame 3 130 3 43f9adbc 43e4db9f
+traj.frame 3 131 3 43fb52bd 43e6bc20
+traj.frame 3 132 3 43fcf8ba 43e89c73
+traj.frame 3 133 3 43fe9fb3 43ea7c9c
+traj.frame 3 134 3 440023a5 43ec5ce2
+traj.frame 3 135 3 4400f7de 43ee3d0a
+traj.frame 3 136 3 4401cc46 43f01d78
+traj.frame 3 137 3 4402a0f9 43f1fdf0
+traj.frame 3 138 3 440375cc 43f3deb3
+traj.frame 3 139 3 44044ab8 43f5bfc2
+traj.frame 3 140 3 44051fb9 43f7a116
+traj.frame 3 141 3 4405f4a2 43f982f2
+traj.frame 3 142 3 4406c98e 43fb6513
+traj.frame 3 143 3 44079e36 43fd47ee
+traj.frame 3 144 3 440872c7 43ff2b1a
+traj.frame 3 145 3 440946ee 44008792
+traj.frame 3 146 3 440a1ad3 440179d2
+traj.frame 3 147 3 440aee37 44026c83
+traj.frame 3 148 3 440bc121 44035f8e
+traj.frame 3 149 3 440c9379 44045304
+traj.frame 3 150 3 440d6510 440546fc
+traj.frame 3 151 3 440e3605 44063b59
+traj.frame 3 152 3 440f05ef 44073061
+traj.frame 3 153 3 440fd521 440825c8
+traj.frame 3 154 3 4410a2fa 44091c03
+traj.frame 3 155 3 44116ff8 440a12a2
+traj.frame 3 156 3 44123b56 440b0a35
+traj.frame 3 157 3 4413059d 440c0242
+traj.frame 3 158 3 4413ce08 440cfb53
+traj.frame 3 159 3 441494fc 440df50e
+traj.frame 3 160 3 441559f2 440eefc3
+traj.frame 3 161 3 44161cd8 440feb79
+traj.frame 3 162 3 4416ddc4 4410e7fd
+traj.frame 3 163 3 44179948 4411e2ba
+traj.frame 3 164 3 441851a3 4412dc09
+traj.frame 3 165 3 441905ad 4413d6fd
+traj.frame 3 166 3 4419b78c 4414d218
+traj.frame 3 167 3 441a648c 4415ce97
+traj.frame 3 168 3 441b0f24 4416cc7c
+traj.frame 3 169 3 441bb53e 4417ccb7
+traj.frame 3 170 3 441c56c6 4418cf0b
+traj.frame 3 171 3 441cf44a 4419d2b3
+traj.frame 3 172 3 441d8a75 441ad963
+traj.frame 3 173 3 441e1b3a 441be18e
+traj.frame 3 174 3 441ea55f 441ceb82
+traj.frame 3 175 3 441f2480 441df914
+traj.frame 3 176 3 441f9b5c 441f0848
+traj.frame 3 177 3 4420130e 442036a1
+traj.frame 3 178 3 442076c5 4421679d
+traj.frame 3 179 3 4420c5f1 44228d97
+traj.frame 3 180 3 442105c8 4423b1aa
+traj.frame 3 181 3 44213898 4424d36f
+traj.frame 3 182 3 4421641a 4426134a
+traj.frame 3 183 3 44218284 442743e1
+traj.frame 3 184 3 442196ec 44286e8f
+traj.frame 3 185 3 4421a293 4429942f
+traj.frame 3 186 3 4421a6ae 442ad68a
+traj.frame 3 187 3 4421a2e0 442c078f
+traj.frame 3 188 3 44219868 442d31c5
+traj.frame 3 189 3 442185c4 442e7590
+traj.frame 3 190 3 44216d77 442faae3
+traj.frame 3 191 3 4421504b 4430d66c
+traj.frame 3 192 3 44212ded 4431fbac
+traj.frame 3 193 3 442102b4 44333be8
+traj.frame 3 194 3 4420d43f 44346b27
+traj.frame 3 195 3 4420a1b2 4435931b
+traj.frame 3 196 3 44206aaf 4436b4f7
+traj.frame 3 197 3 442027b5 4437f141
+traj.frame 3 198 1 4420178c c2a80000

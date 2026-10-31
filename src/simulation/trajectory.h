@@ -51,6 +51,8 @@ class Trajectory {
                    std::uint32_t random_seed = 0x9E3779B9u, int stage_cycle = 1,
                    int used_cols = GameRules::Fleet::FormationGrid::kMaxGridCols);
   [[nodiscard]] stage_t Stage() const noexcept { return stage_; }
+  /// Size of the current attack spline (golden-vector dump / tests).
+  [[nodiscard]] std::size_t AttackPointCount() const noexcept { return attack_.size(); }
   void NextPositionF(float from_x, float from_y, float velocity, float& out_x, float& out_y);
   [[nodiscard]] Coord InitPosition() const;
   [[nodiscard]] Coord CruiseTarget() const noexcept;
