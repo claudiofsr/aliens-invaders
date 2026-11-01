@@ -132,6 +132,17 @@ class BulletsManager {
   void OnResize(float rx, float ry);
   [[nodiscard]] int Nb() const noexcept { return active_count_; }
 
+  /// Read-only observation of the dense active lists (golden-vector recording
+  /// and headless tests): i indexes live slots/particles in simulation order
+  /// (swap-pop stable within a frame).
+  [[nodiscard]] const ProjectileSlot& GetActive(int i) const noexcept {
+    return pool_[active_ids_[static_cast<size_t>(i)]];
+  }
+  [[nodiscard]] int ActiveExhaustCount() const noexcept { return active_exhaust_count_; }
+  [[nodiscard]] const ExhaustParticle& GetActiveExhaust(int i) const noexcept {
+    return exhaust_pool_[active_exhaust_ids_[static_cast<size_t>(i)]];
+  }
+
   void GetYBounds(int& out_min_y, int& out_max_y) const noexcept {
     out_min_y = cached_min_y_;
     out_max_y = cached_max_y_;
@@ -173,6 +184,12 @@ class BonusManager {
   void Add(Coord pos, Bonus::bonus_t type);
   Bonus::bonus_t GetBonusCollision(const simulation::GameObject& other);
   void OnResize(float rx, float ry);
+  [[nodiscard]] int Nb() const noexcept { return active_count_; }
+  /// Read-only observation of the dense active list (golden-vector recording
+  /// and headless tests): i indexes live supply pods in simulation order.
+  [[nodiscard]] const BonusSlot& GetActive(int i) const noexcept {
+    return pool_[active_ids_[static_cast<size_t>(i)]];
+  }
 };
 
 struct BulletCollisionSummary {
@@ -288,6 +305,12 @@ class AliensManager {
   [[nodiscard]] bool Finished() const noexcept {
     return fleet_state_ == active_combat && aliens_.empty();
   }
+  /// Read-only observation of the armada (golden-vector recording and headless
+  /// tests): i indexes aliens_ in stable simulation order.
+  [[nodiscard]] std::size_t AlienCount() const noexcept { return aliens_.size(); }
+  [[nodiscard]] const Alien& GetAlien(std::size_t i) const noexcept {
+    return *aliens_[i];
+  }
 
  private:
   [[nodiscard]] int GetMaxConvoySize() const;
@@ -342,6 +365,10 @@ class Player {
   void DrawInterpolated(float alpha, float angle = 0.0f) const;
 
   [[nodiscard]] int Shield() const noexcept { return shield_; }
+  /// Read-only upgrade levels (golden-vector recording and headless tests).
+  [[nodiscard]] int FireLevel() const noexcept { return fire_level_; }
+  [[nodiscard]] int MultiFire() const noexcept { return multi_fire_; }
+  [[nodiscard]] int SpeedLevel() const noexcept { return speed_level_; }
   void ExtraFire() noexcept;
   void ExtraMulti() noexcept;
   void ExtraShield() noexcept;

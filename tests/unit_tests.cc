@@ -10,6 +10,7 @@
 #include <cstring>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -19,7 +20,9 @@
 #include "audio_export.h"
 #include "bake_hash.h"
 #include "cli_flags.h"
+#include "config.h"
 #include "constants.h"
+#include "explosion.h"
 #include "fanfare_instruments.h"
 #include "stage_catalog.h"
 #include "formation_grid.h"
@@ -27,16 +30,20 @@
 #include "game_object.h"
 #include "highscore_table.h"
 #include "hitch_monitor.h"
+#include "level_data.h"
+#include "managers.h"
 #include "math_types.h"
 #include "motion.h"
 #include "path.h"
 #include "plate_pacing.h"
+#include "presentation_sink.h"
 #include "prewarm_plan.h"
 #include "random_stream.h"
 #include "recycle_bin.h"
 #include "score_hash.h"
 #include "soundfont_synth.h"
 #include "stage_fanfare.h"
+#include "texture_provider.h"
 #include "threading.h"
 #include "track_selection.h"
 #include "trajectory.h"
@@ -2398,6 +2405,209 @@ TEST_CASE(TestRecycleBinLifoReuse) {
   ASSERT_EQ(RecycleProbe::live_instances, 0);  // nothing leaked
 }
 
+namespace {
+
+/// Headless harness for the entity layer (RUST.md slice 4): drives the
+/// managers in the exact production tick order
+/// (CombatSession::TickFixedPhysics) and folds everything observable into an
+/// FNV-1a digest, so replay determinism reduces to one integer comparison.
+class DigestSink final : public PresentationSink {
+ public:
+  std::uint64_t h{0xcbf29ce484222325ULL};
+
+  void Mix(std::uint64_t v) noexcept {
+    h ^= v;
+    h *= 0x100000001b3ULL;
+  }
+  void MixFloat(float v) noexcept {
+    std::uint32_t bits = 0;
+    std::memcpy(&bits, &v, sizeof(bits));
+    Mix(bits);
+  }
+  void FloatingText(Coord pos, const char* text, std::uint8_t r,
+                    std::uint8_t g, std::uint8_t b, float font_size,
+                    int ttl_frames) override {
+    Mix(1);
+    Mix(static_cast<std::uint64_t>(pos.x));
+    Mix(static_cast<std::uint64_t>(pos.y));
+    Mix(r);
+    Mix(g);
+    Mix(b);
+    MixFloat(font_size);
+    Mix(static_cast<std::uint64_t>(ttl_frames));
+    for (const char* c = text; *c != '\0'; ++c) {
+      Mix(static_cast<std::uint64_t>(*c));
+    }
+  }
+  void Flash(std::uint8_t r, std::uint8_t g, std::uint8_t b,
+             int frames) override {
+    Mix(2);
+    Mix(r);
+    Mix(g);
+    Mix(b);
+    Mix(static_cast<std::uint64_t>(frames));
+  }
+  void Trauma(float amount) override {
+    Mix(3);
+    MixFloat(amount);
+  }
+  void Sfx(int sound_id, float pan) override {
+    Mix(4);
+    Mix(static_cast<std::uint64_t>(sound_id));
+    MixFloat(pan);
+  }
+};
+
+/// Texture double for the harness: dimension-only Pix for every id (the
+/// harness only ever compares runs against each other, so one canonical
+/// dimension is enough; the dumper pins the real contract in ent.pix).
+class StubTextures final : public TextureProvider {
+  std::array<std::unique_ptr<Pix>, static_cast<size_t>(TextureId::Count)>
+      pixes_{};
+
+ public:
+  StubTextures() {
+    Pix::SetGlobalScale(1.0f);
+    for (auto& slot : pixes_) slot = Pix::CreateHeadless(Coord(24, 24));
+  }
+  [[nodiscard]] const Pix* Get(TextureId id) const override {
+    return pixes_[static_cast<size_t>(id)].get();
+  }
+};
+
+struct EntityRunResult {
+  std::uint64_t digest{0};
+  std::size_t peak_aliens{0};
+  std::size_t aliens_after_nuke{0};
+};
+
+/// Runs a seeded wave-1 armada against a scripted player for `frames` ticks
+/// with the production wiring (score stays null; every consumer guards it).
+/// When nuke_frame matches a tick, NukeAll fires at the end of that tick
+/// (pass -1 to never fire).
+EntityRunResult RunEntityHarness(std::uint32_t seed, int frames,
+                                 int nuke_frame) {
+  GameRules::Fleet::FormationGrid::Recompute(1.0f);
+  const ViewportMetrics m{1280, 720, 1.0f};
+  const Config cfg = Config::CreateHeadless();
+  DigestSink sink;
+  StubTextures tex;
+  BulletsManager bullets(seed ^ 0xA5A5A5A5u);
+  BulletsManager bombs(seed ^ 0x5A5A5A5Au);
+  BonusManager bonuses(tex);
+  ExplosionsManager explosions(cfg);
+  explosions.SeedRandom(seed ^ 0x01234567u);
+  bullets.SetMetrics(m);
+  bombs.SetMetrics(m);
+  bonuses.SetMetrics(m);
+  explosions.SetMetrics(m);
+  AliensManager aliens(&bombs, &bullets, &bonuses, &explosions,
+                       /*score=*/nullptr, sink, tex, m, 1,
+                       LevelData::GetConvoyData(1),
+                       static_cast<int>(LevelData::GetTotalLevels()), seed);
+  Player player(&bullets, &bombs, &bonuses, &explosions, &cfg, sink, tex, m);
+  aliens.SetPlayer(&player);
+
+  EntityRunResult res;
+  std::uint32_t lcg = seed | 1u;
+  for (int f = 0; f < frames; ++f) {
+    lcg = lcg * 1664525u + 1013904223u;
+    const int dir = static_cast<int>(lcg >> 24) % 3 - 1;
+    const bool fire = ((lcg >> 16) & 1u) != 0u;
+
+    // Exact production tick order (CombatSession::TickFixedPhysics).
+    const BulletCollisionSummary summary = aliens.DoBulletsCollisions();
+    player.DoBombsCollisions();
+    sink.Mix(aliens.CheckKamikazeProximity(player.Position(), 105.0f) ? 1u
+                                                                      : 0u);
+    player.DoBonusCollisions(&aliens);
+    bonuses.Move();
+    player.Move(dir);
+    bullets.Move();
+    bombs.Move(player.Position());
+    if (fire) player.Fire();
+    explosions.Move();
+    aliens.Move();
+    aliens.Fire(player.Position());
+
+    // Fold the inputs and every observable into the digest.
+    // Brace-typed constants: bare ULL literals are `unsigned long long`, and
+    // mixing them with `unsigned long` operands trips -Wsign-conversion on
+    // GCC even though the values are unchanged.
+    sink.Mix(static_cast<std::uint64_t>(dir) +
+             (fire ? std::uint64_t{0x100000000} : std::uint64_t{0}));
+    sink.Mix(static_cast<std::uint64_t>(summary.total_hits) *
+                 std::uint64_t{0x9E3779B97F4A7C15} +
+             summary.score_earned);
+    sink.Mix(aliens.AlienCount());
+    res.peak_aliens = std::max(res.peak_aliens, aliens.AlienCount());
+    for (std::size_t i = 0; i < aliens.AlienCount(); ++i) {
+      const Alien& a = aliens.GetAlien(i);
+      sink.Mix(static_cast<std::uint64_t>(a.GetTextureId()));
+      sink.Mix(static_cast<std::uint64_t>(a.Position().x));
+      sink.Mix(static_cast<std::uint64_t>(a.Position().y));
+      sink.Mix(static_cast<std::uint64_t>(a.Stage()));
+      sink.Mix(a.IsKamikaze() ? 1u : 0u);
+      sink.Mix(a.IsWarping() ? 1u : 0u);
+      sink.Mix(static_cast<std::uint64_t>(a.WarpEvasionsRemaining()));
+      sink.MixFloat(a.Angle());
+      sink.MixFloat(a.GetGameObject().scale);
+    }
+    for (int i = 0; i < bombs.Nb(); ++i) {
+      const ProjectileSlot& b = bombs.GetActive(i);
+      sink.Mix(static_cast<std::uint64_t>(b.pos.x));
+      sink.Mix(static_cast<std::uint64_t>(b.pos.y));
+      sink.Mix(b.relativistic ? 1u : 0u);
+      sink.Mix(b.is_turning_bomb ? 1u : 0u);
+    }
+    for (int i = 0; i < bullets.Nb(); ++i) {
+      const ProjectileSlot& b = bullets.GetActive(i);
+      sink.Mix(static_cast<std::uint64_t>(b.pos.x));
+      sink.Mix(static_cast<std::uint64_t>(b.pos.y));
+    }
+    for (int i = 0; i < bonuses.Nb(); ++i) {
+      const BonusSlot& s = bonuses.GetActive(i);
+      sink.Mix(static_cast<std::uint64_t>(s.type));
+      sink.Mix(static_cast<std::uint64_t>(s.pos.x));
+      sink.Mix(static_cast<std::uint64_t>(s.pos.y));
+    }
+    sink.Mix(static_cast<std::uint64_t>(player.Position().x));
+    sink.Mix(static_cast<std::uint64_t>(player.Position().y));
+    sink.Mix(static_cast<std::uint64_t>(player.Shield()));
+    sink.Mix(static_cast<std::uint64_t>(player.FireLevel()));
+    sink.Mix(static_cast<std::uint64_t>(player.MultiFire()));
+    sink.Mix(static_cast<std::uint64_t>(player.SpeedLevel()));
+    sink.Mix(explosions.ActiveCount());
+
+    if (f == nuke_frame) aliens.NukeAll();
+  }
+  res.aliens_after_nuke = aliens.AlienCount();
+  res.digest = sink.h;
+  return res;
+}
+
+}  // namespace
+
+TEST_CASE(TestHeadlessEntitySimulation) {
+  // The entity layer runs fully headless -- no SDL, recording sink,
+  // dimension-only textures -- and is deterministic: the same seed replays
+  // bit-identically, a different seed diverges, and NukeAll recycles the
+  // whole armada into the pool.
+  const EntityRunResult a = RunEntityHarness(0xC0FFEEu, 300, -1);
+  const EntityRunResult b = RunEntityHarness(0xC0FFEEu, 300, -1);
+  ASSERT_EQ(a.digest, b.digest);
+  ASSERT_TRUE(a.peak_aliens > 0);  // the armada really spawned headlessly
+
+  const EntityRunResult c = RunEntityHarness(0xC0FFEFu, 300, -1);
+  ASSERT_TRUE(a.digest != c.digest);  // different seed -> diverged streams
+
+  // Final-frame nuke leaves no tick for respawns, so the count is exactly
+  // zero and the digest differs (nuke events folded in).
+  const EntityRunResult n = RunEntityHarness(0xC0FFEEu, 300, 299);
+  ASSERT_EQ(n.aliens_after_nuke, static_cast<std::size_t>(0));
+  ASSERT_TRUE(n.digest != a.digest);
+}
+
 TEST_CASE(TestBakeHashIndex) {
   using BakeCache::BakeHash;
   using BakeCache::kIndexSlots;
@@ -2739,6 +2949,7 @@ int main() {
   RUN_TEST(TestCliFlagsMatching);
   RUN_TEST(TestTrackSelectionParser);
   RUN_TEST(TestRecycleBinLifoReuse);
+  RUN_TEST(TestHeadlessEntitySimulation);
   RUN_TEST(TestBakeHashIndex);
   RUN_TEST(TestStarfieldDensityAndTwinkle);
   RUN_TEST(TestSoundtrackWindowGeneration);

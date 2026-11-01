@@ -101,16 +101,23 @@ set(PROJECT_INCLUDES
 file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc")
 list(APPEND GAME_SOURCES "${EMBEDDED_ASSETS_CC}")
 
-# Golden-vector dumper for the Rust kernel port (RUST.md Phase 1): pure kernel,
-# no SDL; links only the two non-header sources it consumes.
+# Golden-vector dumper for the Rust kernel port (RUST.md): pure simulation
+# kernel + entity layer, no SDL; links only the SDL-free sources it consumes.
 add_executable(dump_vectors
     tools/dump_vectors.cc
+    src/entities/actors.cc
+    src/entities/explosion.cc
     src/entities/formation_grid.cc
+    src/entities/managers.cc
     src/highscore/highscore_table.cc
     src/simulation/trajectory.cc
 )
 target_include_directories(dump_vectors PRIVATE ${PROJECT_INCLUDES})
 set_target_properties(dump_vectors PROPERTIES CXX_STANDARD 20)
+# managers.cc pulls in the header-only hitch monitor (std::jthread types), so
+# link the platform threading library explicitly -- the same portability
+# contract the game and unit_tests targets already honor.
+target_link_libraries(dump_vectors PRIVATE Threads::Threads)
 if(UNIX AND NOT APPLE)
     target_link_libraries(dump_vectors PRIVATE m)
 endif()
@@ -142,7 +149,11 @@ if(BUILD_TESTS)
     add_executable(unit_tests
         tests/unit_tests.cc
         src/highscore/highscore_table.cc
+        src/entities/actors.cc
+        src/entities/explosion.cc
         src/entities/formation_grid.cc
+        src/entities/level_data.cc
+        src/entities/managers.cc
         src/simulation/trajectory.cc
         src/audio/stage_fanfare.cc
         src/audio/fanfare_metadata.cc

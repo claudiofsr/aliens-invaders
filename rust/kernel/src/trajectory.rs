@@ -8,6 +8,7 @@ use crate::formation::{self, GridData};
 use crate::mathx::fast_round_f32;
 use crate::path::{generate_smooth_spline, Vec2f};
 use crate::random_stream::RandomStream;
+use crate::stage_catalog;
 
 pub const PI: f32 = std::f32::consts::PI;
 
@@ -58,7 +59,6 @@ pub struct Trajectory {
     attack: Vec<Vec2f>,
     attack_idx: usize,
     stage_cycle: i32,
-    #[allow(dead_code)]
     used_cols: i32,
     grid: GridData,
 }
@@ -346,4 +346,81 @@ impl Trajectory {
         self.attack = generate_smooth_spline(&raw);
         self.stage = Stage::Attacking;
     }
+
+    // ---- Entity-layer surface (RUST.md slice 4b) --------------------------
+    // Ports of the C++ Trajectory members consumed by Alien/AliensManager.
+    // The C++ twin reads the fleet anchor through a shared pointer to the
+    // manager's base_cruise_; the Rust twin stores a copy that the fleet
+    // re-pushes right after its per-frame drift update -- observationally
+    // identical, because nothing reads the anchor in between.
+
+    pub fn set_base_cruise(&mut self, base_cruise: (i32, i32)) {
+        self.base_cruise = base_cruise;
+    }
+
+    pub fn base_cruise(&self) -> (i32, i32) {
+        self.base_cruise
+    }
+
+    pub fn metrics(&self) -> ViewportMetrics {
+        self.metrics
+    }
+
+    pub fn grid_col(&self) -> i32 {
+        self.grid_col
+    }
+
+    pub fn grid_row(&self) -> i32 {
+        self.grid_row
+    }
+
+    pub fn used_cols(&self) -> i32 {
+        self.used_cols
+    }
+
+    pub fn stage_cycle(&self) -> i32 {
+        self.stage_cycle
+    }
+
+    pub fn rng_mut(&mut self) -> &mut RandomStream {
+        &mut self.rng
+    }
+
+    /// Snapshot of the formation the trajectory was built against (the C++
+    /// twin reads the FormationGrid globals; the dump fixes them at scale
+    /// 1.0). Alien14's warp draw walks this snapshot's spacing and slots.
+    pub fn grid(&self) -> &GridData {
+        &self.grid
+    }
+
+    pub fn uniform_int(&mut self, min_value: i32, max_value: i32) -> i32 {
+        self.rng.uniform_int(min_value, max_value)
+    }
+
+    pub fn uniform_float(&mut self, min_value: f32, max_value: f32) -> f32 {
+        self.rng.uniform_float(min_value, max_value)
+    }
+
+    pub fn chance(&mut self, numerator: i32, denominator: i32) -> bool {
+        self.rng.chance(numerator, denominator)
+    }
+
+    pub fn get_max_attack_wait_frames(&self) -> i32 {
+        stage_catalog::get_max_attack_wait_frames_for_stage(self.stage_cycle)
+    }
+
+    /// Twin of ForceCruise: docked cruising with the arrival path consumed.
+    pub fn force_cruise(&mut self) {
+        self.stage = Stage::Cruising;
+        self.arrival_idx = self.arrival.len();
+        self.attack.clear();
+        self.attack_idx = 0;
+    }
+
+    /// Twin of RelocateStation: permanent honeycomb move (Alien14 warp).
+    pub fn relocate_station(&mut self, col: i32, row: i32) {
+        self.grid_col = col;
+        self.grid_row = row;
+    }
 }
+

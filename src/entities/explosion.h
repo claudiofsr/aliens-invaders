@@ -54,6 +54,13 @@ class ExplosionsManager {
   void Add(Coord pos, Coord speed, uint8_t r, uint8_t g, uint8_t b, int duration = 24);
   void TriggerScreenWideNova(Coord epicenter, int win_w, int win_h);
   void OnResize(float rx, float ry) noexcept;
+
+  /// Read-only observation of the dense active list (golden-vector recording
+  /// and headless tests): i indexes the live particles in simulation order.
+  [[nodiscard]] std::size_t ActiveCount() const noexcept { return active_count_; }
+  [[nodiscard]] const Particle& GetActiveParticle(std::size_t i) const noexcept {
+    return pool_[active_indices_[i]];
+  }
 };
 
 #endif  // EXPLOSION_H

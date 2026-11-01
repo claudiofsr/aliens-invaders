@@ -105,3 +105,29 @@ pub fn generate_smooth_spline(controls: &[Vec2f]) -> Vec<Vec2f> {
     }
     out
 }
+
+
+/// Twin of FlightPath::Loop (src/core/path.h): two-entry lead-in plus
+/// `repetitions` turns of a 36-step ellipse, resampled through the shared
+/// Catmull-Rom pipeline. The entity scenarios use Loop(120, -60, 2) as the
+/// canonical arrival spline.
+pub fn flight_path_loop(start_x: f32, start_y: f32, repetitions: i32) -> Vec<Vec2f> {
+    let mut raw = Vec::new();
+    raw.push(Vec2f::new(start_x, start_y));
+    raw.push(Vec2f::new(start_x + (512.0 - start_x) * 0.5, start_y));
+
+    const CX: f32 = 512.0;
+    const CY: f32 = 516.0;
+    const RX: f32 = 130.0;
+    const RY: f32 = 125.0;
+    const STEPS: i32 = 36;
+
+    for _ in 0..repetitions {
+        for s in 0..STEPS {
+            let angle = (s as f32 / STEPS as f32) * (2.0 * std::f32::consts::PI)
+                - (std::f32::consts::PI * 0.5);
+            raw.push(Vec2f::new(CX + RX * angle.cos(), CY + RY * angle.sin()));
+        }
+    }
+    generate_smooth_spline(&raw)
+}

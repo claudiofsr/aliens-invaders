@@ -18,6 +18,12 @@ class Config {
  public:
   Config();
 
+  /// Headless configuration: in-memory defaults only (details 2, 60 Hz,
+  /// standard hull, empty identity). Golden-vector tooling and headless tests
+  /// own a Config without the platform pref-path lookup (SDL) that the
+  /// production constructor performs; the tag keeps this bypass private.
+  [[nodiscard]] static Config CreateHeadless() { return Config(HeadlessTag{}); }
+
   Config(const Config&) = delete;
   Config& operator=(const Config&) = delete;
   Config(Config&&) noexcept = default;
@@ -47,6 +53,12 @@ class Config {
   [[nodiscard]] const std::string& GetScoreFileName() const noexcept {
     return score_file_name_;
   }
+
+ private:
+  /// Construction tag for CreateHeadless(): every member keeps its in-class
+  /// default, so the headless config never touches PlatformPaths.
+  struct HeadlessTag {};
+  explicit Config(HeadlessTag) {}
 };
 
 void SetStandardWindowSize(int win_size);

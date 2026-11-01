@@ -43,3 +43,32 @@ pub fn chebyshev(x1: i32, y1: i32, x2: i32, y2: i32) -> i32 {
         dy
     }
 }
+
+/// Port of the discrete screen-space Coord (src/core/math_types.h): int32
+/// pixel pairs with FastRound float conversions. The C++ Length() promotes to
+/// f64 for UHD headroom; no entity-corpus path calls it, so the twin omits it.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub struct Coord {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl Coord {
+    pub const fn new(x: i32, y: i32) -> Self {
+        Self { x, y }
+    }
+
+    /// Twin of the Coord(float, float) constructor: FastRound per axis.
+    pub fn round(x: f32, y: f32) -> Self {
+        Self { x: fast_round_f32(x), y: fast_round_f32(y) }
+    }
+
+    pub fn add(self, rhs: Self) -> Self {
+        Self { x: self.x + rhs.x, y: self.y + rhs.y }
+    }
+
+    pub fn to_vec2f(self) -> crate::path::Vec2f {
+        crate::path::Vec2f::new(self.x as f32, self.y as f32)
+    }
+}
+

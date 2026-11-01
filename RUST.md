@@ -47,14 +47,20 @@
 
 ## Estado do scaffold (Fases 1 + 2a/2b + 3)
 
-- `tools/dump_vectors.cc` — dumper do kernel puro (sem SDL): rng, math, unit_grid,
-  slots (3 scales), slot_edge, profile (waves 1–75), fleet/player functions,
-  pacing, score_hash, serialize. Floats como **bits IEEE hex** (`%08x`).
+- `tools/dump_vectors.cc` — dumper do kernel puro + camada de entidades (sem
+  SDL): rng, math, unit_grid, slots (3 scales), slot_edge, profile (waves
+  1–75), fleet/player, pacing, score_hash, serialize, splines, trajetórias e
+  os replays seedados `ent.*` (Fatia 4). Floats como **bits IEEE hex**
+  (`%08x`).
 - `golden/vectors-cpp.txt` — corpus (gerado localmente; ver golden/README.md).
 - `rust/kernel` — ports de RandomStream, mathx, formation (tabela em runtime),
   pacing, StageCatalog, ScoreHash (SHA-256), HighScoreTable (serialização
-  byte-idêntica), path (Catmull-Rom + resampler) e trajectory (máquina de
-  estados arriving/joining/cruising/attacking, mergulho e kamikaze).
+  byte-idêntica), path (Catmull-Rom + resampler), trajectory (máquina de
+  estados arriving/joining/cruising/attacking, mergulho e kamikaze) e a camada
+  de entidades (Fatia 4b): dist (uid Lemire do libstdc++), textures/sink
+  headless, game_object, bullets (seeker/relativístico/exaustão), bonus,
+  explosions, alien (warp/decay/kamikaze/spin), player e fleet (AliensManager:
+  comboios, ocupação lazy, criação, drift, fire, wanderers).
 - Política de tolerância (Fase 3): seções puramente aritméticas + sqrt são
   bit-exatas (splines, init, attacking/cruising); quadros do arco de docking
   (atan2/cos/sin) comparam posição com tol 1e-2 px e **sequência de estágios
@@ -75,9 +81,35 @@
   `DistributeMetrics`); Draw* fisicamente movidos para `actors_draw.cc` /
   `managers_draw.cc` / `explosion_draw.cc`. actors/managers/explosion agora
   linkam sem SDL — pré-requisito dos vetores de entidades.
-- **Fatia 4 (fix21)**: `dump_vectors` linka os TUs puros e grava as entidades
-  seedadas (warp/alpha-decay/kamikaze/bônus/colisões) + RecordingSink → ports
-  Rust de actors/managers sob contrato dourado.
+- **Fatia 4 (fix21)**: `dump_vectors` linka os TUs puros de entidades
+  (actors/managers/explosion) e grava replays seedados com RecordingSink +
+  texturas/Config headless (`Pix::CreateHeadless`, `Config::CreateHeadless`):
+  frota sintética na ordem de tick de produção com seed buscado para garantir
+  cobertura (warp relativístico usado, alpha-decay nascido, bônus coletado),
+  micro-contratos por alien (warp, decaimento, mergulho kamikaze),
+  jogador/bônus/escudo, projéteis (seeker/relativístico/tabela-verdade do
+  trap) e explosões. Seções `ent.*` no corpus (replay da frota auto-contido:
+  tabela de comboios, arrival paths e inputs por frame são linhas); teste 50
+  (`TestHeadlessEntitySimulation`) guarda o determinismo headless no CI.
+- **Fatia 4b (fix22)**: ports Rust da camada de entidades (10 módulos novos +
+  superfície de entidade em trajectory/formation) e `tests/entity_parity.rs`:
+  os 8 cenários `ent.*` replays quadro a quadro **bit-exatos, sem tolerância**
+  (mais estrito que a política da Fase 3 — o corpus fixa um toolchain
+  concreto: glibc >= 2.28 para transcendentais e libstdc++ com Lemire desde
+  GCC 11, ver `src/dist.rs`). Consumo do corpus em ordem estrita: linha
+  faltante OU sobrando falha (`Rows::next`/`Rows::done`), então um corpus
+  truncado não passa despercebido. Duas disciplinas de RNG que o port
+  cristaliza: (1) `RandomStream::UniformInt` nativo (rejeição por módulo) e
+  `std::uniform_int_distribution` (Lemire) são algoritmos DIFERENTES — cada
+  sítio C++ usa o seu e o twin espelha o sítio (exaustão do seeker = nativo;
+  `wave_phase` = Lemire); (2) paridade de ponteiro vivo — `Trajectory` em C++
+  lê o `base_cruise_` do manager por ponteiro; o twin Rust recebe o base
+  re-empurrado a cada tick, após o drift e antes do loop de aliens, o que
+  importa para o destino absoluto do warp. O gate estrutural
+  `entity_corpus_present` (Fatia 4) foi removido: a paridade completa o
+  substitui. O replay da frota usa a seed buscada do corpus e mantém o
+  contrato de cobertura (warp usado, decay nascido, bônus coletado, 900
+  quadros na ordem de tick de produção).
 
 ## Comandos
 
