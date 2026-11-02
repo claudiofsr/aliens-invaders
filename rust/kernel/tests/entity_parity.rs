@@ -3,8 +3,9 @@
 //! corpus and asserted BIT-EXACT, with one documented exception: the angle
 //! columns. Their last bit comes from atan2f, and atan2f's last bit depends on
 //! the glibc build that replays it: the same committed corpus passes bit-exact
-//! on the recording machine and diverged 1 ulp on the CI runner (glibc 2.39),
-//! with the Rust side simply calling whichever glibc it runs on. Angles are
+//! on the recording machine and diverges on any other machine: per-frame
+//! atan2f noise integrates through the easing into offsets of hundreds of
+//! ulps (measured worst: 672 ~= 0.13 deg). Angles are
 //! cosmetic -- no dynamics ever reads angle_ back (hull attitudes feed
 //! rendering; the single dynamics path through a deflection angle is
 //! FastRound-quantized) -- so the tight budget below cannot mask a state
@@ -103,13 +104,18 @@ fn hb(tok: &str) -> f32 {
 /// Budget for the transcendental-derived corpus columns: every `angle` field
 /// (hull attitudes from atan2f via AdvanceTurnDeg, and the bomb render and
 /// deflection angles built from them). The last bit of atan2f belongs to the
-/// glibc build that replays it, so these columns compare by ulp distance; a
-/// logic bug (swapped operands, stale frame, wrong easing) misses the corpus
-/// by orders of magnitude more than the budget. If a future glibc revision
-/// ever extends the drift to other libm-derived columns (sin/cos-fed
-/// velocities or arc positions), the same mechanism applies -- extend the
-/// budget to those columns then, never before the corpus proves it.
-const ANGLE_ULP_BUDGET: i64 = 2;
+/// glibc build that replays it, and angle_ integrates that noise through the
+/// per-frame easing, converging to a stationary offset: the measured worst
+/// case is 672 ulps across the full fleet and kamikaze replays (<= 0.13 deg)
+/// against a glibc older than the recorder's. The budget is ~6x that worst
+/// case; a logic bug (swapped operands, stale frame, wrong easing) misses the
+/// corpus by degrees -- four to six orders of magnitude more. To recalibrate
+/// after a glibc change: set the budget to i64::MAX, print `ulps` instead of
+/// asserting, replay every scenario, and size the budget from the observed
+/// maximum. If the drift ever extends to other libm-derived columns
+/// (sin/cos-fed velocities or arc positions), the same mechanism applies --
+/// extend it then, never before the corpus proves it.
+const ANGLE_ULP_BUDGET: i64 = 4096;
 
 /// Monotonic ordering of IEEE-754 bit patterns: for finite floats of the same
 /// sign the integer distance between ordered values is the exact ulp count
@@ -260,7 +266,7 @@ fn bullets_parity() {
         assert_eq!(i(&row, 6), i32::from(b.relativistic), "add {a} relativistic");
         assert_eq!(i(&row, 7), i32::from(b.is_turning_bomb), "add {a} turning");
         assert_eq!(i(&row, 8), b.turn_trigger_y, "add {a} trigger_y");
-        assert_angle_bits(&row[9], b.deflection_angle_deg.to_bits(), "add {a} defl");
+        assert_angle_bits(&row[9], b.deflection_angle_deg.to_bits(), &format!("add {a} defl"));
     }
 
     // Synthetic interception target: headless player dimensions at (300,320).
@@ -295,8 +301,8 @@ fn bullets_parity() {
             assert_eq!(i(&row, 12), i32::from(b.is_turning_bomb), "f{f} slot{a} turning");
             assert_eq!(i(&row, 13), i32::from(b.turn_completed), "f{f} slot{a} done");
             assert_eq!(i(&row, 14), b.turn_timer, "f{f} slot{a} timer");
-            assert_angle_bits(&row[15], b.bomb_render_angle.to_bits(), "f{f} slot{a} render");
-            assert_angle_bits(&row[16], b.deflection_angle_deg.to_bits(), "f{f} slot{a} defl");
+            assert_angle_bits(&row[15], b.bomb_render_angle.to_bits(), &format!("f{f} slot{a} render"));
+            assert_angle_bits(&row[16], b.deflection_angle_deg.to_bits(), &format!("f{f} slot{a} defl"));
             assert_eq!(hex32(&row[17]), b.speed_magnitude.to_bits(), "f{f} slot{a} mag");
         }
 
@@ -493,7 +499,7 @@ fn warp_parity() {
             assert_eq!(i(&row, 3), ship.stage() as i32, "step {step} f{f} stage");
             assert_eq!(i(&row, 4), ship.position().x, "step {step} f{f} x");
             assert_eq!(i(&row, 5), ship.position().y, "step {step} f{f} y");
-            assert_angle_bits(&row[6], ship.angle().to_bits(), "step {step} f{f} angle");
+            assert_angle_bits(&row[6], ship.angle().to_bits(), &format!("step {step} f{f} angle"));
             assert_eq!(i(&row, 7), ship.warp_evasions_remaining(), "step {step} f{f} evasions");
             assert_eq!(i(&row, 8), i32::from(ship.is_warping()), "step {step} f{f} warping");
             drain_sink(&mut sink, &mut sec, &sink_tag, f);
@@ -557,7 +563,7 @@ fn decay_parity() {
             assert_eq!(i(&row, 3), ship.stage() as i32, "phase {phase} f{f} stage");
             assert_eq!(i(&row, 4), ship.position().x, "phase {phase} f{f} x");
             assert_eq!(i(&row, 5), ship.position().y, "phase {phase} f{f} y");
-            assert_angle_bits(&row[6], ship.angle().to_bits(), "phase {phase} f{f} angle");
+            assert_angle_bits(&row[6], ship.angle().to_bits(), &format!("phase {phase} f{f} angle"));
             assert_eq!(hex32(&row[7]), ship.scale().to_bits(), "phase {phase} f{f} scale");
             assert_eq!(
                 i(&row, 8),
@@ -604,7 +610,7 @@ fn kamikaze_parity() {
         assert_eq!(i(&row, 2), ship.stage() as i32, "f{f} stage");
         assert_eq!(i(&row, 3), ship.position().x, "f{f} x");
         assert_eq!(i(&row, 4), ship.position().y, "f{f} y");
-        assert_angle_bits(&row[5], ship.angle().to_bits(), "f{f} angle");
+        assert_angle_bits(&row[5], ship.angle().to_bits(), &format!("f{f} angle"));
         assert_eq!(i(&row, 6), i32::from(ship.is_kamikaze()), "f{f} kamikaze");
     }
     sec.done("ent.kz");
@@ -1065,7 +1071,7 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
                     i32::from(alien.can_trigger_alpha_decay()),
                     "f{f} alien{a} decay"
                 );
-                assert_angle_bits(&row[13], alien.angle().to_bits(), "f{f} alien{a} angle");
+                assert_angle_bits(&row[13], alien.angle().to_bits(), &format!("f{f} alien{a} angle"));
                 assert_eq!(hex32(&row[14]), alien.scale().to_bits(), "f{f} alien{a} scale");
             }
             for a in 0..bombs.nb() as usize {
