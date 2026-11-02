@@ -32,6 +32,7 @@ use kernel::{
     mathx::Coord,
     path::{self, Vec2f},
     player::Player,
+    session::EntitySession,
     sink::{EventSink, PresentationEvent},
     textures::{dims, TextureId, HEADLESS_DIMS},
     trajectory::{Trajectory, ViewportMetrics},
@@ -913,7 +914,10 @@ const FLEET_LEVEL: i32 = 3;
 const FLEET_MAX_LEVEL: i32 = 15; // GameRules::Progression::kWavesPerStage
 const FLEET_REPLAY_FRAMES: i32 = 900;
 
-/// One seeded fleet replay in the EXACT production tick order. With
+/// One seeded fleet replay driven by the kernel `EntitySession` (RUST.md
+/// Fatia 5): the 900-frame corpus IS the golden contract for the production
+/// tick order, so this harness only builds the managers as scenario inputs,
+/// feeds the deterministic input script, and records/asserts rows. With
 /// `rec = Some` it asserts every corpus row of the recorded replay.
 fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
     let convoys = fleet_convoys();
@@ -929,9 +933,9 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
     bombs.set_metrics(METRICS);
     bonuses.set_metrics(METRICS);
     explosions.set_metrics(METRICS.scale);
-    let mut sink = EventSink::default();
+    let sink = EventSink::default();
 
-    let mut fleet = Fleet::new(
+    let fleet = Fleet::new(
         FLEET_LEVEL,
         convoys.clone(),
         paths.clone(),
@@ -939,10 +943,16 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
         FLEET_MAX_LEVEL,
         seed,
     );
-    let mut player = Player::new(METRICS);
+    let player = Player::new(METRICS);
 
     // Kamikaze blast radius: the fleet grid width times the SSOT multiplier.
     let lethal = grid.width as f32 * 1.4;
+
+    // The kernel session owns the managers and the canonical tick order;
+    // the harness keeps only scenario inputs and row assertions.
+    let mut session = EntitySession::new(
+        fleet, player, bullets, bombs, bonuses, explosions, sink, lethal,
+    );
 
     if let Some(sec) = rec.as_deref_mut() {
         let row = sec.next("ent.fleet.setup");
@@ -981,41 +991,25 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
     }
 
     let mut out = FleetOutcome::default();
-    let mut score_total = 0u64;
     let mut script = InputScript { state: 0x1234_ABCD };
 
     let mut f = 0i32;
     while f < FLEET_REPLAY_FRAMES {
         let dir = script.step();
 
-        // Exact production tick order (CombatSession::TickFixedPhysics):
-        // collisions first, then bonuses/player/projectiles, fleet last.
-        let summary = fleet.do_bullets_collisions(
-            &mut bullets, &mut explosions, &mut bonuses, &mut sink, Some(&player),
-        );
-        player.do_bombs_collisions(&mut bombs, &mut explosions, &mut sink);
-        let prox = fleet.check_kamikaze_proximity(player.position(), lethal);
-        player.do_bonus_collisions(
-            &mut bonuses, &mut explosions, &mut sink, Some(&mut fleet),
-        );
-        bonuses.advance();
-        player.move_player(dir);
-        bullets.advance(Coord::new(-1, -1));
-        bombs.advance(player.position());
-        player.fire(&mut bullets, &mut sink);
-        explosions.advance();
-        fleet.advance(&bullets, &mut sink, Some(player.position()));
-        fleet.fire(player.position(), &mut bombs);
-
-        score_total += summary.score_earned;
-        out.kills += summary.total_hits;
-        if bonuses.nb() > 0
-            || player.speed_level() + player.fire_level() + player.multi_fire() > 1
+        // One frame of the canonical production order, kernel-side:
+        // EntitySession::tick == the TickFixedPhysics entity subset.
+        let report = session.tick(dir, true);
+        if session.bonuses().nb() > 0
+            || session.player().speed_level()
+                + session.player().fire_level()
+                + session.player().multi_fire()
+                > 1
         {
             out.bonus_spawned = true;
         }
-        for a in 0..fleet.alien_count() {
-            let alien = fleet.get_alien(a);
+        for a in 0..session.fleet().alien_count() {
+            let alien = session.fleet().get_alien(a);
             if alien.texture_id() == TextureId::Alien14 {
                 if alien.warp_evasions_remaining() > 0 {
                     out.warp_spawned = true;
@@ -1035,25 +1029,37 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
             assert_eq!(i(&row, 1), f, "frame idx");
             assert_eq!(i(&row, 2), dir, "f{f} dir");
             assert_eq!(i(&row, 3), 1, "f{f} fire flag");
-            assert_eq!(sz(&row, 4), fleet.alien_count(), "f{f} aliens");
-            assert_eq!(i(&row, 5), bombs.nb(), "f{f} bombs");
-            assert_eq!(i(&row, 6), bullets.nb(), "f{f} bullets");
-            assert_eq!(i(&row, 7), bonuses.nb(), "f{f} bonuses");
-            assert_eq!(sz(&row, 8), explosions.active_count(), "f{f} explosions");
-            assert_eq!(i(&row, 9), player.position().x, "f{f} pl_x");
-            assert_eq!(i(&row, 10), player.position().y, "f{f} pl_y");
-            assert_eq!(i(&row, 11), player.shield(), "f{f} shield");
-            assert_eq!(i(&row, 12), player.fire_level(), "f{f} fire_lvl");
-            assert_eq!(i(&row, 13), player.multi_fire(), "f{f} multi");
-            assert_eq!(i(&row, 14), player.speed_level(), "f{f} speed_lvl");
-            assert_eq!(i(&row, 15), summary.total_hits, "f{f} hits");
-            assert_eq!(i(&row, 16), summary.regular_hits, "f{f} regular");
-            assert_eq!(i(&row, 17), summary.kamikaze_hits, "f{f} kamikaze");
-            assert_eq!(u(&row, 18), score_total, "f{f} score");
-            assert_eq!(i(&row, 19), i32::from(prox), "f{f} proximity");
+            assert_eq!(sz(&row, 4), session.fleet().alien_count(), "f{f} aliens");
+            assert_eq!(i(&row, 5), session.bombs().nb(), "f{f} bombs");
+            assert_eq!(i(&row, 6), session.bullets().nb(), "f{f} bullets");
+            assert_eq!(i(&row, 7), session.bonuses().nb(), "f{f} bonuses");
+            assert_eq!(
+                sz(&row, 8),
+                session.explosions().active_count(),
+                "f{f} explosions"
+            );
+            assert_eq!(i(&row, 9), session.player().position().x, "f{f} pl_x");
+            assert_eq!(i(&row, 10), session.player().position().y, "f{f} pl_y");
+            assert_eq!(i(&row, 11), session.player().shield(), "f{f} shield");
+            assert_eq!(i(&row, 12), session.player().fire_level(), "f{f} fire_lvl");
+            assert_eq!(i(&row, 13), session.player().multi_fire(), "f{f} multi");
+            assert_eq!(i(&row, 14), session.player().speed_level(), "f{f} speed_lvl");
+            assert_eq!(i(&row, 15), report.collisions.total_hits, "f{f} hits");
+            assert_eq!(i(&row, 16), report.collisions.regular_hits, "f{f} regular");
+            assert_eq!(
+                i(&row, 17),
+                report.collisions.kamikaze_hits,
+                "f{f} kamikaze"
+            );
+            assert_eq!(u(&row, 18), session.score_total(), "f{f} score");
+            assert_eq!(
+                i(&row, 19),
+                i32::from(report.kamikaze_proximity),
+                "f{f} proximity"
+            );
 
-            for a in 0..fleet.alien_count() {
-                let alien = fleet.get_alien(a);
+            for a in 0..session.fleet().alien_count() {
+                let alien = session.fleet().get_alien(a);
                 let row = sec.next("ent.fleet.alien");
                 assert_eq!(i(&row, 1), f, "alien frame");
                 assert_eq!(sz(&row, 2), a, "alien idx");
@@ -1074,8 +1080,8 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
                 assert_angle_bits(&row[13], alien.angle().to_bits(), &format!("f{f} alien{a} angle"));
                 assert_eq!(hex32(&row[14]), alien.scale().to_bits(), "f{f} alien{a} scale");
             }
-            for a in 0..bombs.nb() as usize {
-                let b = bombs.get_active(a);
+            for a in 0..session.bombs().nb() as usize {
+                let b = session.bombs().get_active(a);
                 let row = sec.next("ent.fleet.bomb");
                 assert_eq!(i(&row, 1), f, "bomb frame");
                 assert_eq!(i(&row, 2), a as i32, "bomb idx");
@@ -1087,8 +1093,8 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
                 assert_eq!(i(&row, 8), b.turn_timer, "f{f} bomb{a} timer");
                 assert_eq!(i(&row, 9), b.wave_phase, "f{f} bomb{a} phase");
             }
-            for a in 0..bullets.nb() as usize {
-                let b = bullets.get_active(a);
+            for a in 0..session.bullets().nb() as usize {
+                let b = session.bullets().get_active(a);
                 let row = sec.next("ent.fleet.bullet");
                 assert_eq!(i(&row, 1), f, "bullet frame");
                 assert_eq!(i(&row, 2), a as i32, "bullet idx");
@@ -1097,8 +1103,8 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
                 assert_eq!(i(&row, 5), b.speed.x, "f{f} bullet{a} vx");
                 assert_eq!(i(&row, 6), b.speed.y, "f{f} bullet{a} vy");
             }
-            for a in 0..bonuses.nb() as usize {
-                let s = bonuses.get_active(a);
+            for a in 0..session.bonuses().nb() as usize {
+                let s = session.bonuses().get_active(a);
                 let row = sec.next("ent.fleet.bonus");
                 assert_eq!(i(&row, 1), f, "bonus frame");
                 assert_eq!(i(&row, 2), a as i32, "bonus idx");
@@ -1106,19 +1112,19 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
                 assert_eq!(i(&row, 4), s.pos.x, "f{f} bonus{a} x");
                 assert_eq!(i(&row, 5), s.pos.y, "f{f} bonus{a} y");
             }
-            drain_sink(&mut sink, sec, "ent.fleet.sink", f);
+            drain_sink(session.sink_mut(), sec, "ent.fleet.sink", f);
         } else {
-            sink.drain();
+            session.sink_mut().drain();
         }
 
         // Early exit: armada finished and every pool drained (only after the
         // search had a fair combat window for the coverage contract).
         if f >= 500
-            && fleet.finished()
-            && bombs.nb() == 0
-            && bullets.nb() == 0
-            && bonuses.nb() == 0
-            && explosions.active_count() == 0
+            && session.fleet().finished()
+            && session.bombs().nb() == 0
+            && session.bullets().nb() == 0
+            && session.bonuses().nb() == 0
+            && session.explosions().active_count() == 0
         {
             f += 1;
             break;
@@ -1127,7 +1133,8 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
     }
 
     out.frames = f;
-    out.finished = fleet.finished();
+    out.finished = session.fleet().finished();
+    out.kills = session.kills();
     if let Some(sec) = rec.as_deref_mut() {
         let row = sec.next("ent.fleet.done");
         assert_eq!(i(&row, 1), out.frames, "done frames");

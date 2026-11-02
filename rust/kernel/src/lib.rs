@@ -16,6 +16,7 @@ pub mod path;
 pub mod player;
 pub mod random_stream;
 pub mod score_hash;
+pub mod session;
 pub mod sink;
 pub mod stage_catalog;
 pub mod textures;

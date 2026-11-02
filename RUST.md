@@ -15,18 +15,18 @@
 
 ## Fases e gates
 
-| Fase | Conteúdo | Gate de validação |
-|---|---|---|
-| **0** | Baseline C++ tagado; este documento | — |
-| **1** | `tools/dump_vectors.cc` → `golden/vectors-cpp.txt` (contratos) | corpus versionado e reproduzível |
-| **2a** | Kernel Rust: RandomStream, math, formação, pacing (**este scaffold**) | `cargo test` verde contra os vetores |
-| **2b** | StageCatalog, ScoreHash, HighScoreTable, bonus masks em Rust | seções `profile`/`score_hash`/`serialize` dos vetores |
-| **3** | Trajectory + splines + entidades/simulação (replay dump por frame) | replays longos bit-idênticos |
-| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente |
-| **5** | Áudio: synth procedural + transpilador das 15 partituras + tsf via bindgen | WAV export **bit-idêntico** (KATs já existem) |
-| **6** | UI/menu/layout/telemetria/starfield | paridade visual |
-| **7** | Paridade total + CI Rust (5 plataformas — cross mais fácil que C++) + depots Steam idênticos | 100% dos gates |
-| **8** | Aposentadoria do C++ (tag/branch de arquivo); AGENTS-RS.md | — |
+| Fase | Conteúdo | Gate de validação | Status |
+|---|---|---|---|
+| **0** | Baseline C++ tagado; este documento | — | ✅ |
+| **1** | `tools/dump_vectors.cc` → `golden/vectors-cpp.txt` (contratos) | corpus versionado e reproduzível | ✅ |
+| **2a** | Kernel Rust: RandomStream, math, formação, pacing (**este scaffold**) | `cargo test` verde contra os vetores | ✅ |
+| **2b** | StageCatalog, ScoreHash, HighScoreTable, bonus masks em Rust | seções `profile`/`score_hash`/`serialize` dos vetores | ✅ |
+| **3** | Trajectory + splines + entidades/simulação (replay dump por frame) | replays longos bit-idênticos | ✅ (Fatias 4/4b: replay de 900 quadros bit-exato) |
+| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatia 5: pré-requisito do kernel pronto — `EntitySession`; casca SDL não iniciada) |
+| **5** | Áudio: synth procedural + transpilador das 15 partituras + tsf via bindgen | WAV export **bit-idêntico** (KATs já existem) | ⬜ |
+| **6** | UI/menu/layout/telemetria/starfield | paridade visual | ⬜ |
+| **7** | Paridade total + CI Rust (5 plataformas — cross mais fácil que C++) + depots Steam idênticos | 100% dos gates | ⬜ |
+| **8** | Aposentadoria do C++ (tag/branch de arquivo); AGENTS-RS.md | — | ⬜ |
 
 ## Mapeamento C++ → Rust (decisões fixas)
 
@@ -45,7 +45,7 @@
 | `-Wconversion` discipline | `clippy::as_conversion`, `#[deny(warnings)]` | CI Rust |
 | CMake/Make | Cargo workspace + `cargo-zigbuild` (Win/mac) | FreeBSD tier-2 nativo |
 
-## Estado do scaffold (Fases 1 + 2a/2b + 3)
+## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5)
 
 - `tools/dump_vectors.cc` — dumper do kernel puro + camada de entidades (sem
   SDL): rng, math, unit_grid, slots (3 scales), slot_edge, profile (waves
@@ -59,8 +59,10 @@
   estados arriving/joining/cruising/attacking, mergulho e kamikaze) e a camada
   de entidades (Fatia 4b): dist (uid Lemire do libstdc++), textures/sink
   headless, game_object, bullets (seeker/relativístico/exaustão), bonus,
-  explosions, alien (warp/decay/kamikaze/spin), player e fleet (AliensManager:
-  comboios, ocupação lazy, criação, drift, fire, wanderers).
+  explosions, alien (warp/decay/kamikaze/spin), player, fleet (AliensManager:
+  comboios, ocupação lazy, criação, drift, fire, wanderers) e session (Fatia 5:
+  `EntitySession` — pipeline de tick da física fixa, a ordem canônica de
+  produção atrás de um único `tick(dir, fire)` com `TickReport` por quadro).
 - Política de tolerância (Fase 3): seções puramente aritméticas + sqrt são
   bit-exatas (splines, init, attacking/cruising); quadros do arco de docking
   (atan2/cos/sin) comparam posição com tol 1e-2 px e **sequência de estágios
@@ -115,6 +117,16 @@
   substitui. O replay da frota usa a seed buscada do corpus e mantém o
   contrato de cobertura (warp usado, decay nascido, bônus coletado, 900
   quadros na ordem de tick de produção).
+- **Fatia 5 (fix25)**: `rust/kernel/src/session.rs` — `EntitySession`, o
+  pipeline de tick da física fixa da camada de entidades (o subconjunto de
+  entidades de `CombatSession::TickFixedPhysics`) atrás de um único
+  `tick(dir, fire) -> TickReport` (colisões, score, proximidade kamikaze).
+  A orquestração sai do harness de teste e entra no kernel: `fleet_parity`
+  consome o corpus via `session.tick`. C++ e corpus inalterados — os 900
+  quadros `ent.fleet.*` já eram o contrato golden dessa ordem de tick. Os
+  ramos do shell (cinemática de supernova/destruição, estrelas, contexto de
+  score, transições de fase) permanecem em C++ até a Fase 4: a sessão
+  REPORTA a proximidade kamikaze, não a encena.
 
 ## Comandos
 
