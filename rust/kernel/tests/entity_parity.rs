@@ -34,6 +34,7 @@ use kernel::{
     player::Player,
     session::EntitySession,
     sink::{EventSink, PresentationEvent},
+    stars::{self, StarsFields, STARFIELD_SEED, WARP_DURATION_FRAMES},
     textures::{dims, TextureId, HEADLESS_DIMS},
     trajectory::{Trajectory, ViewportMetrics},
 };
@@ -1165,4 +1166,289 @@ fn fleet_parity() {
     let mut sec = section(&rows, "ent.fleet.");
     let recorded = fleet_replay(chosen, Some(&mut sec));
     assert!(recorded.coverage(), "recorded replay lost coverage");
+}
+
+// ---- Starfield replay (Fatia 6) ---------------------------------------------
+
+/// FNV-1a (64) over the full dynamic state of every active star, in pool
+/// order -- the test-side twin of the dumper's `StarPoolHash`. Float bits go
+/// little-endian, byte by byte, so both sides fold identical bytes.
+fn fnv_byte(h: &mut u64, b: u8) {
+    // FNV-1a multiplies modulo 2^64 by design: C++ unsigned wraps, so the
+    // twin must wrap explicitly (debug builds check overflow).
+    *h = (*h ^ b as u64).wrapping_mul(1_099_511_628_211);
+}
+
+fn fnv_u32(h: &mut u64, v: u32) {
+    for k in 0..4 {
+        fnv_byte(h, ((v >> (8 * k)) & 0xFF) as u8);
+    }
+}
+
+fn star_pool_hash(sf: &StarsFields) -> u64 {
+    let mut h: u64 = 14_695_981_039_346_656_037;
+    for i in 0..sf.active_stars() {
+        let s = sf.sample_star(i);
+        fnv_u32(&mut h, s.x.to_bits());
+        fnv_u32(&mut h, s.y.to_bits());
+        fnv_u32(&mut h, s.base_speed.to_bits());
+        fnv_byte(&mut h, s.star_type);
+        fnv_byte(&mut h, s.spectral);
+        fnv_byte(&mut h, s.r);
+        fnv_byte(&mut h, s.g);
+        fnv_byte(&mut h, s.b);
+        fnv_byte(&mut h, s.alpha);
+        fnv_u32(&mut h, s.twinkle_phase as u32);
+        fnv_u32(&mut h, s.twinkle_step as u32);
+    }
+    h
+}
+
+fn hex64(tok: &str) -> u64 {
+    u64::from_str_radix(tok, 16).unwrap_or_else(|e| panic!("bad u64 hex {tok}: {e}"))
+}
+
+fn f64_of(row: &[String], k: usize) -> f64 {
+    row[k].parse::<f64>().unwrap_or_else(|e| panic!("bad f64 {:?}: {e}", row[k]))
+}
+
+/// Asserts the 11 data columns shared by `ent.stars.star` and
+/// `ent.stars.snapshot` rows against the twin's pool slot.
+fn assert_star_row(row: &[String], sf: &StarsFields, idx: usize, f: i32, ctx: &str) {
+    let s = sf.sample_star(idx);
+    assert_eq!(i(row, 1), f, "{ctx} frame");
+    assert_eq!(sz(row, 2), idx, "{ctx} idx");
+    assert_eq!(hex32(&row[3]), s.x.to_bits(), "{ctx} x");
+    assert_eq!(hex32(&row[4]), s.y.to_bits(), "{ctx} y");
+    assert_eq!(hex32(&row[5]), s.base_speed.to_bits(), "{ctx} speed");
+    assert_eq!(sz(row, 6), s.star_type as usize, "{ctx} type");
+    assert_eq!(sz(row, 7), s.spectral as usize, "{ctx} spectral");
+    assert_eq!(i(row, 8), s.r as i32, "{ctx} r");
+    assert_eq!(i(row, 9), s.g as i32, "{ctx} g");
+    assert_eq!(i(row, 10), s.b as i32, "{ctx} b");
+    assert_eq!(i(row, 11), s.twinkle_phase as i32, "{ctx} phase");
+    assert_eq!(i(row, 12), s.twinkle_step as i32, "{ctx} step");
+    assert_eq!(i(row, 13), s.alpha as i32, "{ctx} alpha");
+}
+
+/// The starfield contract (RUST.md Fatia 6): frozen twinkle LUT + frozen
+/// warp easing, then the scripted 640-frame replay -- bit-exact on EVERY
+/// column (zero tolerance; the transcendentals live in the frozen tables).
+#[test]
+fn stars_parity() {
+    let rows = load_rows();
+    let mut sec = section(&rows, "ent.stars.");
+
+    // ---- setup echoes: SSOT drift gate for the duplicated constants ----
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "seed");
+    assert_eq!(hex32(&row[2]), STARFIELD_SEED, "star rng seed");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "win");
+    assert_eq!(i(&row, 2), 1280, "win_w");
+    assert_eq!(i(&row, 3), 720, "win_h");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "frames");
+    let frames = i(&row, 2);
+    assert_eq!(frames, 640, "replay budget");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "warp_frames");
+    assert_eq!(i(&row, 2), WARP_DURATION_FRAMES, "production warp length");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "warp_at");
+    let warp_at = i(&row, 2);
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "resize_at");
+    let resize_at = i(&row, 2);
+    let new_w = i(&row, 3);
+    let new_h = i(&row, 4);
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "density_at");
+    let density_at = i(&row, 2);
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "warp_mult");
+    assert_eq!(hex32(&row[2]), stars::K_WARP_MULT.to_bits(), "warp multiplier");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "base_res");
+    assert_eq!(f64_of(&row, 2), stars::K_BASE_RES_W, "base res w");
+    assert_eq!(f64_of(&row, 3), stars::K_BASE_RES_H, "base res h");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "base_count");
+    assert_eq!(f64_of(&row, 2), stars::K_BASE_STAR_COUNT, "base star count");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "min_max");
+    assert_eq!(sz(&row, 2), stars::K_MIN_STARS, "min stars");
+    assert_eq!(sz(&row, 3), stars::K_MAX_STARS, "max stars");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "threshold");
+    assert_eq!(
+        hex32(&row[2]),
+        stars::K_FOREGROUND_THRESHOLD.to_bits(),
+        "foreground threshold"
+    );
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "tau");
+    assert_eq!(hex32(&row[2]), stars::K_TAU.to_bits(), "tau");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "twinkle_floor_ceil");
+    assert_eq!(hex32(&row[2]), stars::K_TWINKLE_FLOOR.to_bits(), "floor");
+    assert_eq!(hex32(&row[3]), stars::K_TWINKLE_CEIL.to_bits(), "ceil");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "harmonics");
+    assert_eq!(hex32(&row[2]), stars::K_TWINKLE_HARMONIC2.to_bits(), "h2");
+    assert_eq!(hex32(&row[3]), stars::K_TWINKLE_HARMONIC3.to_bits(), "h3");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "mid_speed");
+    assert_eq!(hex32(&row[2]), stars::K_MID_SPEED_MIN.to_bits(), "mid min");
+    assert_eq!(hex32(&row[3]), stars::K_MID_SPEED_MAX.to_bits(), "mid max");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "fg_speed");
+    assert_eq!(hex32(&row[2]), stars::K_FG_SPEED_MIN.to_bits(), "fg min");
+    assert_eq!(hex32(&row[3]), stars::K_FG_SPEED_MAX.to_bits(), "fg max");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "twinkle_speed");
+    assert_eq!(hex32(&row[2]), stars::K_TWINKLE_SPEED_MIN.to_bits(), "tw min");
+    assert_eq!(hex32(&row[3]), stars::K_TWINKLE_SPEED_MAX.to_bits(), "tw max");
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "phase_scale");
+    assert_eq!(
+        i(&row, 2),
+        stars::K_TWINKLE_PHASE_SCALE as i32,
+        "phase scale"
+    );
+
+    let row = sec.next("ent.stars.setup");
+    assert_eq!(row[1], "density_factors");
+    for lvl in 0..5usize {
+        assert_eq!(
+            hex64(&row[2 + lvl]),
+            stars::K_DENSITY_FACTORS[lvl].to_bits(),
+            "density factor level {lvl}"
+        );
+    }
+
+    // ---- frozen twinkle LUT (recorded transcendentals, bit-exact) ----
+    for k in 0..256 {
+        let row = sec.next("ent.stars.alpha");
+        assert_eq!(i(&row, 1), k, "alpha idx");
+        assert_eq!(
+            i(&row, 2),
+            StarsFields::twinkle_alpha(k as u8) as i32,
+            "alpha[{k}]"
+        );
+    }
+    for k in 0..256 {
+        let row = sec.next("ent.stars.pulse");
+        assert_eq!(i(&row, 1), k, "pulse idx");
+        assert_eq!(
+            hex32(&row[2]),
+            StarsFields::twinkle_pulse(k as u8).to_bits(),
+            "pulse[{k}]"
+        );
+    }
+
+    // ---- frozen warp easing via a throwaway probe (rng-independent) ----
+    let mut probe = StarsFields::new(1280, 720);
+    probe.set_config_details(2);
+    probe.trigger_hyperspace_warp();
+    for _ in 0..WARP_DURATION_FRAMES {
+        probe.scroll();
+        let row = sec.next("ent.stars.warp");
+        assert_eq!(i(&row, 1), probe.warp_timer(), "warp timer");
+        assert_eq!(
+            hex32(&row[2]),
+            probe.warp_factor().to_bits(),
+            "warp factor @t={}",
+            probe.warp_timer()
+        );
+    }
+
+    // ---- scripted replay: the dumper's scenario, frame by frame ----
+    let mut sf = StarsFields::new(1280, 720);
+    sf.set_config_details(2);
+    let mut details = 2;
+    let mut respawns_total = 0i64;
+    let mut warp_seen = false;
+    let mut expanded = false;
+    let mut shrunk = false;
+    for f in 0..frames {
+        if f == warp_at {
+            sf.trigger_hyperspace_warp();
+        }
+        if f == resize_at {
+            sf.set_viewport(new_w, new_h);
+        }
+        if f == density_at {
+            details = 1;
+            sf.set_details_level(details);
+        }
+        sf.scroll();
+        if sf.warp_timer() > 0 || sf.warp_factor() > 1.0 {
+            warp_seen = true;
+        }
+        // Respawn observable: the headless fall respawn parks y at exactly -5.
+        let mut respawned = 0i32;
+        for k in 0..sf.active_stars() {
+            if sf.sample_star(k).y == -5.0 {
+                respawned += 1;
+            }
+        }
+        respawns_total += i64::from(respawned);
+        if sf.active_stars() == 225 {
+            expanded = true;
+        }
+        if f >= density_at && sf.active_stars() == 90 {
+            shrunk = true;
+        }
+
+        let row = sec.next("ent.stars.frame");
+        assert_eq!(i(&row, 1), f, "frame idx");
+        assert_eq!(i(&row, 2), sf.warp_timer(), "f{f} warp_timer");
+        assert_eq!(hex32(&row[3]), sf.warp_factor().to_bits(), "f{f} warp_factor");
+        assert_eq!(sz(&row, 4), sf.active_stars(), "f{f} active");
+        assert_eq!(i(&row, 5), sf.viewport_width(), "f{f} win_w");
+        assert_eq!(i(&row, 6), sf.viewport_height(), "f{f} win_h");
+        assert_eq!(i(&row, 7), details, "f{f} details");
+        assert_eq!(i(&row, 8), respawned, "f{f} respawned");
+        assert_eq!(hex64(&row[9]), star_pool_hash(&sf), "f{f} pool hash");
+
+        let snapshot = f == 0 || f == 420 || f == resize_at || f == density_at || f == frames - 1;
+        let count = if snapshot { sf.active_stars() } else { 8 };
+        for k in 0..count {
+            let tag = if snapshot { "ent.stars.snapshot" } else { "ent.stars.star" };
+            let row = sec.next(tag);
+            assert_star_row(&row, &sf, k, f, tag);
+        }
+    }
+
+    let row = sec.next("ent.stars.done");
+    assert_eq!(i(&row, 1), frames, "done frames");
+    assert_eq!(row[2].parse::<i64>().unwrap(), respawns_total, "done respawns");
+    assert_eq!(sz(&row, 3), sf.active_stars(), "done active");
+    sec.done("ent.stars");
+
+    // Coverage contract: the scenario must keep exercising the branches.
+    assert!(warp_seen, "replay never exercised the warp window");
+    assert!(respawns_total >= 10, "replay never exercised edge respawns");
+    assert!(expanded, "viewport growth never expanded the pool to 225");
+    assert!(shrunk, "details drop never shrank the pool to 90");
+    assert_eq!(sf.active_stars(), 90, "final density misfit");
 }

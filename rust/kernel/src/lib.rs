@@ -19,6 +19,7 @@ pub mod score_hash;
 pub mod session;
 pub mod sink;
 pub mod stage_catalog;
+pub mod stars;
 pub mod textures;
 pub mod trajectory;
 

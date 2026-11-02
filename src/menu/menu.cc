@@ -286,8 +286,9 @@ bool StartMenu::Display(GameContext& ctx) {
 
     if (input.Fullscreen()) {
       Gfx::Inst().ToggleFullscreen();
-      // The starfield owns its own rescaling: Scroll() -> CheckWindowResize() applies the
-      // cumulative ratio from its self-tracked last size, which stays correct even when the ...
+      // The starfield owns its own rescaling: CheckWindowResize() -- run right
+      // before Scroll() below -- applies the cumulative ratio from its
+      // self-tracked last size, which stays correct across missed frames.
       InvalidateGeometry();
     }
 
@@ -328,6 +329,7 @@ bool StartMenu::Display(GameContext& ctx) {
       InvalidateGeometry();  // compositor resize event: geometry, deferrable
     }
 
+    ctx.stars.CheckWindowResize();
     ctx.stars.Scroll();
     Gfx::Inst().Clear();
     ctx.stars.Draw();

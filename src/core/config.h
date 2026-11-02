@@ -29,7 +29,13 @@ class Config {
   Config(Config&&) noexcept = default;
   Config& operator=(Config&&) noexcept = default;
 
-  void AddDetailsLevel(int i) noexcept;
+  // Inline so golden-vector tooling can script detail levels without
+  // linking the SDL-bound config.cc translation unit.
+  void AddDetailsLevel(int i) noexcept {
+    if (details_level_ + i >= min_details && details_level_ + i <= max_details) {
+      details_level_ += i;
+    }
+  }
   [[nodiscard]] int ScaleDetails(int val) const noexcept {
     return val * details_level_ / max_details;
   }

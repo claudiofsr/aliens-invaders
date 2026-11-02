@@ -27,7 +27,8 @@ Revise o `git diff` do arquivo antes de commitar: os vetores SÃO a especificaç
   headless, `ent.bl.*` projéteis, `ent.wp.*` warp relativístico, `ent.dc.*`
   alpha decay, `ent.kz.*` mergulho kamikaze, `ent.fleet.*` replay completo da
   frota — auto-contido: tabela de comboios, paths e inputs por frame —,
-  `ent.pl.*` jogador/bônus, `ent.ex.*` explosões).
+  `ent.pl.*` jogador/bônus, `ent.ex.*` explosões, `ent.stars.*` starfield —
+  LUT de twinkle e easing do warp congelados como dados gravados).
 - Ordem de emissão é fixa (ver `tools/dump_vectors.cc`); streams RNG são
   sequenciais — a ordem dos draws faz parte do contrato.
 
@@ -42,5 +43,8 @@ glibc que o replaya e o ruído integra pelo easing quadro a quadro (pior caso
 medido: 672 ulps ~= 0,13°; política da Fase 3; ângulos são cosméticos —
 nenhuma dinâmica os relê). O corpus fixa o toolchain para a aritmética e para o
 Lemire do libstdc++ desde GCC 11, e o consumo é em ordem estrita — linha
-faltante ou sobrando falha. O gate estrutural
+faltante ou sobrando falha. `ent.stars.*` (Fatia 6) é **tolerância zero**: os
+transcendentais (LUT de twinkle, curva do warp) são dados congelados nos dois
+lados — corpus e `stars.rs` —, então nenhuma coluna admite orçamento de ulps.
+O gate estrutural
 `entity_corpus_present` foi removido: a paridade completa o substitui.

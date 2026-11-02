@@ -22,7 +22,7 @@
 | **2a** | Kernel Rust: RandomStream, math, formação, pacing (**este scaffold**) | `cargo test` verde contra os vetores | ✅ |
 | **2b** | StageCatalog, ScoreHash, HighScoreTable, bonus masks em Rust | seções `profile`/`score_hash`/`serialize` dos vetores | ✅ |
 | **3** | Trajectory + splines + entidades/simulação (replay dump por frame) | replays longos bit-idênticos | ✅ (Fatias 4/4b: replay de 900 quadros bit-exato) |
-| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatia 5: pré-requisito do kernel pronto — `EntitySession`; casca SDL não iniciada) |
+| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5/6: pré-requisitos do kernel prontos — `EntitySession` + starfield; casca SDL não iniciada) |
 | **5** | Áudio: synth procedural + transpilador das 15 partituras + tsf via bindgen | WAV export **bit-idêntico** (KATs já existem) | ⬜ |
 | **6** | UI/menu/layout/telemetria/starfield | paridade visual | ⬜ |
 | **7** | Paridade total + CI Rust (5 plataformas — cross mais fácil que C++) + depots Steam idênticos | 100% dos gates | ⬜ |
@@ -45,12 +45,12 @@
 | `-Wconversion` discipline | `clippy::as_conversion`, `#[deny(warnings)]` | CI Rust |
 | CMake/Make | Cargo workspace + `cargo-zigbuild` (Win/mac) | FreeBSD tier-2 nativo |
 
-## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5)
+## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6)
 
 - `tools/dump_vectors.cc` — dumper do kernel puro + camada de entidades (sem
   SDL): rng, math, unit_grid, slots (3 scales), slot_edge, profile (waves
   1–75), fleet/player, pacing, score_hash, serialize, splines, trajetórias e
-  os replays seedados `ent.*` (Fatia 4). Floats como **bits IEEE hex**
+  os replays seedados `ent.*` (Fatia 4; starfield na Fatia 6). Floats como **bits IEEE hex**
   (`%08x`).
 - `golden/vectors-cpp.txt` — corpus (gerado localmente; ver golden/README.md).
 - `rust/kernel` — ports de RandomStream, mathx, formation (tabela em runtime),
@@ -62,7 +62,9 @@
   explosions, alien (warp/decay/kamikaze/spin), player, fleet (AliensManager:
   comboios, ocupação lazy, criação, drift, fire, wanderers) e session (Fatia 5:
   `EntitySession` — pipeline de tick da física fixa, a ordem canônica de
-  produção atrás de um único `tick(dir, fire)` com `TickReport` por quadro).
+  produção atrás de um único `tick(dir, fire)` com `TickReport` por quadro) e
+  stars (Fatia 6: `StarsFields` — starfield de parallax com os transcendentais
+  congelados como dados gravados).
 - Política de tolerância (Fase 3): seções puramente aritméticas + sqrt são
   bit-exatas (splines, init, attacking/cruising); quadros do arco de docking
   (atan2/cos/sin) comparam posição com tol 1e-2 px e **sequência de estágios
@@ -127,6 +129,27 @@
   ramos do shell (cinemática de supernova/destruição, estrelas, contexto de
   score, transições de fase) permanecem em C++ até a Fase 4: a sessão
   REPORTA a proximidade kamikaze, não a encena.
+- **Fatia 6 (fix26)**: starfield no kernel + split físico do starfield C++.
+  `src/starfield/stars.cc` fica com a lógica pura (sem SDL, linkável no
+  `dump_vectors`); `Draw`, o flare, o construtor default e o poll de janela
+  `Gfx` (`CheckWindowResize`) mudam para `stars_draw.cc` — a mesma receita
+  dos `*_draw.cc` da Fatia 3. As leituras vivas de `Gfx::Inst()` viram o
+  espelho de viewport rastreado (produção byte-idêntica: o espelho sincroniza
+  no `CheckWindowResize` que os call sites agora rodam logo antes do
+  `Scroll()`); costuras headless: construtor `StarsFields(int,int)`,
+  `SetViewport`, hook de release do flare (contrato do `Pix`) e
+  `AddDetailsLevel` inline no `config.h`. O corpus cresce 7.378 linhas
+  `ent.stars.*`: replay de 640 quadros com warp hiperespacial de produção
+  (360 quadros) em f60, crescimento 1600×900 em f480 (expansão de densidade)
+  e details 2→1 em f560 (encolhimento) — hash FNV-1a do pool inteiro por
+  quadro + 8 estrelas amostradas + snapshots completos. **Tolerância zero**:
+  a LUT de twinkle (sinf) e o easing do warp (cosf) são transcendentais
+  GRAVADAS, congeladas como dados no corpus e em `rust/kernel/src/stars.rs`
+  (política do `textures::HEADLESS_DIMS`) — o replay é aritmética IEEE pura +
+  RandomStream + sqrt corretamente arredondado, bit-exato em todas as
+  colunas; regenerar o corpus em outra glibc re-grava as tabelas e o teste
+  aponta a linha driftada (re-congelar as consts). Rust: módulo `stars` +
+  teste `stars_parity` (18º da suíte).
 
 ## Comandos
 

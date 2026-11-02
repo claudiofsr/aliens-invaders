@@ -431,6 +431,7 @@ class CombatSession {
       ctx_.stars.TriggerHyperspaceWarp(warp_frames);
     }
 
+    ctx_.stars.CheckWindowResize();
     ctx_.stars.Scroll();
     if (fast_star_scrolling_time_ > 0) --fast_star_scrolling_time_;
 
@@ -481,6 +482,7 @@ class CombatSession {
       // Pump + checks are the input phase; body()/Present run under render.
       Hitch::Monitor::Instance().EndPhase(Hitch::Phase::kInput);
       Gfx::Inst().Clear();
+      ctx_.stars.CheckWindowResize();
       ctx_.stars.Scroll();
       ctx_.stars.Draw();
       body();

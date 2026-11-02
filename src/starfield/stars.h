@@ -58,10 +58,20 @@ class StarsFields {
   int last_density_level_{2};
 
   SDL_Texture* star_flare_tex_{nullptr};
+  // Flare-release hook: the graphics shell binds SDL_DestroyTexture at
+  // startup (binder in stars_draw.cc); headless builds leave it null (a
+  // headless starfield owns no GPU texture). Same contract as Pix.
+  inline static void (*flare_deleter_)(SDL_Texture*){nullptr};
 
  public:
   StarsFields();
-  ~StarsFields();
+  /// Headless constructor (golden-vector tooling): the tracked viewport comes
+  /// from the caller instead of the live Gfx singleton. The production default
+  /// constructor (stars_draw.cc) delegates with the live window size.
+  StarsFields(int viewport_w, int viewport_h);
+  ~StarsFields() {
+    if (star_flare_tex_ && flare_deleter_) flare_deleter_(star_flare_tex_);
+  }
 
   StarsFields(const StarsFields&) = delete;
   StarsFields& operator=(const StarsFields&) = delete;
@@ -73,12 +83,47 @@ class StarsFields {
   }
   void SetConfig(const Config* cfg) { config_ = cfg; AdjustStarDensity(); }
 
+  /// Explicit viewport change (headless twin of CheckWindowResize): scales the
+  /// pool by the size ratio, updates the tracked mirror and re-fits density.
+  void SetViewport(int viewport_w, int viewport_h);
+
   void OnResize(float rx, float ry);
   void CheckWindowResize();
   void CheckDensityChange();
 
   void Scroll();
   void Draw();
+
+  /// One-star observation sample for the golden-vector tooling
+  /// (tools/dump_vectors.cc and the Rust parity test).
+  struct StarSample {
+    float x;
+    float y;
+    float base_speed;
+    uint8_t type;
+    uint8_t spectral;
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t alpha;
+    uint16_t twinkle_phase;
+    uint16_t twinkle_step;
+  };
+  [[nodiscard]] size_t ActiveStars() const noexcept { return active_stars_; }
+  [[nodiscard]] StarSample SampleStar(size_t i) const noexcept;
+  [[nodiscard]] int WarpTimer() const noexcept { return warp_timer_; }
+  [[nodiscard]] float WarpFactor() const noexcept { return warp_factor_; }
+  [[nodiscard]] int ViewportWidth() const noexcept { return last_window_w_; }
+  [[nodiscard]] int ViewportHeight() const noexcept { return last_window_h_; }
+
+  /// Frozen-lookup observation of the twinkle LUTs: their sine content is
+  /// transcendental, so golden vectors pin the RECORDED bits (the Rust port
+  /// embeds the recorded tables instead of recomputing them).
+  static void SetFlareDeleter(void (*fn)(SDL_Texture*)) noexcept {
+    flare_deleter_ = fn;
+  }
+  [[nodiscard]] static uint8_t TwinkleAlpha(uint8_t index) noexcept;
+  [[nodiscard]] static float TwinklePulse(uint8_t index) noexcept;
 
  private:
   void RespawnStar(Star& s, bool random_initial_y);

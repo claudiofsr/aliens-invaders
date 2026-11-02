@@ -28,6 +28,7 @@
 #include "random_stream.h"
 #include "score_hash.h"
 #include "stage_catalog.h"
+#include "stars.h"
 #include "texture_provider.h"
 #include "trajectory.h"
 
@@ -37,6 +38,12 @@ using GameRules::Fleet::FormationGrid;
 
 [[nodiscard]] std::uint32_t FloatBits(float v) noexcept {
   std::uint32_t u = 0;
+  std::memcpy(&u, &v, sizeof(u));
+  return u;
+}
+
+[[nodiscard]] std::uint64_t DoubleBits(double v) noexcept {
+  std::uint64_t u = 0;
   std::memcpy(&u, &v, sizeof(u));
   return u;
 }
@@ -1152,6 +1159,198 @@ void DumpEntityExplosions() {
   }
 }
 
+/// FNV-1a (64) over the full dynamic state of every active star, in pool
+/// order: one row-sized pin for the whole field per frame. Byte-serializes
+/// the float bits little-endian so the Rust test recomputes it identically.
+[[nodiscard]] std::uint64_t StarPoolHash(const StarsFields& stars) noexcept {
+  std::uint64_t h = 14695981039346656037ull;
+  const auto feed_byte = [&h](std::uint8_t b) noexcept {
+    h = (h ^ b) * 1099511628211ull;
+  };
+  const auto feed_u32 = [&feed_byte](std::uint32_t v) noexcept {
+    feed_byte(static_cast<std::uint8_t>(v));
+    feed_byte(static_cast<std::uint8_t>(v >> 8));
+    feed_byte(static_cast<std::uint8_t>(v >> 16));
+    feed_byte(static_cast<std::uint8_t>(v >> 24));
+  };
+  for (size_t i = 0; i < stars.ActiveStars(); ++i) {
+    const StarsFields::StarSample s = stars.SampleStar(i);
+    feed_u32(FloatBits(s.x));
+    feed_u32(FloatBits(s.y));
+    feed_u32(FloatBits(s.base_speed));
+    feed_byte(s.type);
+    feed_byte(s.spectral);
+    feed_byte(s.r);
+    feed_byte(s.g);
+    feed_byte(s.b);
+    feed_byte(s.alpha);
+    feed_u32(s.twinkle_phase);
+    feed_u32(s.twinkle_step);
+  }
+  return h;
+}
+
+/// Starfield replay (RUST.md Fatia 6). The twinkle LUT and the hyperspace
+/// warp easing contain transcendentals (sinf/cosf): the corpus FREEZES them
+/// as recorded data so the Rust port replays bit-exact on any platform --
+/// the frozen-table policy of textures::HEADLESS_DIMS applied to curves.
+/// Scenario: 640 Scroll() frames over a 1280x720 headless viewport with the
+/// production-length hyperspace warp at f60 (the phase-transition frame
+/// count), a 1600x900 viewport growth at f480 (density expansion) and a
+/// details drop 2->1 at f560 (density shrink). Row layouts:
+///   ent.stars.setup    <key> <values...>   (SSOT echo: constants + scenario)
+///   ent.stars.alpha    <i> <v>             (twinkle LUT, uint8)
+///   ent.stars.pulse    <i> <bits>          (Pulse01 of the LUT sample, f32)
+///   ent.stars.warp     <t> <bits>          (warp_factor by remaining timer)
+///   ent.stars.frame    <f> <warp_timer> <warp_factor bits> <active> <win_w>
+///                      <win_h> <details> <respawned> <pool_hash>
+///   ent.stars.star     <f> <i> <x> <y> <speed> <type> <spectral> <r> <g>
+///                      <b> <phase> <step> <alpha>   (sampled slots, every f)
+///   ent.stars.snapshot <f> <i> <... same 11 data columns ...>  (full pool)
+///   ent.stars.done     <frames> <respawns_total> <final_active>
+void DumpStarfield() {
+  namespace SF = GameRules::Starfield;
+  constexpr int kWinW = 1280;
+  constexpr int kWinH = 720;
+  constexpr int kFrames = 640;
+  constexpr int kWarpAt = 60;
+  constexpr int kResizeAt = 480;
+  constexpr int kNewW = 1600;
+  constexpr int kNewH = 900;
+  constexpr int kDensityAt = 560;
+  constexpr size_t kSampled = 8;
+  // The exact production call: the phase transition triggers the warp with
+  // FastRound(kStageFanfareDurationSeconds * kSimulationFrequencyHz) frames
+  // (combat_session.cc), so the replay mirrors that derivation.
+  const int warp_frames = FastRound(
+      static_cast<double>(GameRules::Progression::kStageFanfareDurationSeconds) *
+      static_cast<double>(GameRules::Simulation::kSimulationFrequencyHz));
+
+  std::printf("ent.stars.setup seed %08x\n", 0xC0531CC1u);
+  std::printf("ent.stars.setup win %d %d\n", kWinW, kWinH);
+  std::printf("ent.stars.setup frames %d\n", kFrames);
+  std::printf("ent.stars.setup warp_frames %d\n", warp_frames);
+  std::printf("ent.stars.setup warp_at %d\n", kWarpAt);
+  std::printf("ent.stars.setup resize_at %d %d %d\n", kResizeAt, kNewW, kNewH);
+  std::printf("ent.stars.setup density_at %d\n", kDensityAt);
+  std::printf("ent.stars.setup warp_mult %08x\n",
+              FloatBits(GameRules::Progression::kHyperspaceWarpSpeedMultiplier));
+  std::printf("ent.stars.setup base_res %.0f %.0f\n",
+              SF::kBaseResolutionWidthPixels, SF::kBaseResolutionHeightPixels);
+  std::printf("ent.stars.setup base_count %.0f\n", SF::kBaseStarCount);
+  std::printf("ent.stars.setup min_max %zu %zu\n", SF::kMinStarsCount,
+              SF::kMaxStarsCount);
+  std::printf("ent.stars.setup threshold %08x\n",
+              FloatBits(SF::kForegroundLayerThreshold));
+  std::printf("ent.stars.setup tau %08x\n", FloatBits(SF::kTau));
+  std::printf("ent.stars.setup twinkle_floor_ceil %08x %08x\n",
+              FloatBits(SF::kTwinkleFloor), FloatBits(SF::kTwinkleCeil));
+  std::printf("ent.stars.setup harmonics %08x %08x\n",
+              FloatBits(SF::kTwinkleHarmonic2), FloatBits(SF::kTwinkleHarmonic3));
+  std::printf("ent.stars.setup mid_speed %08x %08x\n",
+              FloatBits(SF::kMidFieldFallSpeedMinPx),
+              FloatBits(SF::kMidFieldFallSpeedMaxPx));
+  std::printf("ent.stars.setup fg_speed %08x %08x\n",
+              FloatBits(SF::kForegroundFallSpeedMinPx),
+              FloatBits(SF::kForegroundFallSpeedMaxPx));
+  std::printf("ent.stars.setup twinkle_speed %08x %08x\n",
+              FloatBits(SF::kTwinkleSpeedMin), FloatBits(SF::kTwinkleSpeedMax));
+  std::printf("ent.stars.setup phase_scale %u\n", SF::kTwinklePhaseScale);
+  std::printf("ent.stars.setup density_factors %016llx %016llx %016llx %016llx %016llx\n",
+              static_cast<unsigned long long>(DoubleBits(SF::GetDensityFactor(0))),
+              static_cast<unsigned long long>(DoubleBits(SF::GetDensityFactor(1))),
+              static_cast<unsigned long long>(DoubleBits(SF::GetDensityFactor(2))),
+              static_cast<unsigned long long>(DoubleBits(SF::GetDensityFactor(3))),
+              static_cast<unsigned long long>(DoubleBits(SF::GetDensityFactor(4))));
+
+  Config cfg = Config::CreateHeadless();
+  StarsFields stars(kWinW, kWinH);
+  stars.SetConfig(&cfg);
+
+  for (int i = 0; i < 256; ++i) {
+    std::printf("ent.stars.alpha %d %u\n", i,
+                static_cast<unsigned>(
+                    StarsFields::TwinkleAlpha(static_cast<std::uint8_t>(i))));
+  }
+  for (int i = 0; i < 256; ++i) {
+    std::printf("ent.stars.pulse %d %08x\n", i,
+                FloatBits(StarsFields::TwinklePulse(static_cast<std::uint8_t>(i))));
+  }
+
+  // Warp easing probe: the curve is a pure function of the remaining timer
+  // (no RNG, no viewport), so a throwaway instance records the frozen table.
+  {
+    StarsFields probe(kWinW, kWinH);
+    probe.SetConfig(&cfg);
+    probe.TriggerHyperspaceWarp(warp_frames);
+    for (int t = 0; t < warp_frames; ++t) {
+      probe.Scroll();
+      std::printf("ent.stars.warp %d %08x\n", probe.WarpTimer(),
+                  FloatBits(probe.WarpFactor()));
+    }
+  }
+
+  std::uint64_t respawns_total = 0;
+  bool warp_seen = false;
+  bool expanded = false;
+  bool shrunk = false;
+  for (int f = 0; f < kFrames; ++f) {
+    if (f == kWarpAt) stars.TriggerHyperspaceWarp(warp_frames);
+    if (f == kResizeAt) stars.SetViewport(kNewW, kNewH);
+    if (f == kDensityAt) cfg.AddDetailsLevel(-1);
+    stars.Scroll();
+    if (stars.WarpTimer() > 0 || stars.WarpFactor() > 1.0f) warp_seen = true;
+
+    // Respawn observable: the headless fall respawn parks y at exactly -5.
+    int respawned = 0;
+    for (size_t i = 0; i < stars.ActiveStars(); ++i) {
+      if (stars.SampleStar(i).y == -5.0f) ++respawned;
+    }
+    respawns_total += static_cast<std::uint64_t>(respawned);
+    if (stars.ActiveStars() == 225) expanded = true;
+    if (f >= kDensityAt && stars.ActiveStars() == 90) shrunk = true;
+
+    std::printf("ent.stars.frame %d %d %08x %zu %d %d %d %d %016llx\n", f,
+                stars.WarpTimer(), FloatBits(stars.WarpFactor()),
+                stars.ActiveStars(), stars.ViewportWidth(),
+                stars.ViewportHeight(), cfg.DetailsLevel(), respawned,
+                static_cast<unsigned long long>(StarPoolHash(stars)));
+
+    const bool snapshot = (f == 0 || f == 420 || f == kResizeAt ||
+                           f == kDensityAt || f == kFrames - 1);
+    const size_t rows = snapshot ? stars.ActiveStars() : kSampled;
+    for (size_t i = 0; i < rows; ++i) {
+      const StarsFields::StarSample s = stars.SampleStar(i);
+      std::printf("%s %d %zu %08x %08x %08x %u %u %u %u %u %u %u %u\n",
+                  snapshot ? "ent.stars.snapshot" : "ent.stars.star", f, i,
+                  FloatBits(s.x), FloatBits(s.y), FloatBits(s.base_speed),
+                  static_cast<unsigned>(s.type), static_cast<unsigned>(s.spectral),
+                  static_cast<unsigned>(s.r), static_cast<unsigned>(s.g),
+                  static_cast<unsigned>(s.b),
+                  static_cast<unsigned>(s.twinkle_phase),
+                  static_cast<unsigned>(s.twinkle_step),
+                  static_cast<unsigned>(s.alpha));
+    }
+  }
+
+  // Coverage contract (hard gate, same discipline as the fleet seed search):
+  // a scenario that silently stopped warping/respawning/resizing would hollow
+  // out the section, so failure here aborts the dump instead of recording it.
+  if (!warp_seen || respawns_total < 10 || !expanded || !shrunk ||
+      stars.ActiveStars() != 90) {
+    std::fprintf(stderr,
+                 "dump_vectors: starfield coverage contract failed "
+                 "(warp=%d respawns=%llu expanded=%d shrunk=%d active=%zu)\n",
+                 warp_seen ? 1 : 0,
+                 static_cast<unsigned long long>(respawns_total),
+                 expanded ? 1 : 0, shrunk ? 1 : 0, stars.ActiveStars());
+    std::exit(1);
+  }
+  std::printf("ent.stars.done %d %llu %zu\n", kFrames,
+              static_cast<unsigned long long>(respawns_total),
+              stars.ActiveStars());
+}
+
 void DumpEntities() {
   // Explicit scale-1 world: the entity scenarios read the FormationGrid
   // globals and the Pix global-scale cache, and neither may depend on what a
@@ -1184,5 +1383,6 @@ int main() {
   DumpSplines();
   DumpTrajectories();
   DumpEntities();
+  DumpStarfield();
   return 0;
 }

@@ -111,6 +111,7 @@ add_executable(dump_vectors
     src/entities/managers.cc
     src/highscore/highscore_table.cc
     src/simulation/trajectory.cc
+    src/starfield/stars.cc
 )
 target_include_directories(dump_vectors PRIVATE ${PROJECT_INCLUDES})
 set_target_properties(dump_vectors PROPERTIES CXX_STANDARD 20)
