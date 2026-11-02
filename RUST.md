@@ -93,10 +93,14 @@
   (`TestHeadlessEntitySimulation`) guarda o determinismo headless no CI.
 - **Fatia 4b (fix22)**: ports Rust da camada de entidades (10 módulos novos +
   superfície de entidade em trajectory/formation) e `tests/entity_parity.rs`:
-  os 8 cenários `ent.*` replays quadro a quadro **bit-exatos, sem tolerância**
-  (mais estrito que a política da Fase 3 — o corpus fixa um toolchain
-  concreto: glibc >= 2.28 para transcendentais e libstdc++ com Lemire desde
-  GCC 11, ver `src/dist.rs`). Consumo do corpus em ordem estrita: linha
+  os 8 cenários `ent.*` replays quadro a quadro **bit-exatos**, com uma única
+  exceção: as colunas de ângulo (derivadas de `atan2f`) admitem 2 ulps — o
+  último bit de transcendental pertence ao build da glibc que o replaya
+  (comprovado no CI: mesmo corpus, 1 ulp entre a glibc de gravação e a do
+  runner), e ângulos são cosméticos — nenhuma dinâmica relê `angle_`, então o
+  orçamento não mascara divergência de estado. Todo o resto é mais estrito
+  que a política da Fase 3; o corpus fixa o toolchain para a aritmética e
+  para o Lemire do libstdc++ desde GCC 11 (ver `src/dist.rs`). Consumo do corpus em ordem estrita: linha
   faltante OU sobrando falha (`Rows::next`/`Rows::done`), então um corpus
   truncado não passa despercebido. Duas disciplinas de RNG que o port
   cristaliza: (1) `RandomStream::UniformInt` nativo (rejeição por módulo) e

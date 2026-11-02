@@ -35,8 +35,11 @@ Revise o `git diff` do arquivo antes de commitar: os vetores SÃO a especificaç
 
 `rust/kernel/tests/golden.rs` — falha se qualquer linha coberta divergir.
 `rust/kernel/tests/entity_parity.rs` (Fatia 4b) — replay dos cenários `ent.*`
-quadro a quadro contra o port Rust da camada de entidades, **bit-exato e sem
-tolerância**: o corpus fixa um toolchain concreto (glibc >= 2.28 para
-transcendentais, libstdc++ com Lemire desde GCC 11) e o consumo é em ordem
-estrita — linha faltante ou sobrando falha. O gate estrutural
+quadro a quadro contra o port Rust da camada de entidades, **bit-exato** —
+única exceção: as colunas de ângulo (derivadas de `atan2f`) comparam com
+orçamento de 2 ulps, porque o último bit de transcendental pertence ao build
+da glibc que o replaya (política da Fase 3; ângulos são cosméticos — nenhuma
+dinâmica os relê). O corpus fixa o toolchain para a aritmética e para o
+Lemire do libstdc++ desde GCC 11, e o consumo é em ordem estrita — linha
+faltante ou sobrando falha. O gate estrutural
 `entity_corpus_present` foi removido: a paridade completa o substitui.
