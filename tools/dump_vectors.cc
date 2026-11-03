@@ -26,6 +26,7 @@
 #include "math_types.h"
 #include "presentation_sink.h"
 #include "random_stream.h"
+#include "score.h"
 #include "score_hash.h"
 #include "stage_catalog.h"
 #include "stars.h"
@@ -1351,6 +1352,136 @@ void DumpStarfield() {
               stars.ActiveStars());
 }
 
+// ---- score.* : Score pure-logic replay (Fatia 7) ----
+// A scripted op table: every op runs against a headless Score and echoes the
+// FULL state, so the Rust twin replays the operations from the corpus rows
+// themselves (the script never exists twice). The ops exercise the saturating
+// Add, the fractional milestone ledger (double bits pinned), multi-milestone
+// drains, shield clamps (including the negative destruction sentinel), the
+// wave-to-stage cycle rollovers that reset the bonus-economy mask, the cheat
+// flag and ReInit. The saturating Add leaves shield_progress_ astronomically
+// large and the milestone drain is a subtractive loop, so the script must
+// never run `milestone` between that Add and the following ReInit (production
+// never Adds anywhere near those magnitudes either).
+void DumpScore() {
+  std::printf("score.consts %d %d %llu %d %d\n",
+              GameRules::Player::kInitialShields,
+              GameRules::Player::kPlayerMaxShield,
+              static_cast<unsigned long long>(GameRules::Combat::kExtraShieldScoreStep),
+              GameRules::Progression::kWavesPerStage,
+              GameRules::Combat::kMaxBonusesPerStage);
+  std::printf("score.bonus_enum %d %d %d %d %d\n",
+              Bonus::extra_speed, Bonus::extra_fire, Bonus::extra_shield,
+              Bonus::extra_multi, Bonus::extra_nuke);
+
+  Score s;
+  int op_index = 0;
+  bool saw_saturation = false;
+  bool saw_multi_milestone = false;
+  bool saw_rollover_reallow = false;
+  int max_bonus_count = 0;
+
+  const auto row = [&](const char* op, unsigned long long arg,
+                       unsigned long long result) {
+    std::printf("score.op %d %s %llu %llu %016llx %d %d %d %d %u %d %llu\n",
+                op_index++, op, arg,
+                static_cast<unsigned long long>(s.Value()),
+                static_cast<unsigned long long>(DoubleBits(s.ShieldProgress())),
+                s.Shield(), s.Level(), s.Cycle(), s.Cheated() ? 1 : 0,
+                s.StageBonusMask(), s.StageBonusCycle(), result);
+  };
+  const auto add = [&](unsigned long long pts) {
+    s.Add(static_cast<uint64_t>(pts));
+    if (s.Value() == UINT64_MAX) saw_saturation = true;
+    row("add", pts, 0);
+  };
+  const auto milestone = [&]() {
+    const uint64_t n = s.CheckExtraShieldMilestones();
+    if (n > 1) saw_multi_milestone = true;
+    row("milestone", 0, static_cast<unsigned long long>(n));
+  };
+  const auto shield = [&](int req) {
+    s.SetShield(req);
+    row("shield", static_cast<unsigned long long>(static_cast<long long>(req)), 0);
+  };
+  const auto inc = [&]() { s.IncLevel(); row("inc", 0, 0); };
+  const auto cheat = [&](bool c) { s.SetCheated(c); row("cheat", c ? 1ULL : 0ULL, 0); };
+  const auto can = [&](int type) {
+    row("can", static_cast<unsigned long long>(type),
+        s.CanSpawnBonusType(type) ? 1ULL : 0ULL);
+  };
+  const auto record = [&](int type) {
+    s.RecordBonusSpawned(type);
+    row("record", static_cast<unsigned long long>(type), 0);
+  };
+  const auto count = [&]() {
+    const int n = s.StageBonusesSpawnedCount();
+    max_bonus_count = std::max(max_bonus_count, n);
+    row("count", 0, static_cast<unsigned long long>(n));
+  };
+  const auto reinit = [&]() { s.ReInit(); row("reinit", 0, 0); };
+
+  // Milestone economy: exact binary fractions AND noisy decimal ones, so the
+  // ledger pins both clean drains and accumulated rounding residue.
+  add(150); add(850); milestone();
+  add(999); add(1); milestone();
+  add(500); add(500); milestone();
+  add(125); add(125); add(250); add(500); milestone();
+  add(5500); milestone();  // multi-drain: five milestones plus residue
+  add(333); add(777); add(250); milestone();
+  add(7); add(7); add(7); milestone();  // miss: count 0, fractional residue kept
+
+  // Shield clamp, including the negative destruction sentinel (no lower clamp).
+  shield(99); shield(-1); shield(3); shield(8);
+
+  cheat(true);
+
+  // Waves 1 -> 16: cross the first stage boundary (Cycle 1 -> 2). A fresh
+  // cycle re-allows every bonus type; the recorded mask then locks duplicates.
+  for (int w = 0; w < 15; ++w) inc();
+  can(1); can(2); can(3); can(4); can(5);
+  record(2); record(2);  // idempotent bit
+  can(2); can(3);
+  record(1); record(3); record(4); record(5);
+  count();  // 5 of 5
+  can(1);   // locked out inside the cycle
+
+  // Waves 16 -> 31: the second boundary (Cycle 2 -> 3) resets the mask.
+  for (int w = 0; w < 15; ++w) inc();
+  if (s.CanSpawnBonusType(1)) saw_rollover_reallow = true;
+  can(1); count();
+  record(3); can(3); can(4);
+
+  cheat(false);
+
+  // ReInit, then the saturating Add: 200 first so the overflow guard trips,
+  // then a near-UINT64_MAX top-up. Progress bits are pinned but never drained.
+  reinit();
+  add(200);
+  add(UINT64_MAX - 100ULL);
+  reinit();
+
+  // Coverage contract (hard gate, same discipline as the starfield): a script
+  // that silently lost the saturation, the multi-drain or the mask rollover
+  // would hollow out the section, so failure aborts the dump instead of
+  // recording it.
+  if (!saw_saturation || !saw_multi_milestone || !saw_rollover_reallow ||
+      max_bonus_count != GameRules::Combat::kMaxBonusesPerStage ||
+      s.Value() != 0 || s.Level() != 1 ||
+      s.Shield() != GameRules::Player::kInitialShields ||
+      s.StageBonusMask() != 0 || s.Cheated()) {
+    std::fprintf(stderr,
+                 "dump_vectors: score coverage contract failed "
+                 "(sat=%d multi=%d rollover=%d maxcount=%d value=%llu level=%d)\n",
+                 saw_saturation ? 1 : 0, saw_multi_milestone ? 1 : 0,
+                 saw_rollover_reallow ? 1 : 0, max_bonus_count,
+                 static_cast<unsigned long long>(s.Value()), s.Level());
+    std::exit(1);
+  }
+  std::printf("score.done %d %llu %d\n", op_index,
+              static_cast<unsigned long long>(s.Value()), s.Level());
+}
+
 void DumpEntities() {
   // Explicit scale-1 world: the entity scenarios read the FormationGrid
   // globals and the Pix global-scale cache, and neither may depend on what a
@@ -1384,5 +1515,6 @@ int main() {
   DumpTrajectories();
   DumpEntities();
   DumpStarfield();
+  DumpScore();
   return 0;
 }

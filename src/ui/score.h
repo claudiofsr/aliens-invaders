@@ -8,9 +8,13 @@
 #include <string>
 
 #include "constants.h"
-#include "gfxinterface.h"
 #include "math_types.h"
 #include "plate_pacing.h"
+
+// The HUD plate textures are opaque shell handles: forward-declared so this
+// header compiles in headless TUs (golden-vector tooling, entity sim) without
+// dragging in SDL. Same contract as stars.h.
+struct SDL_Texture;
 
 class Score {
   uint64_t score_{0};
@@ -71,6 +75,11 @@ class Score {
   SDL_Texture* hud_plate_back_tex_{nullptr};
   int hud_plate_back_w_{0};
   int hud_plate_back_h_{0};
+  // Plate-release hook: the graphics shell binds the SDL_DestroyTexture pair at
+  // startup (binder in score.cc); headless builds leave it null (a headless
+  // Score owns no GPU textures). Same contract as the star-flare and Pix
+  // deleters.
+  inline static void (*plate_deleter_)(SDL_Texture*, SDL_Texture*){nullptr};
   // Concatenation of the two plate strings -- the exact glyph set the bake will claim. Rebuilt
   // while warming; a content or size-key change parks the cursor back to zero (re-scanning warm ...
   char plate_warm_str_[224]{};
@@ -79,8 +88,10 @@ class Score {
   bool plate_warming_{false};
 
  public:
-  Score();
-  ~Score();
+  Score() { ReInit(); }
+  ~Score() {
+    if (plate_deleter_) plate_deleter_(hud_plate_tex_, hud_plate_back_tex_);
+  }
 
   [[nodiscard]] uint64_t Value() const noexcept { return score_; }
   [[nodiscard]] int Level() const noexcept { return level_; }
@@ -121,6 +132,20 @@ class Score {
     return count;
   }
 
+
+  /// Golden-vector observation (tools/dump_vectors.cc and the Rust parity
+  /// test): the pure state columns pinned by the score.* corpus section.
+  [[nodiscard]] double ShieldProgress() const noexcept { return shield_progress_; }
+  [[nodiscard]] bool Cheated() const noexcept { return cheated_; }
+  [[nodiscard]] uint32_t StageBonusMask() const noexcept { return stage_spawned_bonuses_mask_; }
+  [[nodiscard]] int StageBonusCycle() const noexcept { return stage_bonus_cycle_; }
+
+  /// Binds the plate-release hook (called once by the graphics shell in
+  /// score.cc; headless builds never bind, so the inline destructor is a
+  /// no-op there).
+  static void SetPlateDeleter(void (*fn)(SDL_Texture*, SDL_Texture*)) noexcept {
+    plate_deleter_ = fn;
+  }
 
   [[nodiscard]] uint64_t ExtraShieldStep() const noexcept {
     // Pure arcade fairness: exactly 1000 points per shield milestone across all resolutions.

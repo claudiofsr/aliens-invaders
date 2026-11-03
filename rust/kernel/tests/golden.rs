@@ -7,7 +7,7 @@ use kernel::{
     formation, highscore, mathx, pacing,
     path::{self, Vec2f},
     random_stream::RandomStream,
-    score_hash, stage_catalog,
+    score, score_hash, stage_catalog,
     trajectory::{Trajectory, ViewportMetrics},
 };
 use std::collections::BTreeMap;
@@ -40,6 +40,10 @@ fn group(rows: &[Vec<String>]) -> BTreeMap<String, Vec<Vec<String>>> {
 
 fn hex32(tok: &str) -> u32 {
     u32::from_str_radix(tok, 16).unwrap_or_else(|_| panic!("bad hex32 token: {tok}"))
+}
+
+fn hex64(tok: &str) -> u64 {
+    u64::from_str_radix(tok, 16).unwrap_or_else(|_| panic!("bad hex64 token: {tok}"))
 }
 
 fn i(row: &[String], idx: usize) -> i32 {
@@ -271,6 +275,93 @@ fn score_hash_parity() {
     }
     // Self-consistency of the verifier against the corpus digests.
     assert!(score_hash::verify_line(payloads[0], &g["score_hash"][0][2]));
+}
+
+#[test]
+fn score_parity() {
+    let rows = load_vectors();
+    let g = group(&rows);
+
+    // Constants contract: the Rust redeclarations must equal the C++
+    // GameRules values echoed by the dumper.
+    let c = &g["score.consts"];
+    assert_eq!(c.len(), 1);
+    assert_eq!(i(&c[0], 1), score::INITIAL_SHIELDS);
+    assert_eq!(i(&c[0], 2), score::MAX_SHIELD);
+    assert_eq!(u(&c[0], 3), score::EXTRA_SHIELD_STEP);
+    assert_eq!(i(&c[0], 4), stage_catalog::WAVES_PER_STAGE);
+    assert_eq!(i(&c[0], 5), score::MAX_BONUSES_PER_STAGE);
+
+    // Bonus vocabulary (actors.h): speed=1 fire=2 shield=3 multi=4 nuke=5.
+    let e = &g["score.bonus_enum"];
+    assert_eq!(e.len(), 1);
+    for (k, want) in [1u64, 2, 3, 4, 5].iter().enumerate() {
+        assert_eq!(u(&e[0], 1 + k), *want, "bonus enum slot {k}");
+    }
+
+    // Row-driven replay: each row names its op, so the script lives ONLY in
+    // the C++ dumper; the twin executes the corpus and compares every column.
+    let ops = &g["score.op"];
+    let mut s = score::Score::new();
+    for row in ops {
+        let idx = i(row, 1);
+        let arg = u(row, 3);
+        let result = match row[2].as_str() {
+            "add" => {
+                s.add(arg);
+                0
+            }
+            "milestone" => s.check_extra_shield_milestones(),
+            // The arg column is u64; negative shield requests wrap through it
+            // (the dumper casts via long long) and unwrap here the same way.
+            "shield" => {
+                s.set_shield(arg as i64 as i32);
+                0
+            }
+            "inc" => {
+                s.inc_level();
+                0
+            }
+            "cheat" => {
+                s.set_cheated(arg != 0);
+                0
+            }
+            "can" => u64::from(s.can_spawn_bonus_type(arg as i32)),
+            "record" => {
+                s.record_bonus_spawned(arg as i32);
+                0
+            }
+            "count" => s.stage_bonuses_spawned_count() as u64,
+            "reinit" => {
+                s.reinit();
+                0
+            }
+            other => panic!("score.op {idx}: unknown op {other}"),
+        };
+        assert_eq!(u(row, 4), s.value(), "op {idx} value");
+        assert_eq!(
+            hex64(&row[5]),
+            s.shield_progress().to_bits(),
+            "op {idx} progress bits"
+        );
+        assert_eq!(i(row, 6), s.shield(), "op {idx} shield");
+        assert_eq!(i(row, 7), s.level(), "op {idx} level");
+        assert_eq!(i(row, 8), s.cycle(), "op {idx} cycle");
+        assert_eq!(i(row, 9), i32::from(s.cheated()), "op {idx} cheated");
+        assert_eq!(
+            u(row, 10),
+            u64::from(s.stage_bonus_mask()),
+            "op {idx} bonus mask"
+        );
+        assert_eq!(i(row, 11), s.stage_bonus_cycle(), "op {idx} cycle tag");
+        assert_eq!(u(row, 12), result, "op {idx} result");
+    }
+
+    let d = &g["score.done"];
+    assert_eq!(d.len(), 1);
+    assert_eq!(i(&d[0], 1), ops.len() as i32, "score op count");
+    assert_eq!(u(&d[0], 2), s.value(), "final value");
+    assert_eq!(i(&d[0], 3), s.level(), "final level");
 }
 
 #[test]

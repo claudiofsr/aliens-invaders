@@ -15,6 +15,7 @@ pub mod pacing;
 pub mod path;
 pub mod player;
 pub mod random_stream;
+pub mod score;
 pub mod score_hash;
 pub mod session;
 pub mod sink;

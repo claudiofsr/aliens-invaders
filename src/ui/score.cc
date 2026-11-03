@@ -11,25 +11,27 @@
 
 #include "embedded_assets.h"
 #include "constants.h"
+#include "gfxinterface.h"
 #include "layout.h"
 #include "level_data.h"
 #include "math_types.h"
 #include "hitch_monitor.h"
 
-Score::Score() { ReInit(); }
-
-Score::~Score() {
-  // The plate is owned by Score (see header). The renderer outlives this object: Gfx is a
-  // never-destroyed singleton torn down only by SDL_Quit, and Application (which owns Score) is ...
-  if (hud_plate_tex_) {
-    SDL_DestroyTexture(hud_plate_tex_);
-    hud_plate_tex_ = nullptr;
-  }
-  if (hud_plate_back_tex_) {
-    SDL_DestroyTexture(hud_plate_back_tex_);
-    hud_plate_back_tex_ = nullptr;
-  }
+namespace {
+// Bind the HUD-plate release hook once per process; the inline Score
+// destructor calls through it, so headless TUs never link an SDL symbol (same
+// contract as the star-flare deleter). The renderer outlives every Score: Gfx
+// is a never-destroyed singleton torn down only by SDL_Quit, and static
+// initialization here runs before main(), so the hook is always bound before
+// Application's Score can be destroyed.
+void DestroyScorePlates(SDL_Texture* front, SDL_Texture* back) {
+  if (front) SDL_DestroyTexture(front);
+  if (back) SDL_DestroyTexture(back);
 }
+const struct ScorePlateHookBinder {
+  ScorePlateHookBinder() { Score::SetPlateDeleter(&DestroyScorePlates); }
+} score_plate_hook_binder;
+}  // namespace
 
 void Score::Draw() {
   HITCH_SCOPE("Score::Draw");

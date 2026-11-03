@@ -3,8 +3,8 @@
 `vectors-cpp.txt` é o **contrato executável** entre o kernel C++ e o port Rust:
 cada linha é um fato determinístico do núcleo puro e da camada de entidades
 (RNG, math, super-tabela honeycomb, catálogo de stages, pacing, hash de
-scores, serialização do ledger, splines/trajetórias e replays seedados `ent.*`
-gravados na ordem de tick de produção).
+scores, serialização do ledger, splines/trajetórias, a economia de score
+`score.*` e replays seedados `ent.*` gravados na ordem de tick de produção).
 
 ## Regenerar (após QUALQUER mudança no kernel puro C++)
 
@@ -23,7 +23,9 @@ Revise o `git diff` do arquivo antes de commitar: os vetores SÃO a especificaç
   se esconde em formatação decimal.
 - Seções: `rng.*`, `math.*`, `unit_grid`, `slots`, `slots.metrics`, `slot_edge`,
   `profile`, `fleet.*`, `player.*`, `pacing.*`, `score_hash`, `serialize`,
-  `spline.*`, `traj.*` e `ent.*` (camada de entidades: `ent.pix` geometria
+  `spline.*`, `traj.*`, `score.*` (Fatia 7: replay roteirizado da lógica pura
+  do `Score` — linhas auto-descritivas `score.op <i> <op> <arg> …estado…`) e
+  `ent.*` (camada de entidades: `ent.pix` geometria
   headless, `ent.bl.*` projéteis, `ent.wp.*` warp relativístico, `ent.dc.*`
   alpha decay, `ent.kz.*` mergulho kamikaze, `ent.fleet.*` replay completo da
   frota — auto-contido: tabela de comboios, paths e inputs por frame —,
@@ -46,5 +48,8 @@ Lemire do libstdc++ desde GCC 11, e o consumo é em ordem estrita — linha
 faltante ou sobrando falha. `ent.stars.*` (Fatia 6) é **tolerância zero**: os
 transcendentais (LUT de twinkle, curva do warp) são dados congelados nos dois
 lados — corpus e `stars.rs` —, então nenhuma coluna admite orçamento de ulps.
+`score.*` (Fatia 7) também é tolerância zero: inteiros + a divisão IEEE
+`pts/step` fixada em bits, sem transcendentais — e o script de ops vive SÓ no
+dumper (o teste Rust executa as próprias linhas do corpus).
 O gate estrutural
 `entity_corpus_present` foi removido: a paridade completa o substitui.

@@ -22,7 +22,7 @@
 | **2a** | Kernel Rust: RandomStream, math, formação, pacing (**este scaffold**) | `cargo test` verde contra os vetores | ✅ |
 | **2b** | StageCatalog, ScoreHash, HighScoreTable, bonus masks em Rust | seções `profile`/`score_hash`/`serialize` dos vetores | ✅ |
 | **3** | Trajectory + splines + entidades/simulação (replay dump por frame) | replays longos bit-idênticos | ✅ (Fatias 4/4b: replay de 900 quadros bit-exato) |
-| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5/6: pré-requisitos do kernel prontos — `EntitySession` + starfield; casca SDL não iniciada) |
+| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5/6/7: pré-requisitos do kernel prontos — `EntitySession` + starfield + contexto de score; casca SDL não iniciada) |
 | **5** | Áudio: synth procedural + transpilador das 15 partituras + tsf via bindgen | WAV export **bit-idêntico** (KATs já existem) | ⬜ |
 | **6** | UI/menu/layout/telemetria/starfield | paridade visual | ⬜ |
 | **7** | Paridade total + CI Rust (5 plataformas — cross mais fácil que C++) + depots Steam idênticos | 100% dos gates | ⬜ |
@@ -45,12 +45,13 @@
 | `-Wconversion` discipline | `clippy::as_conversion`, `#[deny(warnings)]` | CI Rust |
 | CMake/Make | Cargo workspace + `cargo-zigbuild` (Win/mac) | FreeBSD tier-2 nativo |
 
-## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6)
+## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6/7)
 
 - `tools/dump_vectors.cc` — dumper do kernel puro + camada de entidades (sem
   SDL): rng, math, unit_grid, slots (3 scales), slot_edge, profile (waves
-  1–75), fleet/player, pacing, score_hash, serialize, splines, trajetórias e
-  os replays seedados `ent.*` (Fatia 4; starfield na Fatia 6). Floats como **bits IEEE hex**
+  1–75), fleet/player, pacing, score_hash, serialize, splines, trajetórias,
+  os replays seedados `ent.*` (Fatia 4; starfield na Fatia 6) e o replay
+  roteirizado `score.*` (Fatia 7). Floats como **bits IEEE hex**
   (`%08x`).
 - `golden/vectors-cpp.txt` — corpus (gerado localmente; ver golden/README.md).
 - `rust/kernel` — ports de RandomStream, mathx, formation (tabela em runtime),
@@ -64,7 +65,9 @@
   `EntitySession` — pipeline de tick da física fixa, a ordem canônica de
   produção atrás de um único `tick(dir, fire)` com `TickReport` por quadro) e
   stars (Fatia 6: `StarsFields` — starfield de parallax com os transcendentais
-  congelados como dados gravados).
+  congelados como dados gravados) e score (Fatia 7: `Score` — economia de
+  pontos: Add saturante, ledger fracionário de milestones de escudo extra,
+  clamp de escudo, ciclo wave→stage e a máscara da economia de bônus).
 - Política de tolerância (Fase 3): seções puramente aritméticas + sqrt são
   bit-exatas (splines, init, attacking/cruising); quadros do arco de docking
   (atan2/cos/sin) comparam posição com tol 1e-2 px e **sequência de estágios
@@ -150,6 +153,28 @@
   colunas; regenerar o corpus em outra glibc re-grava as tabelas e o teste
   aponta a linha driftada (re-congelar as consts). Rust: módulo `stars` +
   teste `stars_parity` (18º da suíte).
+- **Fatia 7 (fix27)**: economia de score no kernel + destrave headless do
+  `Score`. `src/ui/score.h` não inclui mais `gfxinterface.h`: `SDL_Texture`
+  vira forward declaration, o construtor vira inline (`ReInit()`) e o
+  destrutor passa pelo hook de release das placas HUD (contrato do
+  star-flare/`Pix` — binder estático em `score.cc`, a casca gráfica), então a
+  classe pura compila e linka no `dump_vectors` sem SDL. Zero mudança de
+  comportamento nos call sites: a API é a mesma e os accessors novos são
+  apenas observabilidade golden (`ShieldProgress`, `Cheated`,
+  `StageBonusMask`, `StageBonusCycle`). O corpus cresce 87 linhas `score.*`:
+  replay ROTEIRIZADO (84 ops) com eco de estado completo por linha — Add
+  saturante (UINT64_MAX), ledger de milestones de escudo extra com bits
+  double fixados (drenagem subtrativa: multi-milestone, restos fracionários e
+  a divisão IEEE `pts/1000`), clamp de escudo (incl. o sentinela negativo de
+  destruição), dois rollovers de ciclo wave→stage (máscara da economia de
+  bônus: lockout de duplicatas, contagem 5/5, reset no ciclo novo), cheat
+  flag e ReInit. As linhas são auto-descritivas (`score.op <i> <op> <arg>
+  …estado…`): o script existe SÓ no dumper — o teste Rust replaya a partir do
+  corpus. **Tolerância zero**: inteiros + uma divisão IEEE fixada, nenhum
+  transcendental. A máscara de bônus é o gate que o
+  `AliensManager::RollSmartBonusType` consulta via `Score*` (o corpus de
+  frota o liga nulo; um replay de frota score-wired é trabalho futuro).
+  Rust: módulo `score` + teste `score_parity` (19º da suíte).
 
 ## Comandos
 
