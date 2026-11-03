@@ -30,7 +30,10 @@ Revise o `git diff` do arquivo antes de commitar: os vetores SÃO a especificaç
   alpha decay, `ent.kz.*` mergulho kamikaze, `ent.fleet.*` replay completo da
   frota — auto-contido: tabela de comboios, paths e inputs por frame —,
   `ent.pl.*` jogador/bônus, `ent.ex.*` explosões, `ent.stars.*` starfield —
-  LUT de twinkle e easing do warp congelados como dados gravados).
+  LUT de twinkle e easing do warp congelados como dados gravados — e
+  `ent.fs.*` contexto de score da sessão do cenário de frota: Fatia 8, linhas
+  por quadro creditado + cascata de prêmios pós-replay com os bits do
+  progresso fracionário).
 - Ordem de emissão é fixa (ver `tools/dump_vectors.cc`); streams RNG são
   sequenciais — a ordem dos draws faz parte do contrato.
 
@@ -50,6 +53,10 @@ transcendentais (LUT de twinkle, curva do warp) são dados congelados nos dois
 lados — corpus e `stars.rs` —, então nenhuma coluna admite orçamento de ulps.
 `score.*` (Fatia 7) também é tolerância zero: inteiros + a divisão IEEE
 `pts/step` fixada em bits, sem transcendentais — e o script de ops vive SÓ no
-dumper (o teste Rust executa as próprias linhas do corpus).
+dumper (o teste Rust executa as próprias linhas do corpus). `ent.fs.*`
+(Fatia 8) idem: o contexto de score da sessão (crédito → milestones →
+ExtraShield) roda dentro do `EntitySession::tick` e o gate do dumper prova
+que o replay de 900 quadros não drena nenhum milestone — as linhas
+`ent.fleet.*` commitadas são intocadas pela fiação.
 O gate estrutural
 `entity_corpus_present` foi removido: a paridade completa o substitui.

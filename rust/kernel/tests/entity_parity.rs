@@ -32,6 +32,7 @@ use kernel::{
     mathx::Coord,
     path::{self, Vec2f},
     player::Player,
+    score,
     session::EntitySession,
     sink::{EventSink, PresentationEvent},
     stars::{self, StarsFields, STARFIELD_SEED, WARP_DURATION_FRAMES},
@@ -920,7 +921,7 @@ const FLEET_REPLAY_FRAMES: i32 = 900;
 /// tick order, so this harness only builds the managers as scenario inputs,
 /// feeds the deterministic input script, and records/asserts rows. With
 /// `rec = Some` it asserts every corpus row of the recorded replay.
-fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
+fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>, mut fs: Option<&mut Rows>) -> FleetOutcome {
     let convoys = fleet_convoys();
     let paths = fleet_paths();
     let grid = formation::recompute(METRICS.scale);
@@ -991,8 +992,27 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
         }
     }
 
+    // Fatia 8 companion section: the session-level score context. The setup
+    // row is consumed here, the per-credited-frame rows ride inside the tick
+    // loop and the award epilogue follows ent.fleet.done.
+    if let Some(fsec) = fs.as_deref_mut() {
+        let row = fsec.next("ent.fs.setup");
+        assert_eq!(u(&row, 1) as u32, seed, "fs setup seed");
+        assert_eq!(
+            i(&row, 2),
+            session.player().shield(),
+            "fs initial shield"
+        );
+        assert_eq!(u(&row, 3), score::EXTRA_SHIELD_STEP, "fs shield step");
+        assert_eq!(i(&row, 4), score::MAX_SHIELD, "fs max shield");
+    }
+
     let mut out = FleetOutcome::default();
     let mut script = InputScript { state: 0x1234_ABCD };
+    // Mirrors of the dumper's score-context gates: milestones drained during
+    // the replay (must stay zero) and credited frames (earned > 0).
+    let mut replay_extra = 0u64;
+    let mut credit_frames = 0i32;
 
     let mut f = 0i32;
     while f < FLEET_REPLAY_FRAMES {
@@ -1001,6 +1021,7 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
         // One frame of the canonical production order, kernel-side:
         // EntitySession::tick == the TickFixedPhysics entity subset.
         let report = session.tick(dir, true);
+        replay_extra += report.extra_shields;
         if session.bonuses().nb() > 0
             || session.player().speed_level()
                 + session.player().fire_level()
@@ -1052,12 +1073,28 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
                 report.collisions.kamikaze_hits,
                 "f{f} kamikaze"
             );
-            assert_eq!(u(&row, 18), session.score_total(), "f{f} score");
+            assert_eq!(u(&row, 18), session.score().value(), "f{f} score");
             assert_eq!(
                 i(&row, 19),
                 i32::from(report.kamikaze_proximity),
                 "f{f} proximity"
             );
+
+            if report.collisions.score_earned > 0 {
+                credit_frames += 1;
+                if let Some(fsec) = fs.as_deref_mut() {
+                    let row = fsec.next("ent.fs.frame");
+                    assert_eq!(i(&row, 1), f, "fs frame idx");
+                    assert_eq!(u(&row, 2), session.score().value(), "f{f} fs total");
+                    assert_eq!(
+                        hex64(&row[3]),
+                        session.score().shield_progress().to_bits(),
+                        "f{f} fs progress"
+                    );
+                    assert_eq!(i(&row, 4), session.player().shield(), "f{f} fs shield");
+                    assert_eq!(u(&row, 5), report.extra_shields, "f{f} fs extra");
+                }
+            }
 
             for a in 0..session.fleet().alien_count() {
                 let alien = session.fleet().get_alien(a);
@@ -1143,6 +1180,37 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>) -> FleetOutcome {
         assert_eq!(i(&row, 3), out.kills, "done kills");
         sec.done("ent.fleet");
     }
+    if let Some(fsec) = fs.as_deref_mut() {
+        // The replay window must stay milestone-free: that is the proof the
+        // committed ent.fleet.* rows are untouched by the Score wiring.
+        assert_eq!(replay_extra, 0, "replay drained milestones");
+        let mut awarded = 0u64;
+        while fsec.peek_is("ent.fs.award") {
+            let row = fsec.next("ent.fs.award");
+            let idx = i(&row, 1);
+            let ms = session.award_points(u(&row, 2));
+            assert_eq!(u(&row, 3), ms, "award {idx} milestones");
+            assert_eq!(
+                i(&row, 4),
+                session.player().shield(),
+                "award {idx} shield"
+            );
+            assert_eq!(
+                hex64(&row[5]),
+                session.score().shield_progress().to_bits(),
+                "award {idx} progress"
+            );
+            assert_eq!(u(&row, 6), session.score().value(), "award {idx} total");
+            awarded += ms;
+        }
+        let row = fsec.next("ent.fs.done");
+        assert_eq!(i(&row, 1), out.frames, "fs done frames");
+        assert_eq!(i(&row, 2), credit_frames, "fs credited frames");
+        assert_eq!(u(&row, 3), session.score().value(), "fs final total");
+        assert_eq!(i(&row, 4), session.player().shield(), "fs final shield");
+        assert_eq!(u(&row, 5), awarded, "fs awarded milestones");
+        fsec.done("ent.fs");
+    }
     out
 }
 
@@ -1155,7 +1223,7 @@ fn fleet_parity() {
     // replay budget -- the exact loop of DumpEntityFleet.
     let mut chosen = 0u32;
     for s in 1u32..=2048 {
-        let probe = fleet_replay(s, None);
+        let probe = fleet_replay(s, None, None);
         if probe.coverage() {
             chosen = s;
             break;
@@ -1164,7 +1232,8 @@ fn fleet_parity() {
     assert_ne!(chosen, 0, "no fleet seed satisfied the coverage contract");
 
     let mut sec = section(&rows, "ent.fleet.");
-    let recorded = fleet_replay(chosen, Some(&mut sec));
+    let mut fs_sec = section(&rows, "ent.fs.");
+    let recorded = fleet_replay(chosen, Some(&mut sec), Some(&mut fs_sec));
     assert!(recorded.coverage(), "recorded replay lost coverage");
 }
 

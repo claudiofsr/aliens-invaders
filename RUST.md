@@ -22,7 +22,7 @@
 | **2a** | Kernel Rust: RandomStream, math, formação, pacing (**este scaffold**) | `cargo test` verde contra os vetores | ✅ |
 | **2b** | StageCatalog, ScoreHash, HighScoreTable, bonus masks em Rust | seções `profile`/`score_hash`/`serialize` dos vetores | ✅ |
 | **3** | Trajectory + splines + entidades/simulação (replay dump por frame) | replays longos bit-idênticos | ✅ (Fatias 4/4b: replay de 900 quadros bit-exato) |
-| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5/6/7: pré-requisitos do kernel prontos — `EntitySession` + starfield + contexto de score; casca SDL não iniciada) |
+| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5–8: pré-requisitos do kernel prontos — `EntitySession` (tick + contexto de score), starfield, economia `Score`; casca SDL não iniciada) |
 | **5** | Áudio: synth procedural + transpilador das 15 partituras + tsf via bindgen | WAV export **bit-idêntico** (KATs já existem) | ⬜ |
 | **6** | UI/menu/layout/telemetria/starfield | paridade visual | ⬜ |
 | **7** | Paridade total + CI Rust (5 plataformas — cross mais fácil que C++) + depots Steam idênticos | 100% dos gates | ⬜ |
@@ -45,13 +45,14 @@
 | `-Wconversion` discipline | `clippy::as_conversion`, `#[deny(warnings)]` | CI Rust |
 | CMake/Make | Cargo workspace + `cargo-zigbuild` (Win/mac) | FreeBSD tier-2 nativo |
 
-## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6/7)
+## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6/7/8)
 
 - `tools/dump_vectors.cc` — dumper do kernel puro + camada de entidades (sem
   SDL): rng, math, unit_grid, slots (3 scales), slot_edge, profile (waves
   1–75), fleet/player, pacing, score_hash, serialize, splines, trajetórias,
-  os replays seedados `ent.*` (Fatia 4; starfield na Fatia 6) e o replay
-  roteirizado `score.*` (Fatia 7). Floats como **bits IEEE hex**
+  os replays seedados `ent.*` (Fatia 4; starfield na Fatia 6), o replay
+  roteirizado `score.*` (Fatia 7) e o contexto de score da sessão
+  `ent.fs.*` (Fatia 8). Floats como **bits IEEE hex**
   (`%08x`).
 - `golden/vectors-cpp.txt` — corpus (gerado localmente; ver golden/README.md).
 - `rust/kernel` — ports de RandomStream, mathx, formation (tabela em runtime),
@@ -63,7 +64,10 @@
   explosions, alien (warp/decay/kamikaze/spin), player, fleet (AliensManager:
   comboios, ocupação lazy, criação, drift, fire, wanderers) e session (Fatia 5:
   `EntitySession` — pipeline de tick da física fixa, a ordem canônica de
-  produção atrás de um único `tick(dir, fire)` com `TickReport` por quadro) e
+  produção atrás de um único `tick(dir, fire)` com `TickReport` por quadro;
+  Fatia 8: dona do contexto de score — crédito por quadro, drenagem de
+  milestones de escudo extra e `ExtraShield` no jogador, com
+  `extra_shields` no `TickReport`) e
   stars (Fatia 6: `StarsFields` — starfield de parallax com os transcendentais
   congelados como dados gravados) e score (Fatia 7: `Score` — economia de
   pontos: Add saturante, ledger fracionário de milestones de escudo extra,
@@ -175,6 +179,27 @@
   `AliensManager::RollSmartBonusType` consulta via `Score*` (o corpus de
   frota o liga nulo; um replay de frota score-wired é trabalho futuro).
   Rust: módulo `score` + teste `score_parity` (19º da suíte).
+- **Fatia 8 (fix28)**: contexto de score dentro do `EntitySession`. O bloco
+  de produção entre `DoBulletsCollisions` e `DoBombsCollisions`
+  (`score.Add(score_earned)` → `CheckExtraShieldMilestones` →
+  `player_.ExtraShield()` por milestone, com SFX) entra no tick do kernel: a
+  sessão passa a possuir um `Score` (Fatia 7), o `TickReport` carrega
+  `extra_shields` por quadro (o SFX_SHIELD_RESTORE por milestone continua
+  casca), o contador `score_total` sai (a economia vive em `score()` — sem
+  aliases) e `award_points` expõe o mesmo bloco para quantias sintéticas. O
+  harness do dumper replica o bloco na posição exata e o corpus cresce 14
+  linhas `ent.fs.*`: setup, uma linha por quadro creditado (9 quadros, total
+  10→130, bits do progresso e escudo no fim do quadro), a cascata de prêmios
+  pós-replay (1000/2000/5000 → exatamente 1/2/5 milestones, determinística
+  para qualquer resíduo) e done. O resíduo importa: 0,13 acumulado crédito a
+  crédito tem bits diferentes de 130/1000 de uma vez, e as linhas os fixam.
+  Gates duros: zero milestones durante o replay — a prova de que as 900
+  linhas `ent.fleet.*` commitadas não são tocadas pela fiação do Score (130
+  pontos < step 1000; a busca de semente continua escolhendo a seed 2 e a
+  seção saiu byte-idêntica) —, ≥5 quadros creditados, cascata 1+2+5 e escudo
+  final clampado em 8. Corpus: 32.568 linhas. Rust: `session` +
+  `entity_parity` atualizados; a suíte segue com 19 testes (`fleet_parity`
+  absorve o `ent.fs.*`).
 
 ## Comandos
 

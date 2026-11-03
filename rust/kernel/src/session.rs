@@ -5,11 +5,17 @@
 //! `EntitySession::tick` drives collisions, economy, player and projectile
 //! motion, and the armada in the exact production sequence, so a future Rust
 //! shell (Phase 4) consumes one call per fixed 60 Hz frame instead of
-//! re-wiring six managers by hand. Everything else the C++ tick does is
-//! shell territory -- score context, cinematics, starfield, phase
-//! transitions, input devices -- and stays in C++ until then. The session
-//! REPORTS kamikaze proximity but does not act on it: in production that
-//! branch ends the frame with the supernova cinematic.
+//! re-wiring six managers by hand. Since Fatia 8 the session also owns the
+//! score context: the production block between the bullet and the bomb
+//! collisions (credit `score_earned`, drain the extra-shield milestones,
+//! apply each award to the player) runs inside `tick`, and the milestone
+//! count rides back on `TickReport` -- the C++ shell plays one
+//! SFX_SHIELD_RESTORE per milestone, and presentation stays shell-side.
+//! Everything else the C++ tick does is shell territory -- cinematics,
+//! starfield scroll, phase transitions, input devices -- and stays in C++
+//! until then. The session REPORTS kamikaze proximity but does not act on
+//! it: in production that branch ends the frame with the supernova
+//! cinematic.
 //!
 //! Golden contract: the 900-frame `ent.fleet.*` corpus was recorded through
 //! exactly this pipeline order, and `tests/entity_parity.rs::fleet_parity`
@@ -22,15 +28,18 @@ use crate::explosions::ExplosionsManager;
 use crate::fleet::{CollisionSummary, Fleet};
 use crate::mathx::Coord;
 use crate::player::Player;
+use crate::score::Score;
 use crate::sink::EventSink;
 
 /// Per-frame report of one fixed-physics tick: the collision breakdown the
 /// C++ shell reads back from the entity layer (regular/kamikaze hits and the
-/// score they earned) plus the kamikaze proximity flag, which in production
-/// triggers the supernova cinematic.
+/// score they earned), the kamikaze proximity flag, which in production
+/// triggers the supernova cinematic, and the number of extra-shield
+/// milestones this frame awarded (the shell plays one SFX per award).
 pub struct TickReport {
     pub collisions: CollisionSummary,
     pub kamikaze_proximity: bool,
+    pub extra_shields: u64,
 }
 
 /// The entity-layer combat session: the six fixed-physics managers plus the
@@ -49,9 +58,10 @@ pub struct EntitySession {
     /// Kamikaze blast radius in design pixels: the proximity check flags
     /// "an alien is about to ram the player" within this distance.
     lethal_radius: f32,
-    /// Lifetime score earned by the entity layer (sum of the per-frame
-    /// `score_earned`); the shell adds its own context on top.
-    score_total: u64,
+    /// The session's score economy (Fatia 8): receives the per-frame
+    /// `score_earned`, owns the extra-shield milestone ledger and drives the
+    /// player's `ExtraShield` awards -- the production `ctx_.score` role.
+    score: Score,
     /// Lifetime alien kills (regular + kamikaze hits).
     kills: i32,
 }
@@ -80,7 +90,7 @@ impl EntitySession {
             explosions,
             sink,
             lethal_radius,
-            score_total: 0,
+            score: Score::new(),
             kills: 0,
         }
     }
@@ -99,6 +109,10 @@ impl EntitySession {
             &mut self.sink,
             Some(&self.player),
         );
+        // The production score-context block (TickFixedPhysics): credit the
+        // frame's earnings, drain the extra-shield milestones and apply each
+        // award to the player -- exactly between the two collision passes.
+        let extra_shields = self.apply_score_context(collisions.score_earned);
         self.player
             .do_bombs_collisions(&mut self.bombs, &mut self.explosions, &mut self.sink);
         // Production ends the frame here with the supernova cinematic; the
@@ -126,9 +140,31 @@ impl EntitySession {
             .advance(&self.bullets, &mut self.sink, Some(player_pos));
         self.fleet.fire(player_pos, &mut self.bombs);
 
-        self.score_total += collisions.score_earned;
         self.kills += collisions.total_hits;
-        TickReport { collisions, kamikaze_proximity }
+        TickReport { collisions, kamikaze_proximity, extra_shields }
+    }
+
+    /// The production score-context block, factored so the golden epilogue
+    /// can feed it synthetic amounts: credit (only when non-zero, mirroring
+    /// the C++ `if (hit_summary.score_earned > 0)` guard), drain the
+    /// milestone ledger and apply one `ExtraShield` per milestone. Returns
+    /// the number of shields awarded by this call.
+    fn apply_score_context(&mut self, earned: u64) -> u64 {
+        if earned > 0 {
+            self.score.add(earned);
+        }
+        let milestones = self.score.check_extra_shield_milestones();
+        for _ in 0..milestones {
+            self.player.extra_shield();
+        }
+        milestones
+    }
+
+    /// Post-replay award entry point for the golden harness (the
+    /// `ent.fs.award` rows): the same production block driven by scripted
+    /// amounts after the fleet scenario ends.
+    pub fn award_points(&mut self, pts: u64) -> u64 {
+        self.apply_score_context(pts)
     }
 
     pub fn fleet(&self) -> &Fleet {
@@ -155,9 +191,10 @@ impl EntitySession {
         &self.explosions
     }
 
-    /// Lifetime score earned inside the entity layer.
-    pub fn score_total(&self) -> u64 {
-        self.score_total
+    /// The session's score economy (points, milestone ledger, level, bonus
+    /// mask): the kernel twin of the shell's `ctx_.score`.
+    pub fn score(&self) -> &Score {
+        &self.score
     }
 
     /// Lifetime alien kills (regular + kamikaze).

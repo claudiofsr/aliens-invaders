@@ -22890,6 +22890,20 @@ ent.fleet.bomb 899 4 1196 741 0 1 0 20 108
 ent.fleet.bullet 899 0 645 488 0 -8
 ent.fleet.bullet 899 1 640 168 0 -8
 ent.fleet.done 900 0 9
+ent.fs.setup 2 3 1000 8
+ent.fs.frame 206 10 3f847ae147ae147b 3 0
+ent.fs.frame 208 20 3f947ae147ae147b 3 0
+ent.fs.frame 268 30 3f9eb851eb851eb8 3 0
+ent.fs.frame 310 80 3fb47ae147ae147b 3 0
+ent.fs.frame 341 90 3fb70a3d70a3d70a 2 0
+ent.fs.frame 465 100 3fb9999999999999 2 0
+ent.fs.frame 503 110 3fbc28f5c28f5c28 1 0
+ent.fs.frame 749 120 3fbeb851eb851eb7 0 0
+ent.fs.frame 829 130 3fc0a3d70a3d70a3 0 0
+ent.fs.award 0 1000 1 1 3fc0a3d70a3d70a0 1130
+ent.fs.award 1 2000 2 3 3fc0a3d70a3d70a0 3130
+ent.fs.award 2 5000 5 8 3fc0a3d70a3d70a0 8130
+ent.fs.done 900 9 8130 8 8
 ent.pl.setup 1280 720 3
 ent.pl.frame 0 0 0 1 640 656 3 0 1 0 1 0 0 0
 ent.pl.bullet 0 0 640 640 0 -8

@@ -797,6 +797,19 @@ struct FleetOutcome {
 ///   ent.fleet.bonus  <f> <i> <type> <x> <y>
 ///   ent.fleet.sink   <f> ...     (cosmetic events of that frame)
 ///   ent.fleet.done   <frames> <finished> <kills>
+/// The Fatia-8 companion section pins the SESSION-level score context (the
+/// TickFixedPhysics block between the bullet and bomb collisions: credit ->
+/// milestone drain -> ExtraShield). The 900-frame window earns less than one
+/// milestone, so the replay rows prove the wiring stays inert there, and a
+/// scripted post-replay award cascade (1000/2000/5000 -> exactly 1/2/5
+/// milestones) exercises the drain and the shield clamp. Row layouts:
+///   ent.fs.setup <seed> <initial_shield> <extra_shield_step> <max_shield>
+///   ent.fs.frame <f> <score_total> <progress_bits> <shield> <extra_shields>
+///                (one row per credited frame, end-of-frame values)
+///   ent.fs.award <i> <pts> <milestones> <shield> <progress_bits>
+///                <score_total>
+///   ent.fs.done  <frames> <credited_frames> <final_total> <final_shield>
+///                <awarded_milestones>
 bool RunFleetReplay(std::uint32_t seed, bool record,
                     const HeadlessTextures& tex, FleetOutcome& out) {
   const ViewportMetrics m{kEntityWinW, kEntityWinH, 1.0f};
@@ -836,6 +849,30 @@ bool RunFleetReplay(std::uint32_t seed, bool record,
       static_cast<float>(GameRules::Fleet::FormationGrid::Width()) *
       GameRules::Fleet::kKamikazeBlastRadiusMultiplier;
 
+  // Fatia 8: the session-level score context. Headless Score (Fatia 7) plus
+  // the exact production block of TickFixedPhysics -- credit, drain the
+  // extra-shield milestones, apply each to the player. The SFX the C++ shell
+  // plays per milestone is presentation; the golden rows pin the counts.
+  Score score;
+  const auto score_context = [&](std::uint64_t earned) -> std::uint64_t {
+    if (earned > 0) {
+      score.Add(earned);
+    }
+    const std::uint64_t milestones = score.CheckExtraShieldMilestones();
+    for (std::uint64_t mm = 0; mm < milestones; ++mm) {
+      player.ExtraShield();
+    }
+    return milestones;
+  };
+  std::uint64_t replay_milestones = 0;
+  int fs_credit_frames = 0;
+  std::ostringstream fs;
+  if (record) {
+    fs << "ent.fs.setup " << seed << ' ' << player.Shield() << ' '
+       << GameRules::Combat::kExtraShieldScoreStep << ' '
+       << GameRules::Player::kPlayerMaxShield << '\n';
+  }
+
   if (record) {
     std::printf("ent.fleet.setup %d %u %d %d %08x %d %08x\n", kFleetLevel,
                 seed, kEntityWinW, kEntityWinH, FloatBits(m.scale),
@@ -868,6 +905,8 @@ bool RunFleetReplay(std::uint32_t seed, bool record,
     // collisions first, then bonuses/player/projectiles, fleet last. The
     // player fires every frame; the fire interval gates the real cadence.
     const BulletCollisionSummary summary = aliens.DoBulletsCollisions();
+    const std::uint64_t frame_extra = score_context(summary.score_earned);
+    replay_milestones += frame_extra;
     player.DoBombsCollisions();
     const bool prox = aliens.CheckKamikazeProximity(player.Position(), lethal);
     player.DoBonusCollisions(&aliens);
@@ -911,6 +950,15 @@ bool RunFleetReplay(std::uint32_t seed, bool record,
           player.MultiFire(), player.SpeedLevel(), summary.total_hits,
           summary.regular_hits, summary.kamikaze_hits,
           static_cast<unsigned long long>(score_total), prox ? 1 : 0);
+      if (summary.score_earned > 0) {
+        ++fs_credit_frames;
+        char pbits[17];
+        std::snprintf(pbits, sizeof(pbits), "%016llx",
+                      static_cast<unsigned long long>(
+                          DoubleBits(score.ShieldProgress())));
+        fs << "ent.fs.frame " << f << ' ' << score.Value() << ' ' << pbits
+           << ' ' << player.Shield() << ' ' << frame_extra << '\n';
+      }
       for (std::size_t i = 0; i < aliens.AlienCount(); ++i) {
         const Alien& a = aliens.GetAlien(i);
         std::printf(
@@ -952,6 +1000,43 @@ bool RunFleetReplay(std::uint32_t seed, bool record,
   if (record) {
     std::printf("ent.fleet.done %d %d %d\n", f, aliens.Finished() ? 1 : 0,
                 out.kills);
+
+    // ent.fs.* epilogue: the replay window cannot reach a milestone (130
+    // points < the 1000-point step), so the award cascade below is what
+    // exercises the milestone drain and the ExtraShield clamp. Each amount
+    // drains deterministically (1000 -> 1, 2000 -> 2, 5000 -> 5) regardless
+    // of the replay residue, which only survives as the pinned progress bits.
+    static constexpr std::uint64_t kFsAwardPts[] = {1000, 2000, 5000};
+    std::uint64_t fs_awarded = 0;
+    for (int a = 0; a < 3; ++a) {
+      const std::uint64_t ms = score_context(kFsAwardPts[a]);
+      fs_awarded += ms;
+      char pbits[17];
+      std::snprintf(pbits, sizeof(pbits), "%016llx",
+                    static_cast<unsigned long long>(
+                        DoubleBits(score.ShieldProgress())));
+      fs << "ent.fs.award " << a << ' ' << kFsAwardPts[a] << ' ' << ms << ' '
+         << player.Shield() << ' ' << pbits << ' ' << score.Value() << '\n';
+    }
+
+    // Coverage contract (hard gate, same discipline as the seed search): the
+    // replay itself must stay milestone-free (proof the committed ent.fleet.*
+    // rows are untouched by the Score wiring), the cascade must drain exactly
+    // 1+2+5, and the shield must end clamped at the cap.
+    if (replay_milestones != 0 || fs_credit_frames < 5 || fs_awarded != 8 ||
+        player.Shield() != GameRules::Player::kPlayerMaxShield) {
+      std::fprintf(stderr,
+                   "dump_vectors: fleet score-context contract failed "
+                   "(replay_ms=%llu credited=%d awarded=%llu shield=%d)\n",
+                   static_cast<unsigned long long>(replay_milestones),
+                   fs_credit_frames,
+                   static_cast<unsigned long long>(fs_awarded),
+                   player.Shield());
+      std::exit(1);
+    }
+    fs << "ent.fs.done " << f << ' ' << fs_credit_frames << ' '
+       << score.Value() << ' ' << player.Shield() << ' ' << fs_awarded << '\n';
+    std::printf("%s", fs.str().c_str());
   }
   return out.warp_spawned && out.warp_used && out.decay_spawned &&
          out.bonus_spawned;
