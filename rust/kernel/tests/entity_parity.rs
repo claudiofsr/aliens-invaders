@@ -33,8 +33,9 @@ use kernel::{
     path::{self, Vec2f},
     player::Player,
     score,
-    session::EntitySession,
+    session::{phase_transition_frames, EntitySession},
     sink::{EventSink, PresentationEvent},
+    stage_catalog,
     stars::{self, StarsFields, STARFIELD_SEED, WARP_DURATION_FRAMES},
     textures::{dims, TextureId, HEADLESS_DIMS},
     trajectory::{Trajectory, ViewportMetrics},
@@ -952,8 +953,11 @@ fn fleet_replay(seed: u32, mut rec: Option<&mut Rows>, mut fs: Option<&mut Rows>
 
     // The kernel session owns the managers and the canonical tick order;
     // the harness keeps only scenario inputs and row assertions.
+    // Fatia 10 inputs, inert for this scenario: the armada never finishes
+    // inside the 900-frame budget (3 ships survive at ent.fleet.done), so the
+    // transition trigger cannot fire and the committed rows stay untouched.
     let mut session = EntitySession::new(
-        fleet, player, bullets, bombs, bonuses, explosions, sink, lethal,
+        fleet, player, bullets, bombs, bonuses, explosions, sink, lethal, METRICS, 0, [6.0; 15],
     );
 
     if let Some(sec) = rec.as_deref_mut() {
@@ -1235,6 +1239,287 @@ fn fleet_parity() {
     let mut fs_sec = section(&rows, "ent.fs.");
     let recorded = fleet_replay(chosen, Some(&mut sec), Some(&mut fs_sec));
     assert!(recorded.coverage(), "recorded replay lost coverage");
+}
+
+// ---- Phase transition replay (Fatia 10) --------------------------------------
+
+const PT_LEVEL: i32 = 1;
+const PT_MAX_LEVEL: i32 = 15;
+const PT_RNG_SEED: u32 = 0x9EED99;
+const PT_BULLETS_SEED: u32 = 0x97EED11;
+const PT_BOMBS_SEED: u32 = 0x97EED22;
+const PT_EXPLOSIONS_SEED: u32 = 0xE2E3E4;
+const PT_CAP: i32 = 1500;
+const PT_TAIL: i32 = 10;
+/// The scripted bake-edge duration (6.0 s + one 44.1 kHz sample) that pushes
+/// the wave-1 hold to 361 frames -- the dumper computes the same f32 sum.
+const PT_FANFARE_EDGE: f32 = 6.0 + 1.0 / 44100.0;
+
+/// Five single-alien convoys honoring the catalog invariant (table length ==
+/// level-1 profile convoy_count == 5), pc=8 -> one ship per convoy at 1280 px.
+fn pt_convoys() -> Vec<ConvoySpec> {
+    (0..5)
+        .map(|c| ConvoySpec {
+            wait: c * 20,
+            texture_id: TextureId::Alien1,
+            convoy_size_pc: 8,
+            x_mirror: false,
+            split: false,
+            simultaneous: false,
+            dock_align: 0,
+            path_id: 0,
+        })
+        .collect()
+}
+
+/// The dumper's EntityArrivalSpire, resampled through the same golden-pinned
+/// spline (its controls are spline.* case 2).
+fn pt_paths() -> Vec<Vec<Vec2f>> {
+    let ctrls: Vec<Vec2f> = [[512.0f32, -40.0], [540.0, 300.0], [512.0, 640.0], [512.0, 780.0]]
+        .iter()
+        .map(|p| Vec2f::new(p[0], p[1]))
+        .collect();
+    vec![path::generate_smooth_spline(&ctrls)]
+}
+
+/// Scenario-coverage flags; the seed search accepts a seed only when the full
+/// arc fired -- the dumper's RunPhaseTransitionReplay gate, mirrored.
+#[derive(Default)]
+struct PtOutcome {
+    trigger_frame: i32,
+    rebuild_frame: i32,
+    kills: i32,
+    destroyed_frames: i32,
+    frames: i32,
+    final_level: i32,
+    final_score: u64,
+}
+
+impl PtOutcome {
+    fn covered(&self) -> bool {
+        self.trigger_frame >= 0
+            && self.rebuild_frame == self.trigger_frame + 360
+            && self.kills == 5
+            && self.final_level == 2
+            && self.frames < PT_CAP
+    }
+}
+
+fn pt_replay(seed: u32, mut rec: Option<&mut Rows>) -> PtOutcome {
+    let convoys = pt_convoys();
+    let paths = pt_paths();
+    let grid = formation::recompute(METRICS.scale);
+
+    let mut bullets = BulletsManager::new(PT_BULLETS_SEED);
+    let mut bombs = BulletsManager::new(PT_BOMBS_SEED);
+    let mut bonuses = BonusManager::new();
+    let mut explosions = ExplosionsManager::new(2, grid.width);
+    explosions.seed_random(PT_EXPLOSIONS_SEED);
+    bullets.set_metrics(METRICS);
+    bombs.set_metrics(METRICS);
+    bonuses.set_metrics(METRICS);
+    explosions.set_metrics(METRICS.scale);
+    let sink = EventSink::default();
+
+    let fleet = Fleet::new(PT_LEVEL, convoys.clone(), paths.clone(), METRICS, PT_MAX_LEVEL, seed);
+    let player = Player::new(METRICS);
+    let lethal = grid.width as f32 * 1.4;
+
+    // Fanfare durations: 6.0 s everywhere except wave 1, which carries the
+    // 44.1 kHz bake edge. The recording run re-asserts every slot against the
+    // ent.pt.fanfare rows.
+    let mut durations = [stage_catalog::K_STAGE_FANFARE_DURATION_SECONDS; 15];
+    durations[0] = PT_FANFARE_EDGE;
+
+    let mut session = EntitySession::new(
+        fleet, player, bullets, bombs, bonuses, explosions, sink, lethal, METRICS, PT_RNG_SEED,
+        durations,
+    );
+
+    if let Some(sec) = rec.as_deref_mut() {
+        let row = sec.next("ent.pt.setup");
+        assert_eq!(u(&row, 1) as u32, seed, "setup fleet seed");
+        assert_eq!(u(&row, 2) as u32, PT_RNG_SEED, "setup rng seed");
+        assert_eq!(u(&row, 3) as u32, PT_BULLETS_SEED, "setup bullets seed");
+        assert_eq!(u(&row, 4) as u32, PT_BOMBS_SEED, "setup bombs seed");
+        assert_eq!(u(&row, 5) as u32, PT_EXPLOSIONS_SEED, "setup explosions seed");
+        assert_eq!(i(&row, 6), METRICS.win_w, "setup win_w");
+        assert_eq!(i(&row, 7), METRICS.win_h, "setup win_h");
+        assert_eq!(hex32(&row[8]), METRICS.scale.to_bits(), "setup scale");
+        assert_eq!(hex32(&row[9]), lethal.to_bits(), "setup lethal radius");
+        assert_eq!(i(&row, 10), session.player().shield(), "setup initial shield");
+        assert_eq!(i(&row, 11), PT_LEVEL, "setup level");
+        assert_eq!(i(&row, 12), PT_CAP, "setup cap");
+        assert_eq!(i(&row, 13), PT_TAIL, "setup tail");
+        for (k, d) in durations.iter().enumerate() {
+            let row = sec.next("ent.pt.fanfare");
+            assert_eq!(sz(&row, 1), k, "fanfare idx");
+            assert_eq!(hex32(&row[2]), d.to_bits(), "fanfare {k} duration bits");
+        }
+        for (c, cv) in convoys.iter().enumerate() {
+            let row = sec.next("ent.pt.convoy");
+            assert_eq!(sz(&row, 1), c, "convoy idx");
+            assert_eq!(i(&row, 2), cv.wait, "convoy {c} wait");
+            assert_eq!(i(&row, 3), cv.texture_id as i32, "convoy {c} texture");
+            assert_eq!(i(&row, 4), cv.convoy_size_pc, "convoy {c} size_pc");
+            assert_eq!(i(&row, 5), i32::from(cv.x_mirror), "convoy {c} mirror");
+            assert_eq!(i(&row, 6), i32::from(cv.split), "convoy {c} split");
+            assert_eq!(i(&row, 7), i32::from(cv.simultaneous), "convoy {c} simult");
+            assert_eq!(i(&row, 8), cv.dock_align, "convoy {c} dock_align");
+            assert_eq!(sz(&row, 9), cv.path_id, "convoy {c} path_id");
+        }
+        for (p, pts) in paths.iter().enumerate() {
+            let row = sec.next("ent.pt.path_count");
+            assert_eq!(sz(&row, 1), p, "path id");
+            assert_eq!(sz(&row, 2), pts.len(), "path {p} point count");
+            for (j, pt) in pts.iter().enumerate() {
+                let row = sec.next("ent.pt.path");
+                assert_eq!(sz(&row, 1), p, "path id");
+                assert_eq!(sz(&row, 2), j, "path point idx");
+                assert_eq!(hex32(&row[3]), pt.x.to_bits(), "path {p} pt {j} x");
+                assert_eq!(hex32(&row[4]), pt.y.to_bits(), "path {p} pt {j} y");
+            }
+        }
+    }
+
+    let mut out = PtOutcome { trigger_frame: -1, rebuild_frame: -1, ..PtOutcome::default() };
+    let mut f = 0i32;
+    while f < PT_CAP {
+        let level_before = session.score().level();
+        // The stationary player shares one lane with the bullet column: the
+        // divers come to the shots, which keeps the finish fast and the
+        // scenario deterministic without an input script.
+        let report = session.tick(0, true);
+        out.kills += report.collisions.total_hits;
+        if report.player_destroyed {
+            out.destroyed_frames += 1;
+        }
+        if report.transition_started {
+            out.trigger_frame = f;
+        }
+        if report.rebuilt {
+            out.rebuild_frame = f;
+        }
+
+        if let Some(sec) = rec.as_deref_mut() {
+            if report.transition_started {
+                let row = sec.next("ent.pt.trigger");
+                assert_eq!(i(&row, 1), f, "trigger frame");
+                assert_eq!(i(&row, 2), level_before, "completed level");
+                let slot = stage_catalog::wave_in_stage(level_before).max(0) as usize;
+                let dur = durations[slot];
+                assert_eq!(hex32(&row[3]), dur.to_bits(), "f{f} fanfare duration bits");
+                assert_eq!(
+                    hex32(&row[4]),
+                    stage_catalog::K_STAGE_FANFARE_DURATION_SECONDS.max(dur).to_bits(),
+                    "f{f} hold bits"
+                );
+                assert_eq!(i(&row, 5), report.transition_frames, "f{f} hold frames");
+                assert_eq!(i(&row, 6), session.score().level(), "f{f} new level");
+                assert_eq!(i(&row, 7), WARP_DURATION_FRAMES, "f{f} warp frames");
+            }
+            if report.rebuilt {
+                let row = sec.next("ent.pt.rebuild");
+                assert_eq!(i(&row, 1), f, "rebuild frame");
+                assert_eq!(i(&row, 2), report.rebuild_level, "f{f} rebuild level");
+                assert_eq!(u(&row, 3) as u32, report.rebuild_seed, "f{f} rebuild seed");
+                assert_eq!(
+                    sz(&row, 4),
+                    session.fleet().alien_count(),
+                    "f{f} alive right after rebuild"
+                );
+                assert_eq!(
+                    i(&row, 5),
+                    stage_catalog::get_profile(report.rebuild_level, PT_MAX_LEVEL).convoy_count,
+                    "f{f} rebuilt profile convoy_count"
+                );
+            }
+            let row = sec.next("ent.pt.frame");
+            assert_eq!(i(&row, 1), f, "frame idx");
+            assert_eq!(sz(&row, 2), session.fleet().alien_count(), "f{f} aliens");
+            assert_eq!(i(&row, 3), session.bombs().nb(), "f{f} bombs");
+            assert_eq!(i(&row, 4), session.bullets().nb(), "f{f} bullets");
+            assert_eq!(i(&row, 5), report.transition_remaining, "f{f} remaining");
+            assert_eq!(i(&row, 6), session.score().level(), "f{f} level");
+            assert_eq!(i(&row, 7), session.player().shield(), "f{f} shield");
+            assert_eq!(u(&row, 8), session.score().value(), "f{f} score");
+            assert_eq!(i(&row, 9), report.collisions.total_hits, "f{f} hits");
+            assert_eq!(i(&row, 10), i32::from(report.kamikaze_proximity), "f{f} proximity");
+            assert_eq!(i(&row, 11), i32::from(report.player_destroyed), "f{f} destroyed");
+            assert_eq!(i(&row, 12), i32::from(report.transition_started), "f{f} triggered");
+            assert_eq!(i(&row, 13), i32::from(report.rebuilt), "f{f} rebuilt");
+            drain_sink(session.sink_mut(), sec, "ent.pt.sink", f);
+        } else {
+            session.sink_mut().drain();
+        }
+
+        if out.rebuild_frame >= 0 && f - out.rebuild_frame >= PT_TAIL {
+            f += 1;
+            break;
+        }
+        f += 1;
+    }
+
+    out.frames = f;
+    out.final_level = session.score().level();
+    out.final_score = session.score().value();
+    if let Some(sec) = rec.as_deref_mut() {
+        let row = sec.next("ent.pt.done");
+        assert_eq!(i(&row, 1), out.frames, "done frames");
+        assert_eq!(i(&row, 2), out.trigger_frame, "done trigger frame");
+        assert_eq!(i(&row, 3), out.rebuild_frame, "done rebuild frame");
+        assert_eq!(i(&row, 4), out.kills, "done kills");
+        assert_eq!(i(&row, 5), out.final_level, "done final level");
+        assert_eq!(u(&row, 6), out.final_score, "done final score");
+        assert_eq!(i(&row, 7), out.destroyed_frames, "done destroyed frames");
+        sec.done("ent.pt");
+    }
+    out
+}
+
+/// The phase-transition contract (RUST.md Fatia 10): the hold formula over
+/// the bake-edge durations (pt.* rows, zero tolerance -- max/ceil on f32),
+/// then the full live arc (ent.pt.*): a finished wave-1 armada triggers the
+/// 361-frame hold, the countdown freezes the armada, the warp flag rides the
+/// trigger frame, IncLevel lands before the countdown ends, and the rebuild
+/// re-arms from the REAL level-2 catalog with one stream draw -- post-fanfare
+/// delay, convoy schedule and all, for the tail frames.
+#[test]
+fn phase_transition_parity() {
+    let rows = load_rows();
+
+    let mut pt = section(&rows, "pt.");
+    let mut cases = 0;
+    while pt.peek_is("pt.hold") {
+        let row = pt.next("pt.hold");
+        let d = hb(&row[2]);
+        let hold = stage_catalog::K_STAGE_FANFARE_DURATION_SECONDS.max(d);
+        assert_eq!(hex32(&row[3]), hold.to_bits(), "case {cases} hold bits");
+        assert_eq!(i(&row, 4), phase_transition_frames(d), "case {cases} frames");
+        cases += 1;
+    }
+    let row = pt.next("pt.warp");
+    assert_eq!(i(&row, 1), WARP_DURATION_FRAMES, "warp frames");
+    let row = pt.next("pt.done");
+    assert_eq!(i(&row, 1), cases, "formula case count");
+    pt.done("pt");
+
+    // Deterministic seed search: the first seed whose arc completes (all five
+    // ships down, 361-frame hold, catalog rebuild) -- the exact loop of
+    // DumpEntityPhaseTransition.
+    let mut chosen = 0u32;
+    for s in 1u32..=64 {
+        let probe = pt_replay(s, None);
+        if probe.covered() {
+            chosen = s;
+            break;
+        }
+    }
+    assert_ne!(chosen, 0, "no phase-transition seed completed the arc");
+
+    let mut sec = section(&rows, "ent.pt.");
+    let recorded = pt_replay(chosen, Some(&mut sec));
+    assert!(recorded.covered(), "recorded replay lost coverage");
 }
 
 // ---- Starfield replay (Fatia 6) ---------------------------------------------

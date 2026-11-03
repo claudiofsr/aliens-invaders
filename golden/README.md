@@ -4,8 +4,8 @@
 cada linha é um fato determinístico do núcleo puro e da camada de entidades
 (RNG, math, super-tabela honeycomb, catálogo de stages, pacing, hash de
 scores, serialização do ledger, splines/trajetórias, a economia de score
-`score.*`, replays seedados `ent.*` gravados na ordem de tick de produção e o
-catálogo de comboios `level.*`).
+`score.*`, replays seedados `ent.*` gravados na ordem de tick de produção, o
+catálogo de comboios `level.*` e a transição de fase `pt.*`/`ent.pt.*`).
 
 ## Regenerar (após QUALQUER mudança no kernel puro C++)
 
@@ -37,7 +37,11 @@ Revise o `git diff` do arquivo antes de commitar: os vetores SÃO a especificaç
   progresso fracionário) e `level.*` (Fatia 9: catálogo de comboios —
   comprimentos das 30 tabelas, os 136 comboios vivos campo a campo, o
   mapeamento de resolução `GetConvoyData` em 39 níveis e todos os pontos
-  reamostrados das 25 rotas de chegada em bits IEEE).
+  reamostrados das 25 rotas de chegada em bits IEEE), `pt.*` (Fatia 10: a
+  fórmula do hold da transição — max/ceil em f32 sobre as bordas de bake do
+  fanfare — e o warp de 360 quadros) e `ent.pt.*` (o arco vivo: trigger,
+  hold de 361 quadros, countdown com a armada congelada, rebuild no
+  catálogo real de nível 2 e os quadros de cauda).
 - Ordem de emissão é fixa (ver `tools/dump_vectors.cc`); streams RNG são
   sequenciais — a ordem dos draws faz parte do contrato.
 
@@ -68,5 +72,13 @@ referenciadas por nenhuma tabela e ficam fora do contrato) — e a identidade
 das rotas é fixada por CONTEÚDO: o dumper numera os ponteiros `arrival` por
 ordem de primeiro encontro e o `level_parity` casa cada entrada contra o
 registro do Rust (ordem de declaração do fonte) comparando ponto a ponto.
+`pt.*`/`ent.pt.*` (Fatia 10) também são tolerância zero em TODAS as
+colunas: a fórmula do hold é max/ceil em f32 (IEEE, sem transcendentais) e
+as colunas do arco vivo são inteiras — os ângulos (orçados em ulps nas
+outras seções `ent.*`) nunca chegam às linhas `ent.pt.*`; a dinâmica que os
+consome é a mesma já coberta pela política da Fase 3. As durações de
+fanfare são INPUTS roteirizados (o WAV baked é dependente do dispositivo em
+±1 sample): o corpus fixa a tabela do cenário e a fórmula que a transforma
+em quadros de countdown.
 O gate estrutural
 `entity_corpus_present` foi removido: a paridade completa o substitui.

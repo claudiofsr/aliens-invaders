@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdint>
 #include <cstdio>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <memory>
@@ -762,6 +763,20 @@ constexpr int kFleetLevel = 3;
 /// fit inside it; the replay stops early once the armada is finished and every
 /// pool drained (recorded in ent.fleet.done).
 constexpr int kFleetReplayFrames = 900;
+
+/// Fatia 10 scenario: phase transition. Level 1 start is forced by the
+/// production API (Score has no SetLevel -- the level only grows through
+/// IncLevel on trigger), and the rebuild therefore lands on the REAL level-2
+/// catalog (cd2: 6 convoys == the level-2 profile count -- the catalog-wide
+/// invariant that makes Rebuild safe at every level). Level 1 also keeps the
+/// finish fast: kamikaze quota 1 dives early and max_attack_wait is 300.
+constexpr int kPtLevel = 1;
+/// Hard cap; the coverage gate (trigger + rebuild + all five ships down)
+/// fails the dump long before this is reached.
+constexpr int kPtReplayCap = 1500;
+/// Frames simulated after the rebuild so the re-armed armada's first moves
+/// (post-fanfare delay, convoy spawn schedule) ride the corpus rows too.
+constexpr int kPtTailFrames = 10;
 
 /// Scenario-coverage flags collected during a replay; the seed search accepts
 /// a seed only when every special-entity mechanic fired at least once, so the
@@ -1586,6 +1601,268 @@ void DumpEntities() {
 }
 
 // ---------------------------------------------------------------------------
+// Fatia 10 -- phase transition. The formula rows pin hold->frames (the only
+// float math between the fanfare duration and the countdown): hold =
+// max(6.0f, duration); frames = max(1, (int)ceil(hold * 60.0f)). The cases
+// bracket the minimum from below, exactly, and by one sample at both bake
+// rates -- the 44.1 kHz edge is what pushes a real hold to 361 frames. The
+// warp row cross-pins FastRound(6.0 * 60.0) against the kernel constant.
+// ---------------------------------------------------------------------------
+void DumpPhaseTransition() {
+  constexpr float kMin = GameRules::Progression::kStageFanfareDurationSeconds;
+  constexpr float kHz = GameRules::Simulation::kSimulationFrequencyHz;
+  const float durations[] = {0.0f,
+                             1.0e-30f,
+                             5.5f,
+                             5.9999995f,
+                             6.0f,
+                             6.0f + 1.0f / 44100.0f,
+                             6.0f + 1.0f / 48000.0f,
+                             6.0000005f,
+                             7.25f,
+                             12.5f};
+  int cases = 0;
+  for (const float d : durations) {
+    const float hold = std::max(kMin, d);
+    const int frames = std::max(1, static_cast<int>(std::ceil(hold * kHz)));
+    std::printf("pt.hold %d %08x %08x %d\n", cases, FloatBits(d), FloatBits(hold), frames);
+    ++cases;
+  }
+  constexpr double kMinD = GameRules::Progression::kStageFanfareDurationSeconds;
+  constexpr double kHzD = GameRules::Simulation::kSimulationFrequencyHz;
+  std::printf("pt.warp %d\n", FastRound(kMinD * kHzD));
+  std::printf("pt.done %d\n", cases);
+}
+
+/// Scenario-coverage flags for the phase-transition replay; the seed search
+/// accepts a seed only when the whole arc fired: all five ships down, the
+/// trigger with the 361-frame bake-edge hold, and the catalog rebuild.
+struct PtOutcome {
+  int trigger_frame{-1};
+  int rebuild_frame{-1};
+  int kills{0};
+  int destroyed_frames{0};
+};
+
+bool RunPhaseTransitionReplay(std::uint32_t seed, bool record, const HeadlessTextures& tex,
+                              PtOutcome& out) {
+  const ViewportMetrics m{kEntityWinW, kEntityWinH, 1.0f};
+  // Five single-alien convoys (pc=8 -> ConvoySize 1 at 1280 px): the level-1
+  // profile demands exactly 5, honoring the catalog invariant table length ==
+  // profile count. Short staggered waits keep the arrivals tight so the
+  // combat window dominates the scenario.
+  const ConvoyData convoys[] = {
+      {0, TextureId::Alien1, 8, &EntityArrivalSpire(), false, false},
+      {20, TextureId::Alien1, 8, &EntityArrivalSpire(), false, false},
+      {40, TextureId::Alien1, 8, &EntityArrivalSpire(), false, false},
+      {60, TextureId::Alien1, 8, &EntityArrivalSpire(), false, false},
+      {80, TextureId::Alien1, 8, &EntityArrivalSpire(), false, false},
+  };
+  constexpr int kPathIds[] = {0, 0, 0, 0, 0};
+  const FlightPath* const paths[] = {&EntityArrivalSpire()};
+
+  const Config cfg = Config::CreateHeadless();
+  RecordingSink sink;
+  BulletsManager bullets(0x97EED11u);
+  BulletsManager bombs(0x97EED22u);
+  BonusManager bonuses(tex);
+  ExplosionsManager explosions(cfg);
+  explosions.SeedRandom(0xE2E3E4u);
+  bullets.SetMetrics(m);
+  bombs.SetMetrics(m);
+  bonuses.SetMetrics(m);
+  explosions.SetMetrics(m);
+  AliensManager aliens(&bombs, &bullets, &bonuses, &explosions,
+                       /*score=*/nullptr, sink, tex, m, kPtLevel, convoys,
+                       GameRules::Progression::kWavesPerStage, seed);
+  Player player(&bullets, &bombs, &bonuses, &explosions, &cfg, sink, tex, m);
+  aliens.SetPlayer(&player);
+  const float lethal = static_cast<float>(GameRules::Fleet::FormationGrid::Width()) *
+                       GameRules::Fleet::kKamikazeBlastRadiusMultiplier;
+
+  // Production wiring minus the shell: the score economy runs (the trigger
+  // reads Level() and IncLevel()s it), and ctx_.rng's role -- the single
+  // NextU32() draw that seeds each Rebuild -- is a local stream.
+  Score score;
+  RandomStream rng(0x9EED99u);
+  const auto score_context = [&](std::uint64_t earned) -> std::uint64_t {
+    if (earned > 0) {
+      score.Add(earned);
+    }
+    const std::uint64_t milestones = score.CheckExtraShieldMilestones();
+    for (std::uint64_t mm = 0; mm < milestones; ++mm) {
+      player.ExtraShield();
+    }
+    return milestones;
+  };
+
+  // Fanfare durations are SCRIPTED INPUTS: production reads them from the
+  // baked WAVs via PlayStageFanfare (device-dependent, exactly 6.0 s +/-1
+  // sample), which is why the kernel contract takes the table as input.
+  // Slot 0 (wave 1) carries the 44.1 kHz bake edge -> hold = 361 frames.
+  float fanfare[GameRules::Progression::kWavesPerStage];
+  for (float& d : fanfare) {
+    d = GameRules::Progression::kStageFanfareDurationSeconds;
+  }
+  fanfare[0] = GameRules::Progression::kStageFanfareDurationSeconds + 1.0f / 44100.0f;
+
+  if (record) {
+    std::printf("ent.pt.setup %u %u %u %u %u %d %d %08x %08x %d %d %d %d\n", seed, 0x9EED99u,
+                0x97EED11u, 0x97EED22u, 0xE2E3E4u, kEntityWinW, kEntityWinH, FloatBits(m.scale),
+                FloatBits(lethal), player.Shield(), kPtLevel, kPtReplayCap, kPtTailFrames);
+    for (int i = 0; i < GameRules::Progression::kWavesPerStage; ++i) {
+      std::printf("ent.pt.fanfare %d %08x\n", i, FloatBits(fanfare[i]));
+    }
+    for (int c = 0; c < 5; ++c) {
+      const ConvoyData& cv = convoys[c];
+      std::printf("ent.pt.convoy %d %d %d %d %d %d %d %d %d\n", c, cv.wait,
+                  static_cast<int>(cv.texture_id), cv.convoy_size_pc, cv.x_mirror ? 1 : 0,
+                  cv.split ? 1 : 0, cv.simultaneous ? 1 : 0, static_cast<int>(cv.dock_align),
+                  kPathIds[c]);
+    }
+    for (int p = 0; p < 1; ++p) {
+      std::printf("ent.pt.path_count %d %zu\n", p, paths[p]->Size());
+      for (std::size_t j = 0; j < paths[p]->Size(); ++j) {
+        std::printf("ent.pt.path %d %zu %08x %08x\n", p, j, FloatBits((*paths[p])[j].x),
+                    FloatBits((*paths[p])[j].y));
+      }
+    }
+  }
+
+  int phase_frames = 0;
+  bool started = false;
+  int f = 0;
+  for (; f < kPtReplayCap; ++f) {
+    const int dir = 0;  // stationary player: the bullet column and the divers share one lane
+
+    // Exact production tick order (CombatSession::TickFixedPhysics), transition included.
+    const BulletCollisionSummary summary = aliens.DoBulletsCollisions();
+    score_context(summary.score_earned);
+    player.DoBombsCollisions();
+    const bool prox = aliens.CheckKamikazeProximity(player.Position(), lethal);
+    player.DoBonusCollisions(&aliens);
+    score.SetShield(player.Shield());
+    // Production ends the frame here with the destruction cinematic; the
+    // kernel reports and continues (the kamikaze-proximity precedent).
+    const bool destroyed = player.Shield() < 0;
+    if (destroyed) {
+      ++out.destroyed_frames;
+    }
+
+    bool triggered = false;
+    int hold_frames = 0;
+    if (!started && aliens.Finished()) {
+      const int completed_level = score.Level();
+      int slot = GameRules::Progression::WaveInStage(completed_level);
+      if (slot < 0) slot = 0;
+      const float duration = fanfare[slot];
+      const float hold =
+          std::max(GameRules::Progression::kStageFanfareDurationSeconds, duration);
+      hold_frames =
+          std::max(1, static_cast<int>(std::ceil(hold * GameRules::Simulation::kSimulationFrequencyHz)));
+      phase_frames = hold_frames;
+      started = true;
+      score.IncLevel();
+      constexpr double kHyperspaceWarpDurationSec =
+          static_cast<double>(GameRules::Progression::kStageFanfareDurationSeconds);
+      const int warp_frames = FastRound(kHyperspaceWarpDurationSec *
+                                        static_cast<double>(GameRules::Simulation::kSimulationFrequencyHz));
+      // ctx_.stars.TriggerHyperspaceWarp(warp_frames) is shell-side (the
+      // kernel session does not own the starfield); the row records the flag.
+      out.trigger_frame = f;
+      triggered = true;
+      if (record) {
+        std::printf("ent.pt.trigger %d %d %08x %08x %d %d %d\n", f, completed_level,
+                    FloatBits(duration), FloatBits(hold), hold_frames, score.Level(), warp_frames);
+      }
+    }
+
+    bonuses.Move();
+    player.Move(dir);
+    bullets.Move();
+    bombs.Move(player.Position());
+    player.Fire();
+    explosions.Move();
+
+    bool rebuilt = false;
+    bool held = false;
+    if (started) {
+      held = true;
+      if (--phase_frames <= 0) {
+        const int level = score.Level();
+        const std::uint32_t rebuild_seed = rng.NextU32();
+        aliens.Rebuild(level, LevelData::GetConvoyData(static_cast<size_t>(level)),
+                       static_cast<int>(LevelData::GetTotalLevels()), rebuild_seed);
+        aliens.SetPlayer(&player);
+        started = false;
+        rebuilt = true;
+        out.rebuild_frame = f;
+        if (record) {
+          std::printf("ent.pt.rebuild %d %d %u %zu %d\n", f, level, rebuild_seed,
+                      aliens.AlienCount(), GameRules::StageCatalog::GetProfile(level).convoy_count);
+        }
+      }
+    } else {
+      aliens.Move();
+      aliens.Fire(player.Position());
+    }
+    const int remaining = held ? phase_frames : 0;
+
+    out.kills += summary.total_hits;
+    if (record) {
+      std::printf("ent.pt.frame %d %zu %d %d %d %d %d %llu %d %d %d %d %d\n", f,
+                  aliens.AlienCount(), bombs.Nb(), bullets.Nb(), remaining, score.Level(),
+                  player.Shield(), static_cast<unsigned long long>(score.Value()),
+                  summary.total_hits, prox ? 1 : 0, destroyed ? 1 : 0, triggered ? 1 : 0,
+                  rebuilt ? 1 : 0);
+      sink.Drain("ent.pt", f);
+    }
+
+    if (out.rebuild_frame >= 0 && f - out.rebuild_frame >= kPtTailFrames) {
+      ++f;
+      break;
+    }
+  }
+
+  if (record) {
+    std::printf("ent.pt.done %d %d %d %d %d %llu %d\n", f, out.trigger_frame, out.rebuild_frame,
+                out.kills, score.Level(), static_cast<unsigned long long>(score.Value()),
+                out.destroyed_frames);
+  }
+  // Coverage gate: the full arc must fire -- five ships down (kills == 5 is
+  // also the proof the trigger came from a genuinely finished armada), the
+  // 361-frame bake-edge hold counted from the trigger frame (rebuild lands
+  // exactly 360 frames later: the countdown decrements on the trigger frame
+  // itself), and the score level advanced to 2.
+  return out.trigger_frame >= 0 && out.rebuild_frame == out.trigger_frame + 360 &&
+         out.kills == 5 && score.Level() == 2 && f < kPtReplayCap;
+}
+
+void DumpEntityPhaseTransition() {
+  // Same scale-1 discipline as DumpEntities: the scenario reads the
+  // FormationGrid globals and the Pix global-scale cache.
+  GameRules::Fleet::FormationGrid::Recompute(1.0f);
+  Pix::SetGlobalScale(1.0f);
+  const HeadlessTextures tex;
+  std::uint32_t chosen = 0;
+  for (std::uint32_t s = 1; s <= 64; ++s) {
+    PtOutcome probe;
+    if (RunPhaseTransitionReplay(s, false, tex, probe)) {
+      chosen = s;
+      break;
+    }
+  }
+  if (chosen == 0) {
+    std::fprintf(stderr,
+                 "dump_vectors: no phase-transition seed completed the arc "
+                 "(finish + 361-frame hold + rebuild) within 64 candidates\n");
+    std::exit(1);
+  }
+  PtOutcome recorded;
+  RunPhaseTransitionReplay(chosen, true, tex, recorded);
+}
+
+// ---------------------------------------------------------------------------
 // Fatia 9 -- level catalog: per-wave convoy tables + arrival splines.
 // C++ identifies paths by POINTER; the rows pin identity by CONTENT instead:
 // a registry of unique arrival pointers in first-encounter order (stage-1
@@ -1710,5 +1987,7 @@ int main() {
   DumpStarfield();
   DumpScore();
   DumpLevelData();
+  DumpPhaseTransition();
+  DumpEntityPhaseTransition();
   return 0;
 }

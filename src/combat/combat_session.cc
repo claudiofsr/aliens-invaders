@@ -45,7 +45,6 @@ class CombatSession {
   std::unique_ptr<AliensManager> aliens_{nullptr};
   Player player_;
 
-  int fast_star_scrolling_time_{0};
   int phase_transition_frames_{0};
   int total_transition_frames_{0};
   bool phase_transition_started_{false};
@@ -427,13 +426,11 @@ class CombatSession {
       constexpr double kHyperspaceWarpDurationSec = static_cast<double>(GameRules::Progression::kStageFanfareDurationSeconds);
       const int warp_frames =
           FastRound(kHyperspaceWarpDurationSec * static_cast<double>(GameRules::Simulation::kSimulationFrequencyHz));
-      fast_star_scrolling_time_ = warp_frames;
       ctx_.stars.TriggerHyperspaceWarp(warp_frames);
     }
 
     ctx_.stars.CheckWindowResize();
     ctx_.stars.Scroll();
-    if (fast_star_scrolling_time_ > 0) --fast_star_scrolling_time_;
 
     bonuses_.Move();
     player_.Move(input_.Move());

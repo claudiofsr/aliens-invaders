@@ -22,7 +22,7 @@
 | **2a** | Kernel Rust: RandomStream, math, formação, pacing (**este scaffold**) | `cargo test` verde contra os vetores | ✅ |
 | **2b** | StageCatalog, ScoreHash, HighScoreTable, bonus masks em Rust | seções `profile`/`score_hash`/`serialize` dos vetores | ✅ |
 | **3** | Trajectory + splines + entidades/simulação (replay dump por frame) | replays longos bit-idênticos | ✅ (Fatias 4/4b: replay de 900 quadros bit-exato) |
-| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5–9: pré-requisitos do kernel prontos — `EntitySession` (tick + contexto de score), starfield, economia `Score`, catálogo de comboios; casca SDL não iniciada) |
+| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5–10: pré-requisitos do kernel prontos — `EntitySession` (tick + contexto de score + transição de fase), starfield, economia `Score`, catálogo de comboios; casca SDL não iniciada) |
 | **5** | Áudio: synth procedural + transpilador das 15 partituras + tsf via bindgen | WAV export **bit-idêntico** (KATs já existem) | ⬜ |
 | **6** | UI/menu/layout/telemetria/starfield | paridade visual | ⬜ |
 | **7** | Paridade total + CI Rust (5 plataformas — cross mais fácil que C++) + depots Steam idênticos | 100% dos gates | ⬜ |
@@ -45,15 +45,15 @@
 | `-Wconversion` discipline | `clippy::as_conversion`, `#[deny(warnings)]` | CI Rust |
 | CMake/Make | Cargo workspace + `cargo-zigbuild` (Win/mac) | FreeBSD tier-2 nativo |
 
-## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6/7/8/9)
+## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6/7/8/9/10)
 
 - `tools/dump_vectors.cc` — dumper do kernel puro + camada de entidades (sem
   SDL): rng, math, unit_grid, slots (3 scales), slot_edge, profile (waves
   1–75), fleet/player, pacing, score_hash, serialize, splines, trajetórias,
   os replays seedados `ent.*` (Fatia 4; starfield na Fatia 6), o replay
   roteirizado `score.*` (Fatia 7), o contexto de score da sessão
-  `ent.fs.*` (Fatia 8) e o catálogo de níveis `level.*` (Fatia 9). Floats
-  como **bits IEEE hex**
+  `ent.fs.*` (Fatia 8), o catálogo de níveis `level.*` (Fatia 9) e a
+  transição de fase `pt.*`/`ent.pt.*` (Fatia 10). Floats como **bits IEEE hex**
   (`%08x`).
 - `golden/vectors-cpp.txt` — corpus (gerado localmente; ver golden/README.md).
 - `rust/kernel` — ports de RandomStream, mathx, formation (tabela em runtime),
@@ -68,7 +68,9 @@
   produção atrás de um único `tick(dir, fire)` com `TickReport` por quadro;
   Fatia 8: dona do contexto de score — crédito por quadro, drenagem de
   milestones de escudo extra e `ExtraShield` no jogador, com
-  `extra_shields` no `TickReport`) e
+  `extra_shields` no `TickReport`; Fatia 10: dona da transição de fase —
+  gatilho na armada finalizada, hold do fanfare, countdown que congela a
+  armada e rebuild pelo catálogo com um draw de RNG por wave) e
   stars (Fatia 6: `StarsFields` — starfield de parallax com os transcendentais
   congelados como dados gravados) e score (Fatia 7: `Score` — economia de
   pontos: Add saturante, ledger fracionário de milestones de escudo extra,
@@ -228,6 +230,40 @@
   pontos. É o órgão que a Fatia 10 (transição de fase — fanfare, rebuild da
   frota no nível seguinte, warp hiperespacial) consome. Rust: módulo
   `level_data` + `level_parity` (20º teste da suíte).
+- **Fatia 10 (fix30)**: transição de fase no `EntitySession`. O bloco de
+  produção do `CombatSession::TickFixedPhysics` entra no tick do kernel na
+  ordem exata: sync `score.set_shield` + reporte de destruição
+  (`player_destroyed` — produção encerra o quadro com a cinemática; o
+  kernel reporta e continua, o precedente da proximidade kamikaze), o
+  gatilho na armada finalizada (a duração do fanfare é INPUT roteirizado —
+  em produção ela vem do WAV baked via `PlayStageFanfare`, dependente do
+  dispositivo em ±1 sample — indexada por `wave_in_stage`;
+  `hold = max(6 s, duração)` → `max(1, ceil(hold·60))` quadros; o
+  `IncLevel` aterrissa antes do countdown), o countdown que congela a
+  armada (o early-return do Move/Fire de produção) e o rebuild consumindo o
+  catálogo da Fatia 9 — `Fleet::new` é o twin bit-idêntico documentado do
+  `Rebuild` para a mesma seed — com um draw do `RandomStream` por wave (o
+  papel do `ctx_.rng`) e um `TickReport` estendido que a casca lê (fanfare,
+  warp, progresso do overlay, destruição). No C++, sai o
+  `fast_star_scrolling_time_` write-only (o mecanismo vivo do warp é o
+  `stars.TriggerHyperspaceWarp` — o membro era atribuído e decrementado sem
+  nenhuma leitura). O corpus cresce 1.009 linhas: 10 casos `pt.hold`
+  fixando a fórmula nas bordas de bake (6,0 s + 1 sample a 44,1/48 kHz →
+  **361 quadros**; 1 ulp acima de 6,0; 7,25 s; 12,5 s; 0; 5,5; 1e-30),
+  `pt.warp` (FastRound(6·60) = 360 = `WARP_DURATION_FRAMES`) e o arco
+  `ent.pt.*` completo — wave 1 com 5 comboios sintéticos de uma nave
+  (honrando o invariante do catálogo "tamanho da tabela == convoy_count do
+  profile"), jogador estacionário compartilhando a coluna de balas com os
+  mergulhadores, trigger no f285, hold de 361, rebuild no f645 a partir do
+  catálogo REAL de nível 2 (cd2: 6 comboios, seed 2023342831 do draw), 10
+  quadros de cauda com o delay pós-fanfare e o schedule de spawn, e o
+  caminho de destruição exercitado (221 quadros com escudo < 0). Gate duro
+  na busca de 64 seeds: arco completo (5 kills, rebuild == trigger+360,
+  nível final 2). **Tolerância zero em todas as colunas** (inteiros +
+  max/ceil em f32; nenhum ângulo chega às linhas). Corpus: 46.111 linhas.
+  Rust: `session` (5 campos novos + `phase_transition_frames` pub),
+  `stage_catalog` (a constante do fanfare) e `phase_transition_parity`
+  (21º teste da suíte).
 
 ## Comandos
 

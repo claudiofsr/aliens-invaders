@@ -3,6 +3,12 @@
 //! order so the golden vectors match bit for bit.
 
 pub const WAVES_PER_STAGE: i32 = 15;
+
+/// Progression::kStageFanfareDurationSeconds -- the baked stage-fanfare
+/// nominal window. Doubles as the phase-transition hold minimum (the countdown
+/// can never be shorter than the music it waits for) and, through
+/// FastRound(6.0 * 60.0), the hyperspace warp length (stars::WARP_DURATION_FRAMES).
+pub const K_STAGE_FANFARE_DURATION_SECONDS: f32 = 6.0;
 pub const WANDERER_MAX_WAIT: i32 = 180;
 
 // Mirrors of GameRules constants (RUST.md rule 4: the golden vectors watch
