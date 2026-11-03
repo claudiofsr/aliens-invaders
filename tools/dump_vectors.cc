@@ -22,6 +22,7 @@
 #include "frame_pacing.h"
 #include "game_object.h"
 #include "highscore_table.h"
+#include "level_data.h"
 #include "managers.h"
 #include "math_types.h"
 #include "presentation_sink.h"
@@ -1584,6 +1585,113 @@ void DumpEntities() {
   DumpEntityExplosions();
 }
 
+// ---------------------------------------------------------------------------
+// Fatia 9 -- level catalog: per-wave convoy tables + arrival splines.
+// C++ identifies paths by POINTER; the rows pin identity by CONTENT instead:
+// a registry of unique arrival pointers in first-encounter order (stage-1
+// waves 1..15, then stage-2) assigns ids, and the Rust parity test matches
+// them by comparing resampled points, not ordering. The resampler is
+// sqrt+IEEE only, so every level.* row carries ZERO tolerance.
+// ---------------------------------------------------------------------------
+void DumpLevelData() {
+  std::printf("level.total %zu\n", LevelData::GetTotalLevels());
+
+  std::vector<const FlightPath*> registry;
+  const auto path_id = [&registry](const FlightPath* p) -> int {
+    for (size_t i = 0; i < registry.size(); ++i) {
+      if (registry[i] == p) return static_cast<int>(i);
+    }
+    registry.push_back(p);
+    return static_cast<int>(registry.size() - 1);
+  };
+
+  struct TableRow {
+    int stage;
+    int idx;
+    int n;
+  };
+  struct ConvoyRow {
+    int stage;
+    int idx;
+    int i;
+    int wait;
+    int tex;
+    int pc;
+    int mir;
+    int spl;
+    int sim;
+    int dock;
+    int pid;
+  };
+  std::vector<TableRow> tables;
+  std::vector<ConvoyRow> convoys;
+  int total_convoys = 0;
+
+  for (int stage = 1; stage <= 2; ++stage) {
+    for (int idx = 0; idx < 15; ++idx) {
+      const int level = (stage == 1) ? idx + 1 : 16 + idx;
+      const ConvoyData* cd = LevelData::GetConvoyData(static_cast<size_t>(level));
+      int n = 0;
+      while (cd[n].texture_id != TextureId::None) ++n;
+      tables.push_back({stage, idx, n});
+      total_convoys += n;
+      for (int i = 0; i < n; ++i) {
+        convoys.push_back({stage, idx, i, cd[i].wait, static_cast<int>(cd[i].texture_id),
+                           cd[i].convoy_size_pc, cd[i].x_mirror ? 1 : 0, cd[i].split ? 1 : 0,
+                           cd[i].simultaneous ? 1 : 0, static_cast<int>(cd[i].dock_align),
+                           path_id(cd[i].arrival)});
+      }
+    }
+  }
+  for (const auto& t : tables) {
+    std::printf("level.table %d %d %d\n", t.stage, t.idx, t.n);
+  }
+  for (const auto& c : convoys) {
+    std::printf("level.convoy %d %d %d %d %d %d %d %d %d %d %d\n", c.stage, c.idx, c.i, c.wait,
+                c.tex, c.pc, c.mir, c.spl, c.sim, c.dock, c.pid);
+  }
+
+  // Production GetConvoyData resolution across the whole first cycle, both
+  // sides of every stage/wrap boundary, and deep repeating levels.
+  std::vector<int> resolve_levels;
+  resolve_levels.push_back(0);
+  for (int l = 1; l <= 30; ++l) resolve_levels.push_back(l);
+  for (int l : {31, 45, 46, 60, 75, 76, 90, 105, 999}) resolve_levels.push_back(l);
+  for (const int level : resolve_levels) {
+    const int effective = (level == 0) ? 1 : level;
+    const int idx = (effective - 1) % 15;
+    const int stage = GameRules::Progression::WaveToStage(effective);
+    const int tbl = (stage >= 2) ? 2 : 1;
+    const ConvoyData* cd = LevelData::GetConvoyData(static_cast<size_t>(level));
+    int n = 0;
+    while (cd[n].texture_id != TextureId::None) ++n;
+    std::printf("level.resolve %d %d %d %d %d %d %d\n", level, stage, idx, tbl, n, cd[0].wait,
+                static_cast<int>(cd[0].texture_id));
+  }
+
+  // Arrival splines: every resampled point, bit-exact.
+  size_t total_pts = 0;
+  for (size_t id = 0; id < registry.size(); ++id) {
+    const FlightPath& fp = *registry[id];
+    std::printf("level.path %zu %zu\n", id, fp.Size());
+    total_pts += fp.Size();
+    for (size_t j = 0; j < fp.Size(); ++j) {
+      std::printf("level.pt %zu %zu %08x %08x\n", id, j, FloatBits(fp[j].x), FloatBits(fp[j].y));
+    }
+  }
+
+  // Hard gates: a truncated catalog would silently weaken every future
+  // replay that rebuilds waves from it.
+  if (registry.size() < 20 || tables.size() != 30 || total_convoys < 100 || total_pts < 3000) {
+    std::fprintf(stderr,
+                 "DumpLevelData gates failed: paths=%zu tables=%zu convoys=%d pts=%zu\n",
+                 registry.size(), tables.size(), total_convoys, total_pts);
+    std::exit(1);
+  }
+  std::printf("level.done %zu %zu %d %zu\n", registry.size(), total_pts, total_convoys,
+              tables.size());
+}
+
 }  // namespace
 
 int main() {
@@ -1601,5 +1709,6 @@ int main() {
   DumpEntities();
   DumpStarfield();
   DumpScore();
+  DumpLevelData();
   return 0;
 }

@@ -108,6 +108,7 @@ add_executable(dump_vectors
     src/entities/actors.cc
     src/entities/explosion.cc
     src/entities/formation_grid.cc
+    src/entities/level_data.cc
     src/entities/managers.cc
     src/highscore/highscore_table.cc
     src/simulation/trajectory.cc

@@ -4,7 +4,7 @@
 //! counted to prove the corpus parses, but not asserted yet.
 
 use kernel::{
-    formation, highscore, mathx, pacing,
+    formation, highscore, level_data, mathx, pacing,
     path::{self, Vec2f},
     random_stream::RandomStream,
     score, score_hash, stage_catalog,
@@ -494,4 +494,99 @@ fn trajectory_parity() {
             );
         }
     }
+}
+#[test]
+fn level_parity() {
+    let rows = load_vectors();
+    let g = group(&rows);
+    assert!(
+        g.contains_key("level.done"),
+        "corpus sem secao level -- regenere golden/vectors-cpp.txt"
+    );
+
+    // level.total -- LevelData::GetTotalLevels.
+    assert_eq!(i(&g["level.total"][0], 1) as usize, level_data::get_total_levels());
+
+    // Arrival splines. C++ identifies paths by POINTER; the corpus pins them
+    // by CONTENT, so the Rust registry (source-declaration order) is matched
+    // against the dumped ids (first-encounter order) point-by-point.
+    let mut pts_by_id: BTreeMap<i32, Vec<(u32, u32)>> = BTreeMap::new();
+    for row in &g["level.path"] {
+        let id = i(row, 1);
+        let n = i(row, 2) as usize;
+        let pts: Vec<&Vec<String>> = g["level.pt"].iter().filter(|r| i(r, 1) == id).collect();
+        assert_eq!(pts.len(), n, "level.path {id} point count");
+        let mut bits = vec![(0u32, 0u32); n];
+        for p in pts {
+            let j = i(p, 2) as usize;
+            assert!(j < n, "level.pt {id} index {j} out of range");
+            bits[j] = (hex32(&p[3]), hex32(&p[4]));
+        }
+        assert!(pts_by_id.insert(id, bits).is_none(), "duplicate level.path {id}");
+    }
+
+    let rust_paths = level_data::paths();
+    let rust_bits: Vec<Vec<(u32, u32)>> = rust_paths
+        .iter()
+        .map(|p| p.iter().map(|q| (q.x.to_bits(), q.y.to_bits())).collect())
+        .collect();
+    assert_eq!(pts_by_id.len(), rust_paths.len(), "registry size");
+    for (rid, bits) in rust_bits.iter().enumerate() {
+        let hits = pts_by_id.values().filter(|v| *v == bits).count();
+        assert_eq!(hits, 1, "rust path {rid} must match exactly one dumped path by content");
+    }
+
+    // Convoy tables: per-wave lengths and every field of every entry.
+    for row in &g["level.table"] {
+        let (stage, idx, n) = (i(row, 1), i(row, 2), i(row, 3) as usize);
+        let level = if stage == 1 { idx + 1 } else { 16 + idx };
+        let table = level_data::get_convoy_data(level as usize);
+        assert_eq!(table.len(), n, "table stage {stage} wave {idx} length");
+    }
+    for row in &g["level.convoy"] {
+        let (stage, idx, k) = (i(row, 1), i(row, 2), i(row, 3) as usize);
+        let level = if stage == 1 { idx + 1 } else { 16 + idx };
+        let spec = &level_data::get_convoy_data(level as usize)[k];
+        let ctx = format!("convoy stage {stage} wave {idx} entry {k}");
+        assert_eq!(i(row, 4), spec.wait, "{ctx} wait");
+        assert_eq!(i(row, 5), spec.texture_id as i32, "{ctx} texture_id");
+        assert_eq!(i(row, 6), spec.convoy_size_pc, "{ctx} convoy_size_pc");
+        assert_eq!(i(row, 7), i32::from(spec.x_mirror), "{ctx} x_mirror");
+        assert_eq!(i(row, 8), i32::from(spec.split), "{ctx} split");
+        assert_eq!(i(row, 9), i32::from(spec.simultaneous), "{ctx} simultaneous");
+        assert_eq!(i(row, 10), spec.dock_align, "{ctx} dock_align");
+        let pid = i(row, 11);
+        assert_eq!(
+            pts_by_id.get(&pid).unwrap(),
+            &rust_bits[spec.path_id],
+            "{ctx} arrival path content"
+        );
+    }
+
+    // Resolution mapping: production GetConvoyData across the first cycle,
+    // both stage/wrap boundaries and deep repeating levels.
+    let total = level_data::get_total_levels() as i32;
+    for row in &g["level.resolve"] {
+        let level = i(row, 1);
+        let effective = if level == 0 { 1 } else { level };
+        let stage = stage_catalog::wave_to_stage(effective);
+        let tbl = if stage >= 2 { 2 } else { 1 };
+        assert_eq!(i(row, 2), stage, "resolve {level} stage");
+        assert_eq!(i(row, 3), (effective - 1) % total, "resolve {level} idx");
+        assert_eq!(i(row, 4), tbl, "resolve {level} table");
+        let table = level_data::get_convoy_data(level.max(0) as usize);
+        assert_eq!(i(row, 5) as usize, table.len(), "resolve {level} n");
+        assert_eq!(i(row, 6), table[0].wait, "resolve {level} first wait");
+        assert_eq!(i(row, 7), table[0].texture_id as i32, "resolve {level} first texture");
+    }
+
+    // Aggregates: registry size, total resampled points, live convoys, tables.
+    let done = &g["level.done"][0];
+    assert_eq!(i(done, 1) as usize, rust_paths.len(), "done n_paths");
+    let total_pts: usize = rust_bits.iter().map(|b| b.len()).sum();
+    assert_eq!(i(done, 2) as usize, total_pts, "done total_pts");
+    let convoys: usize = g["level.table"].iter().map(|r| i(r, 3) as usize).sum();
+    assert_eq!(i(done, 3) as usize, convoys, "done n_convoys");
+    assert_eq!(i(done, 4), g["level.table"].len() as i32, "done n_tables");
+    assert_eq!(g["level.convoy"].len(), convoys, "convoy row count");
 }

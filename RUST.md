@@ -22,7 +22,7 @@
 | **2a** | Kernel Rust: RandomStream, math, formação, pacing (**este scaffold**) | `cargo test` verde contra os vetores | ✅ |
 | **2b** | StageCatalog, ScoreHash, HighScoreTable, bonus masks em Rust | seções `profile`/`score_hash`/`serialize` dos vetores | ✅ |
 | **3** | Trajectory + splines + entidades/simulação (replay dump por frame) | replays longos bit-idênticos | ✅ (Fatias 4/4b: replay de 900 quadros bit-exato) |
-| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5–8: pré-requisitos do kernel prontos — `EntitySession` (tick + contexto de score), starfield, economia `Score`; casca SDL não iniciada) |
+| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5–9: pré-requisitos do kernel prontos — `EntitySession` (tick + contexto de score), starfield, economia `Score`, catálogo de comboios; casca SDL não iniciada) |
 | **5** | Áudio: synth procedural + transpilador das 15 partituras + tsf via bindgen | WAV export **bit-idêntico** (KATs já existem) | ⬜ |
 | **6** | UI/menu/layout/telemetria/starfield | paridade visual | ⬜ |
 | **7** | Paridade total + CI Rust (5 plataformas — cross mais fácil que C++) + depots Steam idênticos | 100% dos gates | ⬜ |
@@ -45,14 +45,15 @@
 | `-Wconversion` discipline | `clippy::as_conversion`, `#[deny(warnings)]` | CI Rust |
 | CMake/Make | Cargo workspace + `cargo-zigbuild` (Win/mac) | FreeBSD tier-2 nativo |
 
-## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6/7/8)
+## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6/7/8/9)
 
 - `tools/dump_vectors.cc` — dumper do kernel puro + camada de entidades (sem
   SDL): rng, math, unit_grid, slots (3 scales), slot_edge, profile (waves
   1–75), fleet/player, pacing, score_hash, serialize, splines, trajetórias,
   os replays seedados `ent.*` (Fatia 4; starfield na Fatia 6), o replay
-  roteirizado `score.*` (Fatia 7) e o contexto de score da sessão
-  `ent.fs.*` (Fatia 8). Floats como **bits IEEE hex**
+  roteirizado `score.*` (Fatia 7), o contexto de score da sessão
+  `ent.fs.*` (Fatia 8) e o catálogo de níveis `level.*` (Fatia 9). Floats
+  como **bits IEEE hex**
   (`%08x`).
 - `golden/vectors-cpp.txt` — corpus (gerado localmente; ver golden/README.md).
 - `rust/kernel` — ports de RandomStream, mathx, formation (tabela em runtime),
@@ -71,7 +72,11 @@
   stars (Fatia 6: `StarsFields` — starfield de parallax com os transcendentais
   congelados como dados gravados) e score (Fatia 7: `Score` — economia de
   pontos: Add saturante, ledger fracionário de milestones de escudo extra,
-  clamp de escudo, ciclo wave→stage e a máscara da economia de bônus).
+  clamp de escudo, ciclo wave→stage e a máscara da economia de bônus) e
+  level_data (Fatia 9: o catálogo de comboios — arquivo GERADO por
+  `tools/extract_level.py`, 25 splines de chegada reamostradas pelo `path`
+  golden-pinado e as 30 tabelas por wave com o mapeamento de produção do
+  `GetConvoyData`).
 - Política de tolerância (Fase 3): seções puramente aritméticas + sqrt são
   bit-exatas (splines, init, attacking/cruising); quadros do arco de docking
   (atan2/cos/sin) comparam posição com tol 1e-2 px e **sequência de estágios
@@ -200,6 +205,29 @@
   final clampado em 8. Corpus: 32.568 linhas. Rust: `session` +
   `entity_parity` atualizados; a suíte segue com 19 testes (`fleet_parity`
   absorve o `ent.fs.*`).
+- **Fatia 9 (fix29)**: catálogo de comboios no kernel
+  (`rust/kernel/src/level_data.rs`, arquivo GERADO — regenerar com
+  `tools/extract_level.py` após qualquer mudança em
+  `src/entities/level_data.cc`; o fonte C++ segue intocado). Duas metades
+  com o contrato exato de produção: `paths()` — as 25 splines de chegada
+  reamostradas pelo `path::generate_smooth_spline` já golden-pinado (o
+  catálogo não tem transcendental: as duas factories `FlightPath::Loop` não
+  são referenciadas por nenhuma tabela e ficam fora do contrato) — e
+  `get_convoy_data(level)` / `get_total_levels()` — as 30 tabelas (15 por
+  estágio) com o mapeamento de produção (`level==0→1`, `(level−1)%15`,
+  `WaveToStage≥2` → estágio 2; o `size_t` do C++ espelhado como `usize`,
+  mesmos wraps). O corpus cresce 12.534 linhas `level.*` (total: 45.102):
+  uma linha por tabela, todos os campos dos 136 comboios vivos, o
+  mapeamento de resolução em 39 níveis (ciclo 1 completo, fronteiras de
+  estágio/wrap e níveis profundos) e todos os 12.301 pontos reamostrados
+  das 25 rotas em bits IEEE. A identidade de rota é fixada por CONTEÚDO: o
+  dumper registra os ponteiros `arrival` por ordem de primeiro encontro e o
+  teste casa cada `path_id` do Rust comparando ponto a ponto, não a
+  ordenação. **Tolerância zero** (inteiros + sqrt/IEEE, como `spline.*`).
+  Gates duros no dumper: ≥20 rotas, 30 tabelas, ≥100 comboios, ≥3.000
+  pontos. É o órgão que a Fatia 10 (transição de fase — fanfare, rebuild da
+  frota no nível seguinte, warp hiperespacial) consome. Rust: módulo
+  `level_data` + `level_parity` (20º teste da suíte).
 
 ## Comandos
 

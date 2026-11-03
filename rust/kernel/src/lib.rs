@@ -10,6 +10,7 @@ pub mod fleet;
 pub mod formation;
 pub mod game_object;
 pub mod highscore;
+pub mod level_data;
 pub mod mathx;
 pub mod pacing;
 pub mod path;

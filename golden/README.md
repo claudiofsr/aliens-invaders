@@ -4,7 +4,8 @@
 cada linha é um fato determinístico do núcleo puro e da camada de entidades
 (RNG, math, super-tabela honeycomb, catálogo de stages, pacing, hash de
 scores, serialização do ledger, splines/trajetórias, a economia de score
-`score.*` e replays seedados `ent.*` gravados na ordem de tick de produção).
+`score.*`, replays seedados `ent.*` gravados na ordem de tick de produção e o
+catálogo de comboios `level.*`).
 
 ## Regenerar (após QUALQUER mudança no kernel puro C++)
 
@@ -33,7 +34,10 @@ Revise o `git diff` do arquivo antes de commitar: os vetores SÃO a especificaç
   LUT de twinkle e easing do warp congelados como dados gravados — e
   `ent.fs.*` contexto de score da sessão do cenário de frota: Fatia 8, linhas
   por quadro creditado + cascata de prêmios pós-replay com os bits do
-  progresso fracionário).
+  progresso fracionário) e `level.*` (Fatia 9: catálogo de comboios —
+  comprimentos das 30 tabelas, os 136 comboios vivos campo a campo, o
+  mapeamento de resolução `GetConvoyData` em 39 níveis e todos os pontos
+  reamostrados das 25 rotas de chegada em bits IEEE).
 - Ordem de emissão é fixa (ver `tools/dump_vectors.cc`); streams RNG são
   sequenciais — a ordem dos draws faz parte do contrato.
 
@@ -58,5 +62,11 @@ dumper (o teste Rust executa as próprias linhas do corpus). `ent.fs.*`
 ExtraShield) roda dentro do `EntitySession::tick` e o gate do dumper prova
 que o replay de 900 quadros não drena nenhum milestone — as linhas
 `ent.fleet.*` commitadas são intocadas pela fiação.
+`level.*` (Fatia 9) idem — tolerância zero: inteiros + sqrt/IEEE apenas (o
+catálogo não tem transcendentais: as factories `FlightPath::Loop` não são
+referenciadas por nenhuma tabela e ficam fora do contrato) — e a identidade
+das rotas é fixada por CONTEÚDO: o dumper numera os ponteiros `arrival` por
+ordem de primeiro encontro e o `level_parity` casa cada entrada contra o
+registro do Rust (ordem de declaração do fonte) comparando ponto a ponto.
 O gate estrutural
 `entity_corpus_present` foi removido: a paridade completa o substitui.
