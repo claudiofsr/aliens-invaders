@@ -22,6 +22,7 @@
 #include "formation_grid.h"
 #include "frame_pacing.h"
 #include "game_object.h"
+#include "highscore.h"
 #include "highscore_table.h"
 #include "level_data.h"
 #include "managers.h"
@@ -2240,6 +2241,551 @@ void DumpLevelData() {
 
 }  // namespace
 
+
+// ---------------------------------------------------------------------------
+// Fatia 12 -- the match flow: everything TickFixedPhysics does BEYOND the
+// entity subset, minus the shell. The two match-over branches (kamikaze
+// supernova, grand destruction) return from production BEFORE the motion
+// phase, so the response frame never advances bullets/bombs/aliens -- the
+// harnesses below mirror that cut exactly, and the Rust kernel exposes the
+// same seam as tick_collisions()/tick_motion(). CommitFinalScore's guard,
+// predicate and HighScores pending ledger ride live runs; the Update() I/O
+// (Load/SaveAsync) is shell -- the replica consumes the pending entry into a
+// live HighScoreTable and hashes the serialized content instead.
+// ---------------------------------------------------------------------------
+
+/// FNV-1a 64 over raw bytes -- same constants as StarPoolHash.
+[[nodiscard]] std::uint64_t ContentHash64(const std::string& content) noexcept {
+  std::uint64_t h = 14695981039346656037ull;
+  for (const char c : content) {
+    h = (h ^ static_cast<std::uint8_t>(c)) * 1099511628211ull;
+  }
+  return h;
+}
+
+/// The transition-overlay alpha curve of CombatSession::Run, lifted verbatim:
+/// ramp in over the first 18% of the hold, full between the knees, ramp out
+/// over the last 22%.
+[[nodiscard]] float MfOverlayAlpha(float progress) noexcept {
+  if (progress < 0.18f) {
+    return progress / 0.18f;
+  }
+  if (progress > 0.78f) {
+    return std::max(0.0f, (1.0f - progress) / 0.22f);
+  }
+  return 1.0f;
+}
+
+constexpr int kMfRefreshRate = 60;      // scenario input (Config::RefreshRate role)
+constexpr int kMfNovaCap = 3000;        // dive must reach the player before this
+constexpr int kMfDeathCap = 6000;       // four bomb hits must land before this
+constexpr std::int64_t kMfTimestamp = 1762000000;  // scripted Update() clock input
+constexpr const char* kMfPilot = "GOLDENPILOT";    // scripted player-name input
+
+/// The Update() decision core without the I/O: build the pending entry, feed
+/// the live table, report the serialized content. Mirrored line-for-line by
+/// the Rust consume_pending() + serialize hash.
+void MfConsumePending(HighScores& hs, HighScoreTable& table, const char* tag,
+                      int idx, std::int64_t ts) {
+  int consumed = 0;
+  int added = -1;
+  if (hs.HasPendingScore() && hs.LastScore() > 0) {
+    consumed = 1;
+    const HighScore entry(hs.LastScore(), kMfPilot, ts, hs.LastSize(),
+                          hs.LastRate(), hs.LastStage(), hs.LastWave());
+    std::printf("%s.entry %d %llu %lld %d %d %d %d %d %s\n", tag, idx,
+                static_cast<unsigned long long>(entry.Value()),
+                static_cast<long long>(entry.Date()), entry.WindowSize().x,
+                entry.WindowSize().y, entry.RefreshRate(), entry.Stage(),
+                entry.Wave(), entry.Name().c_str());
+    added = table.Add(entry) ? 1 : 0;
+    hs.CancelPending();  // Update() clears the pending state after consuming
+  }
+  std::ostringstream ss;
+  table.Serialize(ss);
+  const std::string content = ss.str();
+  std::printf("%s.update %d %d %d %zu %zu %llu\n", tag, idx, consumed, added,
+              table.GetAll().size(), content.size(),
+              static_cast<unsigned long long>(ContentHash64(content)));
+}
+
+void DumpMatchFlow() {
+  GameRules::Fleet::FormationGrid::Recompute(1.0f);
+  Pix::SetGlobalScale(1.0f);
+  const HeadlessTextures tex;
+
+  // --- pure math cases: the overlay curve and every refresh-rate-derived
+  // --- frame count (truncation semantics included).
+  const float kProgress[] = {0.0f, 0.05f, 0.17999f, 0.18f, 0.5f,
+                             0.78f, 0.78001f, 0.9f, 1.0f};
+  for (int idx = 0; idx < static_cast<int>(std::size(kProgress)); ++idx) {
+    const float p = kProgress[idx];
+    std::printf("mf.overlay %d %08x %08x\n", idx, FloatBits(p),
+                FloatBits(MfOverlayAlpha(p)));
+  }
+  const int kRates[] = {30, 50, 60, 75, 120, 144, 165, 240};
+  const int kSecsX100[] = {300, 135, 600, 150};  // nova, death, debrief, OSD
+  for (const int rate : kRates) {
+    for (const int sx : kSecsX100) {
+      const int frames = static_cast<int>(rate * (sx / 100.0));
+      std::printf("mf.cinematic %d %d %d\n", rate, sx, frames);
+    }
+    const int nova = static_cast<int>(rate * 3.0);
+    const int death = static_cast<int>(rate * 1.35);
+    std::printf("mf.skip %d %d %d %d %d\n", rate, nova, nova / 6, death,
+                death / 4);
+    std::printf("mf.osd %d %d\n", rate, static_cast<int>(rate * 1.5));
+  }
+
+  // --- HighScores pending ledger: the guard (score==0), the cancel, the
+  // --- consume-into-table core and the exact-duplicate rejection.
+  {
+    HighScores hs;
+    HighScoreTable table;
+    int idx = 0;
+    const auto state = [&]() {
+      std::printf("hs.state %d %d %llu %d %d %d %d %d\n", idx,
+                  hs.HasPendingScore() ? 1 : 0,
+                  static_cast<unsigned long long>(hs.LastScore()),
+                  hs.LastSize().x, hs.LastSize().y, hs.LastRate(),
+                  hs.LastStage(), hs.LastWave());
+    };
+    const auto op_add = [&](std::uint64_t score, Coord size, int rate, int stage,
+                            int wave) {
+      hs.Add(score, size, rate, stage, wave);
+      std::printf("hs.op %d 0 %llu %d %d %d %d %d\n", idx,
+                  static_cast<unsigned long long>(score), size.x, size.y, rate,
+                  stage, wave);
+      state();
+      ++idx;
+    };
+    op_add(0, Coord(1280, 720), 60, 1, 1);        // guard: score==0 is a no-op
+    op_add(130, Coord(1280, 720), 60, 1, 2);      // pending armed
+    std::printf("hs.op %d 1 0 0 0 0 0 0\n", idx);  // CancelPending
+    hs.CancelPending();
+    state();
+    ++idx;
+    op_add(2500, Coord(1920, 1080), 144, 3, 7);
+    MfConsumePending(hs, table, "hs", idx, kMfTimestamp);  // consumed, added
+    ++idx;
+    MfConsumePending(hs, table, "hs", idx, kMfTimestamp + 1);  // nothing pending
+    ++idx;
+    op_add(2500, Coord(1920, 1080), 144, 3, 7);
+    MfConsumePending(hs, table, "hs", idx, kMfTimestamp);  // exact duplicate
+    ++idx;
+    MfConsumePending(hs, table, "hs", idx, kMfTimestamp + 7);  // distinct date
+  }
+
+  // --- the cheat-input response: session flag, score flag, pending cancel
+  // --- and the three upgrades. Production has NO re-apply guard, so the
+  // --- second pass stacks (up to the player caps).
+  {
+    const ViewportMetrics m{kEntityWinW, kEntityWinH, 1.0f};
+    const Config cfg = Config::CreateHeadless();
+    RecordingSink sink;
+    BulletsManager bullets(0x4D460111u);
+    BulletsManager bombs(0x4D460222u);
+    BonusManager bonuses(tex);
+    ExplosionsManager explosions(cfg);
+    bullets.SetMetrics(m);
+    bombs.SetMetrics(m);
+    bonuses.SetMetrics(m);
+    explosions.SetMetrics(m);
+    Player player(&bullets, &bombs, &bonuses, &explosions, &cfg, sink, tex, m);
+    Score score;
+    HighScores hs;
+    hs.Add(999, Coord(1280, 720), 60, 2, 5);
+    const auto cheat_row = [&](int phase) {
+      std::printf("ent.mf.cheat %d %d %d %d %d %d %llu\n", phase,
+                  player.FireLevel(), player.MultiFire(), player.Shield(),
+                  score.Cheated() ? 1 : 0, hs.HasPendingScore() ? 1 : 0,
+                  static_cast<unsigned long long>(hs.LastScore()));
+    };
+    cheat_row(0);
+    for (int phase = 1; phase <= 2; ++phase) {
+      score.SetCheated(true);
+      hs.CancelPending();
+      player.ExtraFire();
+      player.ExtraShield();
+      player.ExtraMulti();
+      cheat_row(phase);
+    }
+  }
+
+  // --- live nova run: level-3 real catalog (kamikaze quota 1), stationary
+  // --- firing player; the diver reaches the lethal radius and the production
+  // --- response fires: SetShield(-1), CommitFinalScore (Add path: kills put
+  // --- the score above zero), screen-wide nova, 180-frame explosions-only
+  // --- cinematic, debriefing decisions.
+  struct NovaOutcome {
+    int prox_frame{-1};
+    int kills{0};
+    int frames{0};
+    std::uint64_t score_value{0};
+    int added{-1};
+    bool trigger_seen{false};
+    bool bomb_death{false};
+  };
+  const auto run_nova = [&](std::uint32_t seed, bool record,
+                            NovaOutcome& out) -> bool {
+    const ViewportMetrics m{kEntityWinW, kEntityWinH, 1.0f};
+    const ConvoyData* const convoys = LevelData::GetConvoyData(3);
+    const Config cfg = Config::CreateHeadless();
+    RecordingSink sink;
+    BulletsManager bullets(0x4D461111u);
+    BulletsManager bombs(0x4D462222u);
+    BonusManager bonuses(tex);
+    ExplosionsManager explosions(cfg);
+    explosions.SeedRandom(0x4D463333u);
+    bullets.SetMetrics(m);
+    bombs.SetMetrics(m);
+    bonuses.SetMetrics(m);
+    explosions.SetMetrics(m);
+    Score score;
+    AliensManager aliens(&bombs, &bullets, &bonuses, &explosions, &score, sink,
+                         tex, m, 3, convoys,
+                         GameRules::Progression::kWavesPerStage, seed);
+    Player player(&bullets, &bombs, &bonuses, &explosions, &cfg, sink, tex, m);
+    aliens.SetPlayer(&player);
+    const float lethal = static_cast<float>(GameRules::Fleet::FormationGrid::Width()) *
+                         GameRules::Fleet::kKamikazeBlastRadiusMultiplier;
+    const auto score_context = [&](std::uint64_t earned) {
+      if (earned > 0) {
+        score.Add(earned);
+      }
+      const std::uint64_t milestones = score.CheckExtraShieldMilestones();
+      for (std::uint64_t mm = 0; mm < milestones; ++mm) {
+        player.ExtraShield();
+      }
+    };
+    if (record) {
+      std::printf("ent.mf.nova.setup %u %u %u %u %d %d %08x %08x %d %d %d\n",
+                  seed, 0x4D461111u, 0x4D462222u, 0x4D463333u, kEntityWinW,
+                  kEntityWinH, FloatBits(m.scale), FloatBits(lethal),
+                  player.Shield(), 3, kMfNovaCap);
+    }
+    int f = 0;
+    for (; f < kMfNovaCap; ++f) {
+      const BulletCollisionSummary summary = aliens.DoBulletsCollisions();
+      score_context(summary.score_earned);
+      const int old_shield = player.Shield();
+      player.DoBombsCollisions();
+      const bool bomb_loss = player.Shield() < old_shield;
+      // Production returns HERE -- before bonus collisions, the shield sync
+      // and every Move. The response frame advances nothing else.
+      if (aliens.CheckKamikazeProximity(player.Position(), lethal)) {
+        out.prox_frame = f;
+        if (record) {
+          std::printf("ent.mf.nova.prox %d %zu %d %llu %zu\n", f,
+                      aliens.AlienCount(), player.Shield(),
+                      static_cast<unsigned long long>(score.Value()),
+                      explosions.ActiveCount());
+          sink.Drain("ent.mf.nova", f);
+        }
+        break;
+      }
+      player.DoBonusCollisions(&aliens);
+      score.SetShield(player.Shield());
+      if (player.Shield() < 0) {
+        out.bomb_death = true;
+        break;
+      }
+      if (aliens.Finished()) {
+        out.trigger_seen = true;
+        break;
+      }
+      bonuses.Move();
+      player.Move(0);
+      bullets.Move();
+      bombs.Move(player.Position());
+      player.Fire();
+      explosions.Move();
+      aliens.Move();
+      aliens.Fire(player.Position());
+      out.kills += summary.total_hits;
+      if (record) {
+        if (f % 20 == 0 || summary.total_hits > 0 || bomb_loss) {
+          std::printf("ent.mf.nova.frame %d %zu %d %llu %d %d %zu\n", f,
+                      aliens.AlienCount(), player.Shield(),
+                      static_cast<unsigned long long>(score.Value()),
+                      summary.total_hits, bomb_loss ? 1 : 0,
+                      explosions.ActiveCount());
+        }
+        sink.Drain("ent.mf.nova", f);
+      }
+    }
+    out.frames = f;
+    out.score_value = score.Value();
+    const bool ok = out.prox_frame >= 0 && !out.trigger_seen && !out.bomb_death &&
+                    out.score_value > 0 && f < kMfNovaCap;
+    if (!ok) {
+      return false;
+    }
+    if (!record) {
+      return true;
+    }
+    // The production kamikaze branch, in order: shield sync to -1, the
+    // guarded commit, the nova burst. Flash/trauma/sfx/rumble are Gfx/audio
+    // calls in production -- shell-side, not kernel rows.
+    score.SetShield(-1);
+    HighScores hs;
+    HighScoreTable table;
+    bool committed = false;
+    if (!committed && !score.Cheated() && score.Value() > 0) {
+      committed = true;
+      hs.Add(score.Value(), Coord(kEntityWinW, kEntityWinH), kMfRefreshRate,
+             score.Cycle(), score.Level());
+      std::printf("ent.mf.nova.commit 1 %llu %d %d %d %d %d\n",
+                  static_cast<unsigned long long>(score.Value()), kEntityWinW,
+                  kEntityWinH, kMfRefreshRate, score.Cycle(), score.Level());
+      MfConsumePending(hs, table, "ent.mf.nova.commit", 0, kMfTimestamp);
+    }
+    explosions.TriggerScreenWideNova(player.Position(), kEntityWinW, kEntityWinH);
+    const int nova_frames = static_cast<int>(kMfRefreshRate * 3.0);
+    const int skip_after = nova_frames / 6;
+    std::printf("ent.mf.nova.burst %d %zu %d %d\n", out.prox_frame,
+                explosions.ActiveCount(), nova_frames, skip_after);
+    for (int k = 0; k < nova_frames; ++k) {
+      explosions.Move();
+      if (k % 10 == 0) {
+        std::printf("ent.mf.nova.cine %d %zu\n", k, explosions.ActiveCount());
+      }
+      if (k == 30) {
+        // Mid-cinematic sample: the burst decays to zero by k~80, so k=30
+        // catches live particles and pins nova spawn physics (position,
+        // velocity, colors, life) beyond the per-frame counts.
+        const std::size_t samples = std::min<std::size_t>(explosions.ActiveCount(), 4);
+        for (std::size_t i = 0; i < samples; ++i) {
+          const Particle& pt = explosions.GetActiveParticle(i);
+          std::printf("ent.mf.nova.p %d %zu %08x %08x %08x %08x %d %d %d %d %d %d\n",
+                      k, i, FloatBits(pt.pos.x), FloatBits(pt.pos.y),
+                      FloatBits(pt.vel.x), FloatBits(pt.vel.y), pt.r, pt.g,
+                      pt.b, pt.a, pt.life, pt.max_life);
+        }
+      }
+    }
+    // Debriefing: the guarded re-commit is a no-op (proof: the table count
+    // stays), then the record decisions.
+    const bool new_record = !score.Cheated() && score.Value() > 0;
+    const int status_kind = score.Cheated() ? 2 : (new_record ? 1 : 0);
+    const int game_over_frames = static_cast<int>(kMfRefreshRate * 6.0);
+    std::printf("ent.mf.nova.debrief %d %d %d %zu %d\n", committed ? 1 : 0,
+                new_record ? 1 : 0, status_kind, table.GetAll().size(),
+                game_over_frames);
+    std::printf("ent.mf.nova.done %d %d %llu %d %d\n", out.frames, out.kills,
+                static_cast<unsigned long long>(score.Value()),
+                committed ? 1 : 0, hs.HasPendingScore() ? 1 : 0);
+    return true;
+  };
+  {
+    std::uint32_t chosen = 0;
+    for (std::uint32_t s = 1; s <= 64 && chosen == 0; ++s) {
+      NovaOutcome probe;
+      if (run_nova(s, false, probe)) {
+        chosen = s;
+      }
+    }
+    if (chosen == 0) {
+      std::fprintf(stderr,
+                   "dump_vectors: no nova seed reached the kamikaze proximity "
+                   "with a positive score within 64 candidates\n");
+      std::exit(1);
+    }
+    NovaOutcome recorded;
+    run_nova(chosen, true, recorded);
+  }
+
+  // --- live death run: level-1 real catalog, stationary NON-firing player,
+  // --- plus four scripted bombs falling straight onto the player (placed at
+  // --- setup, spacing 60px, speed 6 -- all four hits land within the
+  // --- first ~40 frames, long before the fleet reaches active combat and the kamikaze
+  // --- dive; quota is >= 1 on EVERY level, so a slow attrition death would
+  // --- always lose the race). Four hits take the shield below zero and the
+  // --- production destruction branch fires: the guarded commit (value 0 ->
+  // --- CancelPending path), the two scripted explosion adds and the
+  // --- 81-frame four-manager cinematic (aliens do NOT move -- production
+  // --- only draws them).
+  struct DeathOutcome {
+    int death_frame{-1};
+    int frames{0};
+    bool prox_seen{false};
+    bool finished_seen{false};
+  };
+  const auto run_death = [&](std::uint32_t seed, bool record,
+                             DeathOutcome& out) -> bool {
+    const ViewportMetrics m{kEntityWinW, kEntityWinH, 1.0f};
+    const ConvoyData* const convoys = LevelData::GetConvoyData(1);
+    const Config cfg = Config::CreateHeadless();
+    RecordingSink sink;
+    BulletsManager bullets(0x4D464444u);
+    BulletsManager bombs(0x4D465555u);
+    BonusManager bonuses(tex);
+    ExplosionsManager explosions(cfg);
+    explosions.SeedRandom(0x4D466666u);
+    bullets.SetMetrics(m);
+    bombs.SetMetrics(m);
+    bonuses.SetMetrics(m);
+    explosions.SetMetrics(m);
+    Score score;
+    AliensManager aliens(&bombs, &bullets, &bonuses, &explosions, &score, sink,
+                         tex, m, 1, convoys,
+                         GameRules::Progression::kWavesPerStage, seed);
+    Player player(&bullets, &bombs, &bonuses, &explosions, &cfg, sink, tex, m);
+    aliens.SetPlayer(&player);
+    // Scripted death: four bombs stacked above the player's real baseline
+    // (PosY() -- the constructor leaves a -50 placeholder, and anything
+    // above y=-60 would be culled off-screen before reaching the player).
+    // Placement is scenario input (PT-style); fall speed, collision and
+    // shield accounting are all real physics from here on. Spacing 60px at
+    // speed 6 spaces the four hits ~10 frames apart.
+    const int player_y =
+        m.win_h - GameRules::Player::kPlayerBottomMarginPx - player.Height() / 2;
+    for (int k = 0; k < 4; ++k) {
+      bombs.Add(tex.Get(TextureId::Bomb),
+                Coord(static_cast<float>(player.Position().x),
+                      static_cast<float>(player_y - 60 - k * 60)),
+                Coord(0, 6));
+    }
+    const float lethal = static_cast<float>(GameRules::Fleet::FormationGrid::Width()) *
+                         GameRules::Fleet::kKamikazeBlastRadiusMultiplier;
+    if (record) {
+      std::printf("ent.mf.death.setup %u %u %u %u %d %d %08x %08x %d %d %d\n",
+                  seed, 0x4D464444u, 0x4D465555u, 0x4D466666u, kEntityWinW,
+                  kEntityWinH, FloatBits(m.scale), FloatBits(lethal),
+                  player.Shield(), 1, kMfDeathCap);
+    }
+    int f = 0;
+    for (; f < kMfDeathCap; ++f) {
+      const BulletCollisionSummary summary = aliens.DoBulletsCollisions();
+      if (summary.score_earned > 0) {
+        score.Add(summary.score_earned);
+      }
+      const std::uint64_t milestones = score.CheckExtraShieldMilestones();
+      for (std::uint64_t mm = 0; mm < milestones; ++mm) {
+        player.ExtraShield();
+      }
+      const int old_shield = player.Shield();
+      player.DoBombsCollisions();
+      const bool bomb_loss = player.Shield() < old_shield;
+      if (aliens.CheckKamikazeProximity(player.Position(), lethal)) {
+        out.prox_seen = true;
+        break;
+      }
+      player.DoBonusCollisions(&aliens);
+      score.SetShield(player.Shield());
+      if (player.Shield() < 0) {
+        out.death_frame = f;
+        if (record) {
+          std::printf("ent.mf.death.hit %d %zu %d %zu %d\n", f,
+                      aliens.AlienCount(), player.Shield(),
+                      explosions.ActiveCount(), bombs.Nb());
+          sink.Drain("ent.mf.death", f);
+        }
+        break;
+      }
+      if (aliens.Finished()) {
+        out.finished_seen = true;
+        break;
+      }
+      bonuses.Move();
+      player.Move(0);
+      bullets.Move();
+      bombs.Move(player.Position());
+      // No Fire: the pilot never shoots, so the wave never ends and the bombs
+      // are the only clock.
+      explosions.Move();
+      aliens.Move();
+      aliens.Fire(player.Position());
+      if (record) {
+        if (f % 60 == 0 || bomb_loss) {
+          std::printf("ent.mf.death.frame %d %zu %d %llu %d %d %zu\n", f,
+                      aliens.AlienCount(), player.Shield(),
+                      static_cast<unsigned long long>(score.Value()),
+                      bomb_loss ? 1 : 0, bombs.Nb(), explosions.ActiveCount());
+        }
+        sink.Drain("ent.mf.death", f);
+      }
+    }
+    out.frames = f;
+    const bool ok = out.death_frame >= 0 && !out.prox_seen &&
+                    !out.finished_seen && f < kMfDeathCap;
+    if (!ok) {
+      return false;
+    }
+    if (!record) {
+      return true;
+    }
+    // The production destruction branch: guarded commit (score 0 -> the
+    // CancelPending path), then the two scripted bursts. Audio/flash/rumble
+    // are shell calls in production.
+    HighScores hs;
+    HighScoreTable table;
+    bool committed = false;
+    if (!committed && !score.Cheated() && score.Value() > 0) {
+      committed = true;
+      hs.Add(score.Value(), Coord(kEntityWinW, kEntityWinH), kMfRefreshRate,
+             score.Cycle(), score.Level());
+      MfConsumePending(hs, table, "ent.mf.death.commit", 0, kMfTimestamp);
+      std::printf("ent.mf.death.commit 1 %llu\n",
+                  static_cast<unsigned long long>(score.Value()));
+    } else {
+      hs.CancelPending();
+      std::printf("ent.mf.death.commit 0 %llu %d %llu\n",
+                  static_cast<unsigned long long>(score.Value()),
+                  hs.HasPendingScore() ? 1 : 0,
+                  static_cast<unsigned long long>(hs.LastScore()));
+    }
+    explosions.Add(player.Position(), Coord(0, -1), static_cast<std::uint8_t>(255),
+                   static_cast<std::uint8_t>(255), static_cast<std::uint8_t>(230), 70);
+    explosions.Add(player.Position(), Coord(0, 1), static_cast<std::uint8_t>(255),
+                   static_cast<std::uint8_t>(210), static_cast<std::uint8_t>(50), 65);
+    const int death_frames = static_cast<int>(kMfRefreshRate * 1.35);
+    const int skip_after = death_frames / 4;
+    std::printf("ent.mf.death.burst %d %zu %d %d\n", out.death_frame,
+                explosions.ActiveCount(), death_frames, skip_after);
+    for (int k = 0; k < death_frames; ++k) {
+      // Production body: bombs_.Move() with NO argument -- the default
+      // Coord(-1,-1) target. (Indistinguishable here: every bomb was
+      // consumed by the player hits, but the replica stays literal.)
+      bonuses.Move();
+      bullets.Move();
+      bombs.Move();
+      explosions.Move();
+      if (k % 10 == 0) {
+        std::printf("ent.mf.death.cine %d %d %d %d %zu\n", k, bonuses.Nb(),
+                    bullets.Nb(), bombs.Nb(), explosions.ActiveCount());
+      }
+    }
+    const bool new_record = !score.Cheated() && score.Value() > 0;
+    const int status_kind = score.Cheated() ? 2 : (new_record ? 1 : 0);
+    const int game_over_frames = static_cast<int>(kMfRefreshRate * 6.0);
+    std::printf("ent.mf.death.debrief %d %d %d %zu %d\n", committed ? 1 : 0,
+                new_record ? 1 : 0, status_kind, table.GetAll().size(),
+                game_over_frames);
+    std::printf("ent.mf.death.done %d %d %llu %d %d\n", out.frames,
+                out.death_frame, static_cast<unsigned long long>(score.Value()),
+                committed ? 1 : 0, hs.HasPendingScore() ? 1 : 0);
+    return true;
+  };
+  {
+    std::uint32_t chosen = 0;
+    for (std::uint32_t s = 1; s <= 64 && chosen == 0; ++s) {
+      DeathOutcome probe;
+      if (run_death(s, false, probe)) {
+        chosen = s;
+      }
+    }
+    if (chosen == 0) {
+      std::fprintf(stderr,
+                   "dump_vectors: no death seed took four bomb hits within 64 "
+                   "candidates\n");
+      std::exit(1);
+    }
+    DeathOutcome recorded;
+    run_death(chosen, true, recorded);
+  }
+}
+
 int main() {
   std::printf("# aliens-invaders golden vectors v1 -- pure kernel contract (RUST.md)\n");
   std::printf("# regenerate: cmake --build build --target dump_vectors && ./build/dump_vectors > golden/vectors-cpp.txt\n");
@@ -2259,5 +2805,6 @@ int main() {
   DumpPhaseTransition();
   DumpEntityPhaseTransition();
   DumpEntityFleetBonus();
+  DumpMatchFlow();
   return 0;
 }

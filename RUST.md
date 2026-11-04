@@ -22,7 +22,7 @@
 | **2a** | Kernel Rust: RandomStream, math, formação, pacing (**este scaffold**) | `cargo test` verde contra os vetores | ✅ |
 | **2b** | StageCatalog, ScoreHash, HighScoreTable, bonus masks em Rust | seções `profile`/`score_hash`/`serialize` dos vetores | ✅ |
 | **3** | Trajectory + splines + entidades/simulação (replay dump por frame) | replays longos bit-idênticos | ✅ (Fatias 4/4b: replay de 900 quadros bit-exato) |
-| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5–10: pré-requisitos do kernel prontos — `EntitySession` (tick + contexto de score + transição de fase), starfield, economia `Score`, catálogo de comboios; casca SDL não iniciada) |
+| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5–12: pré-requisitos do kernel prontos — `EntitySession` (tick + contexto de score + transição de fase + match flow), starfield, economia `Score`, catálogo de comboios, ledger `HighScores`; casca SDL não iniciada) |
 | **5** | Áudio: synth procedural + transpilador das 15 partituras + tsf via bindgen | WAV export **bit-idêntico** (KATs já existem) | ⬜ |
 | **6** | UI/menu/layout/telemetria/starfield | paridade visual | ⬜ |
 | **7** | Paridade total + CI Rust (5 plataformas — cross mais fácil que C++) + depots Steam idênticos | 100% dos gates | ⬜ |
@@ -45,7 +45,7 @@
 | `-Wconversion` discipline | `clippy::as_conversion`, `#[deny(warnings)]` | CI Rust |
 | CMake/Make | Cargo workspace + `cargo-zigbuild` (Win/mac) | FreeBSD tier-2 nativo |
 
-## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6/7/8/9/10/11)
+## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6/7/8/9/10/11/12)
 
 - `tools/dump_vectors.cc` — dumper do kernel puro + camada de entidades (sem
   SDL): rng, math, unit_grid, slots (3 scales), slot_edge, profile (waves
@@ -53,13 +53,15 @@
   os replays seedados `ent.*` (Fatia 4; starfield na Fatia 6), o replay
   roteirizado `score.*` (Fatia 7), o contexto de score da sessão
   `ent.fs.*` (Fatia 8), o catálogo de níveis `level.*` (Fatia 9), a
-  transição de fase `pt.*`/`ent.pt.*` (Fatia 10) e a economia de bônus
-  `ent.fb.*` (Fatia 11). Floats como **bits IEEE hex**
+  transição de fase `pt.*`/`ent.pt.*` (Fatia 10), a economia de bônus
+  `ent.fb.*` (Fatia 11) e o match flow `mf.*`/`hs.*`/`ent.mf.*` (Fatia 12).
+  Floats como **bits IEEE hex**
   (`%08x`).
 - `golden/vectors-cpp.txt` — corpus (gerado localmente; ver golden/README.md).
 - `rust/kernel` — ports de RandomStream, mathx, formation (tabela em runtime),
   pacing, StageCatalog, ScoreHash (SHA-256), HighScoreTable (serialização
-  byte-idêntica), path (Catmull-Rom + resampler), trajectory (máquina de
+  byte-idêntica) + HighScores (ledger pendente e o core decisório do
+  `Update()` sem I/O — Fatia 12), path (Catmull-Rom + resampler), trajectory (máquina de
   estados arriving/joining/cruising/attacking, mergulho e kamikaze) e a camada
   de entidades (Fatia 4b): dist (uid Lemire do libstdc++), textures/sink
   headless, game_object, bullets (seeker/relativístico/exaustão), bonus,
@@ -73,7 +75,11 @@
   `extra_shields` no `TickReport`; Fatia 10: dona da transição de fase —
   gatilho na armada finalizada, hold do fanfare, countdown que congela a
   armada e rebuild pelo catálogo com um draw de RNG por wave; Fatia 11:
-  fia o `Score` vivo na kill chain e no pickup do nuke — `score_mut()`) e
+  fia o `Score` vivo na kill chain e no pickup do nuke — `score_mut()`;
+  Fatia 12: o match flow — o tick divide nas duas metades de produção
+  (`tick_collisions` com o early return do kamikaze / `tick_motion`), as
+  respostas de supernova e destruição, o commit final guardado, o cheat
+  que empilha, os cinematic ticks e a matemática de duração/alpha) e
   stars (Fatia 6: `StarsFields` — starfield de parallax com os transcendentais
   congelados como dados gravados) e score (Fatia 7: `Score` — economia de
   pontos: Add saturante, ledger fracionário de milestones de escudo extra,
@@ -310,6 +316,55 @@
   colunas** (inteiros + constantes IEEE — nenhum ângulo chega às linhas).
   Rust: `fleet`, `player`, `session` + `fleet_bonus_parity` (22º teste da
   suíte).
+- **Fatia 12 (fix32)**: o match flow — tudo o que o `CombatSession` faz
+  entre "o último quadro jogado" e "o menu volta", sem nenhum SDL. O tick
+  divide nas duas metades de produção: `tick_collisions` (balas → contexto
+  de score → bombas + gate de rumble → sonda kamikaze **com o early return
+  de produção** → bônus → cheat → sync de escudo → predicado de destruição)
+  e `tick_motion` (trigger de transição, advances, rebuild-or-advance,
+  decremento do OSD); o `tick` segue a composição report-only pela qual os
+  corpora das Fatias 5–11 foram gravados — os 22 testes verdes pós-refactor
+  são a prova executável. Órgãos novos: `kamikaze_supernova_response`
+  (espelho do score a −1 → commit guardado → nova full-screen),
+  `grand_destruction_response` (commit guardado → os dois bursts do casco),
+  `supernova_cinematic_tick` (só explosões) e `destruction_cinematic_tick`
+  (quatro managers; a armada é Draw-only em produção e NÃO avança),
+  `commit_final_score` (guard incondicional ANTES do predicado; Add honesto
+  com stage=cycle/wave=level/janela=max_session_size, senão CancelPending),
+  `apply_cheat` (flag de sessão + desqualificação do score + cancel do
+  ledger + três upgrades — produção NÃO tem guard de re-aplicação, eles
+  empilham), predicados do debrief (new_record/status tri-state), o timer
+  do OSD de detalhes e as funções livres `cinematic_frames` (truncatura
+  double — 1,35 s a 75 Hz são 101 quadros, não 102), `details_osd_frames`
+  e `overlay_alpha_at` (joelhos 0,18/0,78 da curva de alpha da transição).
+  O C++ recebe só os 6 accessors read-only do `HighScores` (precedente das
+  Fatias 7/11) e o dumper replica o core decisório do `Update()` SEM o I/O
+  (SaveAsync/Load são não-deterministas e ficam fora do corpus): a tabela
+  viva recebe a entrada e o `Serialize` alimenta o comprimento + FNV-64 que
+  pinam os bytes exatos do ledger. O corpus cresce 312 linhas (total:
+  47.050): `mf.overlay` (9 casos da curva), `mf.cinematic`/`mf.skip`/
+  `mf.osd` (8 refresh rates), `hs.*` (script de 7 ops: guard do score 0,
+  cancel com resíduo, consume, duplicata exata rejeitada, data distinta),
+  `ent.mf.cheat` (duas passadas que empilham), `ent.mf.nova.*` (run viva
+  de nível 3, seed 1: 1.533 quadros até o diver ganhar a corrida — score
+  160 → commit Add → ledger de 1 entrada com FNV → nova de 4.096
+  partículas → cinematográfico de 180 quadros com amostra de partículas no
+  k=30 → debrief new-record) e `ent.mf.death.*` (run viva de nível 1 com
+  4 bombas ROTEIRIZADAS sobre o jogador estacionário — espaçamento 60,
+  velocidade 6, hits em f8/f18/f28 e morte em f38, antes da transição
+  kamikaze: a atração natural de bombas NUNCA ganharia a corrida do diver,
+  quota ≥1 em todo nível e raio letal ≈ tela cheia; score 0 → caminho
+  CancelPending pinado vivo → 2 bursts → cinematográfico de 81 quadros →
+  debrief). Gates duros: o diver ganha sem trigger nem morte por bomba
+  (nova); morte antes de prox ou trigger (death). **Tolerância zero em
+  todas as colunas** (inteiros + aritmética IEEE pura — nenhum
+  transcendental chega às linhas). Rust: `session` (5 campos, 12 métodos,
+  3 funções livres, 6 constantes), `highscore` (`HighScores` +
+  `serialized_content`/`content_hash`), `player`
+  (`PLAYER_BOTTOM_MARGIN_PX` pub — a baseline real para cenários
+  roteirizados; o −50 do construtor é placeholder), `drain_sink_fb`
+  generalizado com tag (streams esparsos) + `match_flow_parity` (23º teste
+  da suíte).
 
 ## Comandos
 

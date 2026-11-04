@@ -68,6 +68,17 @@ class HighScores {
   [[nodiscard]] const std::multiset<HighScore>& GetAll() const noexcept { return table_.GetAll(); }
   [[nodiscard]] std::vector<Coord> GetDistinctResolutions() const { return table_.GetDistinctResolutions(); }
 
+  // Read-only observability of the pending-commit ledger (golden vectors,
+  // Fatia 12 precedent: the score.h/managers.h accessors). Update() owns the
+  // disk I/O, so the corpus harnesses replicate its decision core around
+  // these reads instead of calling it.
+  [[nodiscard]] bool HasPendingScore() const noexcept { return has_pending_score_; }
+  [[nodiscard]] std::uint64_t LastScore() const noexcept { return last_score_; }
+  [[nodiscard]] Coord LastSize() const noexcept { return last_size_; }
+  [[nodiscard]] int LastRate() const noexcept { return last_rate_; }
+  [[nodiscard]] int LastStage() const noexcept { return last_stage_; }
+  [[nodiscard]] int LastWave() const noexcept { return last_wave_; }
+
  private:
   void SaveAsync(const std::string& path, const std::string& serialized_content);
 };

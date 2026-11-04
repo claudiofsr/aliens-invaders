@@ -29,12 +29,17 @@ use kernel::{
     fleet::{ConvoySpec, Fleet},
     formation,
     game_object::GameObject,
+    highscore::{content_hash, HighScoreTable, HighScores},
     level_data,
     mathx::Coord,
     path::{self, Vec2f},
-    player::Player,
+    player::{Player, PLAYER_BOTTOM_MARGIN_PX},
     score,
-    session::{phase_transition_frames, EntitySession},
+    session::{
+        cinematic_frames, details_osd_frames, overlay_alpha_at, phase_transition_frames,
+        EntitySession, DESTRUCTION_CINEMATIC_SECONDS, DESTRUCTION_SKIP_DIVISOR,
+        GAME_OVER_SECONDS, NOVA_CINEMATIC_SECONDS, NOVA_SKIP_DIVISOR,
+    },
     sink::{EventSink, PresentationEvent},
     stage_catalog,
     stars::{self, StarsFields, STARFIELD_SEED, WARP_DURATION_FRAMES},
@@ -198,23 +203,24 @@ fn drain_sink(sink: &mut EventSink, sec: &mut Rows, tag: &str, frame: i32) {
     );
 }
 
-/// `drain_sink` variant for the sampled ent.fb frame rows: the fleet-bonus
-/// corpus carries sink rows on frames that have NO frame row (the 40-frame
-/// shot heartbeat between sampled frames), so a sink row queued for a FUTURE
-/// frame is legitimate. Only a row stamped at or before the current frame is
-/// a divergence (a missed event); an extra event fails through the stamp and
-/// value asserts of the row it consumes out of turn.
-fn drain_sink_fb(sink: &mut EventSink, sec: &mut Rows, frame: i32) {
+/// `drain_sink` variant for SPARSE sink streams (the sampled ent.fb frame
+/// rows and the match-flow replays): the corpus carries sink rows on frames
+/// that have no frame row (the 40-frame shot heartbeat, an isolated bonus
+/// pickup), so a sink row queued for a FUTURE frame is legitimate. Only a
+/// row stamped at or before the current frame is a divergence (a missed
+/// event); an extra event fails through the stamp and value asserts of the
+/// row it consumes out of turn.
+fn drain_sink_fb(sink: &mut EventSink, sec: &mut Rows, tag: &str, frame: i32) {
     for ev in sink.drain() {
-        let row = sec.next("ent.fb.sink");
-        assert_eq!(i(&row, 1), frame, "ent.fb.sink: frame stamp");
-        assert_eq!(parse_sink(&row), ev, "ent.fb.sink f{frame}: event mismatch");
+        let row = sec.next(tag);
+        assert_eq!(i(&row, 1), frame, "{tag}: frame stamp");
+        assert_eq!(parse_sink(&row), ev, "{tag} f{frame}: event mismatch");
     }
     if let Some(head) = sec.q.front() {
-        if head[0] == "ent.fb.sink" {
+        if head[0] == tag {
             assert!(
                 i(head, 1) > frame,
-                "ent.fb.sink: stale corpus rows at f{frame} (sink drained empty)"
+                "{tag}: stale corpus rows at f{frame} (sink drained empty)"
             );
         }
     }
@@ -2091,7 +2097,7 @@ fn fb_replay(seed: u32, mut rec: Option<&mut Rows>) -> FbOutcome {
                 );
                 assert_eq!(i(&row, 15), session.fleet().bonus_wait(), "f{f} wait");
             }
-            drain_sink_fb(session.sink_mut(), sec, f);
+            drain_sink_fb(session.sink_mut(), sec, "ent.fb.sink", f);
         } else {
             session.sink_mut().drain();
         }
@@ -2150,4 +2156,537 @@ fn fleet_bonus_parity() {
     let mut sec = section(&rows, "ent.fb.");
     let recorded = fb_replay(chosen, Some(&mut sec));
     assert!(recorded.covered(), "recorded replay lost coverage");
+}
+
+// ---- mf/hs/ent.mf: the match flow (Fatia 12) --------------------------------
+
+/// Match-flow scenario inputs (the dumper's kMf* constants): the scripted
+/// refresh rate, the Update() clock input, the pilot name and the two
+/// replay budgets.
+const MF_RATE: i32 = 60;
+const MF_TS: i64 = 1_762_000_000;
+const MF_PILOT: &str = "GOLDENPILOT";
+const MF_NOVA_CAP: i32 = 3000;
+const MF_DEATH_CAP: i32 = 6000;
+
+/// Asserts one `hs.state` row (the pending ledger snapshot after an op).
+fn mf_assert_state(hs: &HighScores, sec: &mut Rows, idx: i32) {
+    let row = sec.next("hs.state");
+    assert_eq!(i(&row, 1), idx, "state idx");
+    assert_eq!(i(&row, 2), i32::from(hs.has_pending()), "state pending");
+    assert_eq!(u(&row, 3), hs.last_value(), "state value");
+    assert_eq!(i(&row, 4), hs.last_size().x, "state width");
+    assert_eq!(i(&row, 5), hs.last_size().y, "state height");
+    assert_eq!(i(&row, 6), hs.last_rate(), "state rate");
+    assert_eq!(i(&row, 7), hs.last_stage(), "state stage");
+    assert_eq!(i(&row, 8), hs.last_wave(), "state wave");
+}
+
+/// One scripted `Add` op of the hs.* ledger script: run, assert the op row
+/// and the state row, advance the index.
+fn mf_op_add(
+    hs: &mut HighScores,
+    sec: &mut Rows,
+    idx: &mut i32,
+    value: u64,
+    size: Coord,
+    rate: i32,
+    stage: i32,
+    wave: i32,
+) {
+    hs.add(value, size, rate, stage, wave);
+    let row = sec.next("hs.op");
+    assert_eq!(i(&row, 1), *idx, "op idx");
+    assert_eq!(i(&row, 2), 0, "op kind: add");
+    assert_eq!(u(&row, 3), value, "op value");
+    assert_eq!(i(&row, 4), size.x, "op width");
+    assert_eq!(i(&row, 5), size.y, "op height");
+    assert_eq!(i(&row, 6), rate, "op rate");
+    assert_eq!(i(&row, 7), stage, "op stage");
+    assert_eq!(i(&row, 8), wave, "op wave");
+    mf_assert_state(hs, sec, *idx);
+    *idx += 1;
+}
+
+/// The Update() decision-core replay shared by every consume site (the hs.*
+/// script and the two commit branches): feed the live table, assert the
+/// entry row when something was consumed, then the update row -- including
+/// the serialized-content length and its FNV-64, which pin the exact ledger
+/// bytes.
+fn mf_consume(
+    hs: &mut HighScores,
+    table: &mut HighScoreTable,
+    sec: &mut Rows,
+    tag: &str,
+    idx: i32,
+    ts: i64,
+) {
+    let res = hs.consume_pending(table, MF_PILOT, ts);
+    if let Some((entry, _)) = &res {
+        let row = sec.next(&format!("{tag}.entry"));
+        assert_eq!(i(&row, 1), idx, "entry idx");
+        assert_eq!(u(&row, 2), entry.value, "entry value");
+        assert_eq!(row[3].parse::<i64>().unwrap(), entry.date, "entry date");
+        assert_eq!(i(&row, 4), entry.width, "entry width");
+        assert_eq!(i(&row, 5), entry.height, "entry height");
+        assert_eq!(i(&row, 6), entry.refresh, "entry refresh");
+        assert_eq!(i(&row, 7), entry.stage, "entry stage");
+        assert_eq!(i(&row, 8), entry.wave, "entry wave");
+        assert_eq!(row[9], entry.name, "entry name");
+    }
+    let row = sec.next(&format!("{tag}.update"));
+    assert_eq!(i(&row, 1), idx, "update idx");
+    assert_eq!(i(&row, 2), i32::from(res.is_some()), "update consumed");
+    let added = match &res {
+        Some((_, added)) => i32::from(*added),
+        None => -1,
+    };
+    assert_eq!(i(&row, 3), added, "update added");
+    assert_eq!(sz(&row, 4), table.all().len(), "update table count");
+    let content = table.serialized_content();
+    assert_eq!(sz(&row, 5), content.len(), "update content length");
+    assert_eq!(u(&row, 6), content_hash(&content), "update content fnv64");
+}
+
+/// Builds a match-flow harness session: the real level catalog, the dumper's
+/// manager seeds and the scale-1 metrics world. `pre_placed_bombs > 0`
+/// mirrors the death scenario's scripted volley -- that many bombs stacked
+/// above the player's real baseline (spacing 60, speed 6), placed before the
+/// session adopts the manager.
+fn mf_session(
+    level: i32,
+    seed: u32,
+    bullets_seed: u32,
+    bombs_seed: u32,
+    explosions_seed: u32,
+    pre_placed_bombs: i32,
+) -> EntitySession {
+    let grid = formation::recompute(METRICS.scale);
+    let mut bullets = BulletsManager::new(bullets_seed);
+    let mut bombs = BulletsManager::new(bombs_seed);
+    let mut bonuses = BonusManager::new();
+    let mut explosions = ExplosionsManager::new(2, grid.width);
+    explosions.seed_random(explosions_seed);
+    bullets.set_metrics(METRICS);
+    bombs.set_metrics(METRICS);
+    bonuses.set_metrics(METRICS);
+    explosions.set_metrics(METRICS.scale);
+    let fleet = Fleet::new(
+        level,
+        level_data::get_convoy_data(level as usize).to_vec(),
+        level_data::paths().to_vec(),
+        METRICS,
+        15, // GameRules::Progression::kWavesPerStage -- the dumper's argument
+        seed,
+    );
+    let player = Player::new(METRICS);
+    if pre_placed_bombs > 0 {
+        let player_y = METRICS.win_h - PLAYER_BOTTOM_MARGIN_PX - player.height() / 2;
+        for k in 0..pre_placed_bombs {
+            bombs.add(
+                TextureId::Bomb,
+                Coord::new(METRICS.win_w / 2, player_y - 60 - k * 60),
+                Coord::new(0, 6),
+                false,
+                false,
+                0,
+                0.0,
+                false,
+                SEEKER_ENGINE_COLOR,
+            );
+        }
+    }
+    let lethal = grid.width as f32 * 1.4;
+    let sink = EventSink::default();
+    EntitySession::new(
+        fleet, player, bullets, bombs, bonuses, explosions, sink, lethal, METRICS, 0, [6.0; 15],
+    )
+}
+
+/// Fatia 12: the match flow -- the overlay/cinematic math, the HighScores
+/// pending ledger script, the cheat response and the two live end-of-run
+/// scenarios (the kamikaze supernova with a committed score, and the
+/// scripted-bomb destruction with the CancelPending path). Every row is
+/// bit-exact; both live replays ride the production-faithful tick halves
+/// (`tick_collisions` ends the frame at the kamikaze probe, `tick_motion`
+/// only runs on frames production would move).
+#[test]
+fn match_flow_parity() {
+    let rows = load_rows();
+
+    // --- pure math: the overlay curve and every refresh-derived count.
+    let mut sec = section(&rows, "mf.");
+    for case in 0..9i32 {
+        let row = sec.next("mf.overlay");
+        assert_eq!(i(&row, 1), case, "overlay case idx");
+        let p = hb(&row[2]);
+        assert_eq!(
+            hex32(&row[3]),
+            overlay_alpha_at(p).to_bits(),
+            "overlay alpha case {case}"
+        );
+    }
+    for _ in 0..8 {
+        for _ in 0..4 {
+            let row = sec.next("mf.cinematic");
+            let rate = i(&row, 1);
+            let sx100 = i(&row, 2);
+            assert_eq!(
+                cinematic_frames(rate, f64::from(sx100) / 100.0),
+                i(&row, 3),
+                "cinematic frames rate {rate} sx100 {sx100}"
+            );
+        }
+        let row = sec.next("mf.skip");
+        let rate = i(&row, 1);
+        let nova = cinematic_frames(rate, NOVA_CINEMATIC_SECONDS);
+        let death = cinematic_frames(rate, DESTRUCTION_CINEMATIC_SECONDS);
+        assert_eq!(i(&row, 2), nova, "skip nova frames");
+        assert_eq!(i(&row, 3), nova / NOVA_SKIP_DIVISOR, "skip nova interval");
+        assert_eq!(i(&row, 4), death, "skip death frames");
+        assert_eq!(
+            i(&row, 5),
+            death / DESTRUCTION_SKIP_DIVISOR,
+            "skip death interval"
+        );
+        let row = sec.next("mf.osd");
+        assert_eq!(i(&row, 1), rate, "osd rate");
+        assert_eq!(details_osd_frames(rate), i(&row, 2), "osd frames");
+    }
+    sec.done("mf");
+
+    // --- the HighScores pending ledger script: the score==0 guard, the
+    // --- cancel residue, the consume-into-table core and the exact
+    // --- duplicate rejection.
+    let mut sec = section(&rows, "hs.");
+    let mut hs = HighScores::new();
+    let mut table = HighScoreTable::new();
+    let mut idx = 0i32;
+    mf_op_add(&mut hs, &mut sec, &mut idx, 0, Coord::new(1280, 720), 60, 1, 1);
+    mf_op_add(&mut hs, &mut sec, &mut idx, 130, Coord::new(1280, 720), 60, 1, 2);
+    {
+        let row = sec.next("hs.op");
+        assert_eq!(i(&row, 1), idx, "cancel op idx");
+        assert_eq!(i(&row, 2), 1, "op kind: cancel");
+        hs.cancel_pending();
+        mf_assert_state(&hs, &mut sec, idx);
+        idx += 1;
+    }
+    mf_op_add(&mut hs, &mut sec, &mut idx, 2500, Coord::new(1920, 1080), 144, 3, 7);
+    mf_consume(&mut hs, &mut table, &mut sec, "hs", idx, MF_TS);
+    idx += 1;
+    mf_consume(&mut hs, &mut table, &mut sec, "hs", idx, MF_TS + 1);
+    idx += 1;
+    mf_op_add(&mut hs, &mut sec, &mut idx, 2500, Coord::new(1920, 1080), 144, 3, 7);
+    mf_consume(&mut hs, &mut table, &mut sec, "hs", idx, MF_TS);
+    idx += 1;
+    mf_consume(&mut hs, &mut table, &mut sec, "hs", idx, MF_TS + 7);
+    sec.done("hs");
+
+    // --- the cheat-input response: two stacking passes on a live session
+    // --- (production has no re-apply guard).
+    let mut sec = section(&rows, "ent.mf.cheat");
+    let mut session = mf_session(1, 1, 0x4D460111, 0x4D460222, 0x4D460333, 0);
+    session.highscores_mut().add(999, Coord::new(1280, 720), 60, 2, 5);
+    for phase in 0..3i32 {
+        if phase > 0 {
+            session.apply_cheat();
+        }
+        let row = sec.next("ent.mf.cheat");
+        assert_eq!(i(&row, 1), phase, "cheat phase");
+        assert_eq!(i(&row, 2), session.player().fire_level(), "fire level");
+        assert_eq!(i(&row, 3), session.player().multi_fire(), "multi fire");
+        assert_eq!(i(&row, 4), session.player().shield(), "shield");
+        assert_eq!(i(&row, 5), i32::from(session.score().cheated()), "cheated");
+        assert_eq!(
+            i(&row, 6),
+            i32::from(session.highscores().has_pending()),
+            "pending"
+        );
+        assert_eq!(
+            u(&row, 7),
+            session.highscores().last_value(),
+            "pending value"
+        );
+    }
+    sec.done("ent.mf.cheat");
+
+    // --- live nova run: level 3, stationary firing player; the kamikaze
+    // --- diver wins the race and the production response fires.
+    let mut sec = section(&rows, "ent.mf.nova");
+    let row = sec.next("ent.mf.nova.setup");
+    let seed = u(&row, 1) as u32;
+    assert_eq!(u(&row, 2), 0x4D461111, "bullets seed");
+    assert_eq!(u(&row, 3), 0x4D462222, "bombs seed");
+    assert_eq!(u(&row, 4), 0x4D463333, "explosions seed");
+    assert_eq!(i(&row, 5), METRICS.win_w, "win w");
+    assert_eq!(i(&row, 6), METRICS.win_h, "win h");
+    assert_eq!(hex32(&row[7]), METRICS.scale.to_bits(), "scale bits");
+    let lethal = formation::recompute(METRICS.scale).width as f32 * 1.4;
+    assert_eq!(hex32(&row[8]), lethal.to_bits(), "lethal bits");
+    let mut session = mf_session(3, seed, 0x4D461111, 0x4D462222, 0x4D463333, 0);
+    assert_eq!(i(&row, 9), session.player().shield(), "initial shield");
+    assert_eq!(i(&row, 10), 3, "level");
+    assert_eq!(i(&row, 11), MF_NOVA_CAP, "cap");
+
+    let mut f = 0i32;
+    let mut kills = 0i32;
+    let prox_frame = loop {
+        let report = session.tick_collisions(false);
+        if report.kamikaze_proximity {
+            // Production returns HERE: the frame's bonus collisions, shield
+            // sync and every Move are replaced by the supernova branch.
+            let row = sec.next("ent.mf.nova.prox");
+            assert_eq!(i(&row, 1), f, "prox frame");
+            assert_eq!(sz(&row, 2), session.fleet().alien_count(), "prox aliens");
+            assert_eq!(i(&row, 3), session.player().shield(), "prox shield");
+            assert_eq!(u(&row, 4), session.score().value(), "prox score");
+            assert_eq!(
+                sz(&row, 5),
+                session.explosions().active_count(),
+                "prox explosions"
+            );
+            drain_sink_fb(session.sink_mut(), &mut sec, "ent.mf.nova.sink", f);
+            break f;
+        }
+        // Scenario gates: the diver must beat both the bomb economy and the
+        // wave clear (the dumper searched its seed for exactly this outcome).
+        assert!(!report.player_destroyed, "nova gate: bomb death at f{f}");
+        assert!(!session.fleet().finished(), "nova gate: trigger at f{f}");
+        session.tick_motion(0, true);
+        kills += report.collisions.total_hits;
+        if f % 20 == 0 || report.collisions.total_hits > 0 || report.bomb_shield_loss {
+            let row = sec.next("ent.mf.nova.frame");
+            assert_eq!(i(&row, 1), f, "frame stamp");
+            assert_eq!(sz(&row, 2), session.fleet().alien_count(), "aliens");
+            assert_eq!(i(&row, 3), session.player().shield(), "shield");
+            assert_eq!(u(&row, 4), session.score().value(), "score");
+            assert_eq!(i(&row, 5), report.collisions.total_hits, "hits");
+            assert_eq!(i(&row, 6), i32::from(report.bomb_shield_loss), "bomb loss");
+            assert_eq!(
+                sz(&row, 7),
+                session.explosions().active_count(),
+                "explosions"
+            );
+        }
+        drain_sink_fb(session.sink_mut(), &mut sec, "ent.mf.nova.sink", f);
+        f += 1;
+        assert!(f < MF_NOVA_CAP, "nova cap exhausted");
+    };
+
+    // The kamikaze branch: score mirror to -1, guarded commit (the Add path
+    // -- this run scored), the screen-wide burst, then the 3 s
+    // explosions-only cinematic.
+    let committed = session.kamikaze_supernova_response(MF_RATE);
+    assert!(committed, "nova run must commit");
+    assert!(session.score().value() > 0, "nova gate: positive score");
+    let row = sec.next("ent.mf.nova.commit");
+    assert_eq!(i(&row, 1), 1, "committed");
+    assert_eq!(u(&row, 2), session.score().value(), "commit value");
+    assert_eq!(i(&row, 3), session.max_session_size().x, "commit width");
+    assert_eq!(i(&row, 4), session.max_session_size().y, "commit height");
+    assert_eq!(i(&row, 5), MF_RATE, "commit rate");
+    assert_eq!(i(&row, 6), session.score().cycle(), "commit cycle");
+    assert_eq!(i(&row, 7), session.score().level(), "commit level");
+    let mut table = HighScoreTable::new();
+    mf_consume(
+        session.highscores_mut(),
+        &mut table,
+        &mut sec,
+        "ent.mf.nova.commit",
+        0,
+        MF_TS,
+    );
+    let row = sec.next("ent.mf.nova.burst");
+    assert_eq!(i(&row, 1), prox_frame, "burst frame");
+    assert_eq!(
+        sz(&row, 2),
+        session.explosions().active_count(),
+        "burst active"
+    );
+    let nova_frames = cinematic_frames(MF_RATE, NOVA_CINEMATIC_SECONDS);
+    assert_eq!(i(&row, 3), nova_frames, "nova frames");
+    assert_eq!(i(&row, 4), nova_frames / NOVA_SKIP_DIVISOR, "skip after");
+    for k in 0..nova_frames {
+        session.supernova_cinematic_tick();
+        if k == 30 {
+            // Mid-cinematic particle sample (the burst decays to zero by
+            // k~80): pins nova spawn physics beyond the per-frame counts.
+            sample_particles(
+                session.explosions(),
+                &mut sec,
+                "ent.mf.nova.cine",
+                "ent.mf.nova.p",
+                k,
+                4,
+            );
+        } else if k % 10 == 0 {
+            let row = sec.next("ent.mf.nova.cine");
+            assert_eq!(i(&row, 1), k, "cine frame");
+            assert_eq!(
+                sz(&row, 2),
+                session.explosions().active_count(),
+                "cine active"
+            );
+        }
+    }
+    let row = sec.next("ent.mf.nova.debrief");
+    assert_eq!(i(&row, 1), i32::from(committed), "debrief committed");
+    assert_eq!(
+        i(&row, 2),
+        i32::from(session.debrief_new_record()),
+        "new record"
+    );
+    assert_eq!(i(&row, 3), session.debrief_status_kind(), "status kind");
+    assert_eq!(sz(&row, 4), table.all().len(), "table count");
+    assert_eq!(
+        i(&row, 5),
+        cinematic_frames(MF_RATE, GAME_OVER_SECONDS),
+        "game over frames"
+    );
+    let row = sec.next("ent.mf.nova.done");
+    assert_eq!(i(&row, 1), prox_frame, "done frames");
+    assert_eq!(i(&row, 2), kills, "done kills");
+    assert_eq!(u(&row, 3), session.score().value(), "done score");
+    assert_eq!(i(&row, 4), i32::from(committed), "done committed");
+    assert_eq!(
+        i(&row, 5),
+        i32::from(session.highscores().has_pending()),
+        "done pending"
+    );
+    sec.done("ent.mf.nova");
+
+    // --- live death run: level 1, stationary NON-firing player, four
+    // --- scripted bombs; the fourth hit drops the shield below zero and the
+    // --- destruction branch fires with the CancelPending commit path.
+    let mut sec = section(&rows, "ent.mf.death");
+    let row = sec.next("ent.mf.death.setup");
+    let seed = u(&row, 1) as u32;
+    assert_eq!(u(&row, 2), 0x4D464444, "bullets seed");
+    assert_eq!(u(&row, 3), 0x4D465555, "bombs seed");
+    assert_eq!(u(&row, 4), 0x4D466666, "explosions seed");
+    assert_eq!(i(&row, 5), METRICS.win_w, "win w");
+    assert_eq!(i(&row, 6), METRICS.win_h, "win h");
+    assert_eq!(hex32(&row[7]), METRICS.scale.to_bits(), "scale bits");
+    let lethal = formation::recompute(METRICS.scale).width as f32 * 1.4;
+    assert_eq!(hex32(&row[8]), lethal.to_bits(), "lethal bits");
+    let mut session = mf_session(1, seed, 0x4D464444, 0x4D465555, 0x4D466666, 4);
+    assert_eq!(i(&row, 9), session.player().shield(), "initial shield");
+    assert_eq!(i(&row, 10), 1, "level");
+    assert_eq!(i(&row, 11), MF_DEATH_CAP, "cap");
+
+    let mut f = 0i32;
+    let death_frame = loop {
+        let report = session.tick_collisions(false);
+        assert!(
+            !report.kamikaze_proximity,
+            "death gate: diver arrived first at f{f}"
+        );
+        if report.player_destroyed {
+            let row = sec.next("ent.mf.death.hit");
+            assert_eq!(i(&row, 1), f, "hit frame");
+            assert_eq!(sz(&row, 2), session.fleet().alien_count(), "hit aliens");
+            assert_eq!(i(&row, 3), session.player().shield(), "hit shield");
+            assert_eq!(
+                sz(&row, 4),
+                session.explosions().active_count(),
+                "hit explosions"
+            );
+            assert_eq!(i(&row, 5), session.bombs().nb(), "hit bombs");
+            drain_sink_fb(session.sink_mut(), &mut sec, "ent.mf.death.sink", f);
+            break f;
+        }
+        assert!(!session.fleet().finished(), "death gate: trigger at f{f}");
+        session.tick_motion(0, false);
+        if f % 60 == 0 || report.bomb_shield_loss {
+            let row = sec.next("ent.mf.death.frame");
+            assert_eq!(i(&row, 1), f, "frame stamp");
+            assert_eq!(sz(&row, 2), session.fleet().alien_count(), "aliens");
+            assert_eq!(i(&row, 3), session.player().shield(), "shield");
+            assert_eq!(u(&row, 4), session.score().value(), "score");
+            assert_eq!(i(&row, 5), i32::from(report.bomb_shield_loss), "bomb loss");
+            assert_eq!(i(&row, 6), session.bombs().nb(), "bombs");
+            assert_eq!(
+                sz(&row, 7),
+                session.explosions().active_count(),
+                "explosions"
+            );
+        }
+        drain_sink_fb(session.sink_mut(), &mut sec, "ent.mf.death.sink", f);
+        f += 1;
+        assert!(f < MF_DEATH_CAP, "death cap exhausted");
+    };
+
+    // The destruction branch: the guarded commit takes the CancelPending
+    // path (the pilot never scored), then the two hull bursts and the 1.35 s
+    // four-manager cinematic (the armada only draws in production).
+    let committed = session.grand_destruction_response(MF_RATE);
+    assert!(!committed, "death run must not commit");
+    let row = sec.next("ent.mf.death.commit");
+    assert_eq!(i(&row, 1), 0, "commit kind: cancel");
+    assert_eq!(u(&row, 2), session.score().value(), "commit value");
+    assert_eq!(
+        i(&row, 3),
+        i32::from(session.highscores().has_pending()),
+        "pending after cancel"
+    );
+    assert_eq!(
+        u(&row, 4),
+        session.highscores().last_value(),
+        "ledger value after cancel"
+    );
+    let row = sec.next("ent.mf.death.burst");
+    assert_eq!(i(&row, 1), death_frame, "burst frame");
+    assert_eq!(
+        sz(&row, 2),
+        session.explosions().active_count(),
+        "burst active"
+    );
+    let death_frames = cinematic_frames(MF_RATE, DESTRUCTION_CINEMATIC_SECONDS);
+    assert_eq!(i(&row, 3), death_frames, "death frames");
+    assert_eq!(
+        i(&row, 4),
+        death_frames / DESTRUCTION_SKIP_DIVISOR,
+        "skip after"
+    );
+    for k in 0..death_frames {
+        session.destruction_cinematic_tick();
+        if k % 10 == 0 {
+            let row = sec.next("ent.mf.death.cine");
+            assert_eq!(i(&row, 1), k, "cine frame");
+            assert_eq!(i(&row, 2), session.bonuses().nb(), "cine bonuses");
+            assert_eq!(i(&row, 3), session.bullets().nb(), "cine bullets");
+            assert_eq!(i(&row, 4), session.bombs().nb(), "cine bombs");
+            assert_eq!(
+                sz(&row, 5),
+                session.explosions().active_count(),
+                "cine explosions"
+            );
+        }
+    }
+    let row = sec.next("ent.mf.death.debrief");
+    assert_eq!(i(&row, 1), i32::from(committed), "debrief committed");
+    assert_eq!(
+        i(&row, 2),
+        i32::from(session.debrief_new_record()),
+        "new record"
+    );
+    assert_eq!(i(&row, 3), session.debrief_status_kind(), "status kind");
+    assert_eq!(sz(&row, 4), 0, "table count (never fed)");
+    assert_eq!(
+        i(&row, 5),
+        cinematic_frames(MF_RATE, GAME_OVER_SECONDS),
+        "game over frames"
+    );
+    let row = sec.next("ent.mf.death.done");
+    assert_eq!(i(&row, 1), f, "done frames");
+    assert_eq!(i(&row, 2), death_frame, "done death frame");
+    assert_eq!(u(&row, 3), session.score().value(), "done score");
+    assert_eq!(i(&row, 4), i32::from(committed), "done committed");
+    assert_eq!(
+        i(&row, 5),
+        i32::from(session.highscores().has_pending()),
+        "done pending"
+    );
+    sec.done("ent.mf.death");
 }

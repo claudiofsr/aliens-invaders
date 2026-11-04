@@ -24,7 +24,11 @@ use crate::trajectory::ViewportMetrics;
 
 // GameRules::Player / GameRules::Visuals constants (golden-vector policed).
 const PLAYER_BASE_BULLET_SPEED: f32 = -8.0;
-const PLAYER_BOTTOM_MARGIN_PX: i32 = 48;
+/// GameRules::Player::kPlayerBottomMarginPx: the player baseline sits this
+/// many pixels above the window bottom (`pos_y`). Public because scenario
+/// harnesses place entities relative to the real baseline -- the spawn
+/// placeholder (-50) is not it.
+pub const PLAYER_BOTTOM_MARGIN_PX: i32 = 48;
 const INITIAL_SHIELDS: i32 = 3;
 const PLAYER_MAX_SHIELD: i32 = 8;
 const PLAYER_SHIELD_GATE_THRESHOLD: i32 = 4;
