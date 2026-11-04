@@ -11,8 +11,11 @@
 //! - The recycle bin is omitted (Respawn == fresh construction, see alien.rs)
 //!   and `original_max_convoy_size_` with it: both exist only to serve the
 //!   resize cascade, which the headless corpus never exercises.
-//! - Score is omitted: the corpus wires score = nullptr and every consumer
-//!   guards it, so the guarded paths are the only behavior.
+//! - Score rides per call (`Option<&mut Score>` on the collision entry):
+//!   the production `AliensManager` holds a `Score*` member, wired live in
+//!   the game and null in the Fatia-4 fleet corpus. Fatia 11 pins the wired
+//!   economy (`ent.fb.*`); with a null/None score every gate opens, which is
+//!   bit-identical to the recorded nullptr behavior.
 //! - RNG discipline: `dist::uniform_int` twins the std::uniform_int_distribution
 //!   call sites; `rng.uniform_int` twins the native RandomStream::UniformInt
 //!   sites. Mixing them up shifts every later draw.
@@ -28,6 +31,7 @@ use crate::mathx::{fast_round_f32, fast_round_f64, Coord};
 use crate::path::{generate_smooth_spline, Vec2f};
 use crate::player::Player;
 use crate::random_stream::RandomStream;
+use crate::score::{Score, MAX_BONUSES_PER_STAGE};
 use crate::sink::EventSink;
 use crate::stage_catalog::{self, StageProfile};
 use crate::textures::TextureId;
@@ -839,12 +843,23 @@ impl Fleet {
         }
     }
 
-    /// NukeAll twin: one gold debris burst and one banner per alien.
-    pub fn nuke_all(&mut self, explosions: &mut ExplosionsManager, sink: &mut EventSink) {
+    /// NukeAll twin: one gold debris burst, one score credit and one banner
+    /// per alien. The score rides the same optional wiring as the kill chain:
+    /// production passes its `Score*` member, harnesses without an economy
+    /// pass `None` and the awards vanish with it.
+    pub fn nuke_all(
+        &mut self,
+        explosions: &mut ExplosionsManager,
+        sink: &mut EventSink,
+        mut score: Option<&mut Score>,
+    ) {
         let nuke_text = format!("+{SCORE_PER_ALIEN_NUKED}");
         let positions: Vec<Coord> = self.aliens.iter().map(|a| a.position()).collect();
         for pos in positions {
             explosions.add(pos, Coord::new(0, 0), 255, 230, 90, 36);
+            if let Some(sc) = score.as_deref_mut() {
+                sc.add(SCORE_PER_ALIEN_NUKED);
+            }
             sink.floating_text(
                 pos,
                 &nuke_text,
@@ -868,6 +883,7 @@ impl Fleet {
         bonus: &mut BonusManager,
         sink: &mut EventSink,
         player: Option<&Player>,
+        mut score: Option<&mut Score>,
     ) -> CollisionSummary {
         let mut summary = CollisionSummary::default();
         if bullets.nb() <= 0 || self.aliens.is_empty() {
@@ -1018,7 +1034,7 @@ impl Fleet {
                     72,
                 );
 
-                self.create_bonus_maybe(hit_pos, bonus, player);
+                self.create_bonus_maybe(hit_pos, bonus, player, score.as_deref_mut());
                 summary.total_hits += 1;
 
                 // Swap-and-Pop O(1): the fallen alien leaves the dense list
@@ -1038,6 +1054,7 @@ impl Fleet {
         pos: Coord,
         bonus: &mut BonusManager,
         player: Option<&Player>,
+        mut score: Option<&mut Score>,
     ) {
         if !self.bonus_allowed_this_level {
             return;
@@ -1050,41 +1067,57 @@ impl Fleet {
             return;
         }
 
-        let chosen = self.roll_smart_bonus_type(player);
+        let chosen = self.roll_smart_bonus_type(player, score.as_deref());
         if chosen == BonusType::None {
             return;
+        }
+        // Record BEFORE the drop lands (production order): the type locks out
+        // for the rest of the 15-wave stage cycle the moment it is chosen.
+        if let Some(s) = score.as_deref_mut() {
+            s.record_bonus_spawned(chosen as i32);
         }
         bonus.add(pos, chosen);
         self.bonus_spawned_this_level = true;
     }
 
-    /// RollSmartBonusType twin with score_ = nullptr (the corpus wiring): no
-    /// stage caps, no type lockouts, weighted draw with the maxed-out
-    /// upgrades of the live starship zeroed.
-    fn roll_smart_bonus_type(&mut self, player: Option<&Player>) -> BonusType {
-        let w_fire = if player.is_some_and(|p| p.is_fire_maxed()) {
+    /// RollSmartBonusType twin, `Score*` and all: with a wired score the
+    /// stage cap (5 spawns) short-circuits BEFORE any draw, and the cycle
+    /// mask zeroes the weight of every type already dropped this stage --
+    /// a `None` score opens every gate (the nullptr wiring of the Fatia-4
+    /// fleet corpus). Player-maxed upgrades zero their weights either way.
+    /// The weighted Lemire draw and the fixed fire->multi->speed->shield->
+    /// nuke accumulator order are the contract's RNG-visible surface.
+    fn roll_smart_bonus_type(&mut self, player: Option<&Player>, score: Option<&Score>) -> BonusType {
+        if score.is_some_and(|s| s.stage_bonuses_spawned_count() >= MAX_BONUSES_PER_STAGE) {
+            return BonusType::None;
+        }
+        let can = |t: BonusType| -> bool {
+            score.map_or(true, |s| s.can_spawn_bonus_type(t as i32))
+        };
+        let w_fire = if player.is_some_and(|p| p.is_fire_maxed()) || !can(BonusType::ExtraFire) {
             0
         } else {
             BONUS_WEIGHT_FIRE
         };
-        let w_multi = if player.is_some_and(|p| p.is_multi_maxed()) {
+        let w_multi = if player.is_some_and(|p| p.is_multi_maxed()) || !can(BonusType::ExtraMulti) {
             0
         } else {
             BONUS_WEIGHT_MULTI
         };
-        let w_speed = if player.is_some_and(|p| p.is_speed_maxed()) {
+        let w_speed = if player.is_some_and(|p| p.is_speed_maxed()) || !can(BonusType::ExtraSpeed) {
             0
         } else {
             BONUS_WEIGHT_SPEED
         };
         let w_shield = if player
             .is_some_and(|p| p.is_shield_gated() || p.is_shield_maxed())
+            || !can(BonusType::ExtraShield)
         {
             0
         } else {
             BONUS_WEIGHT_SHIELD
         };
-        let w_nuke = BONUS_WEIGHT_NUKE;
+        let w_nuke = if can(BonusType::ExtraNuke) { BONUS_WEIGHT_NUKE } else { 0 };
 
         let total_weight = w_fire + w_multi + w_speed + w_shield + w_nuke;
         if total_weight <= 0 {
@@ -1124,6 +1157,21 @@ impl Fleet {
             }
         }
         BonusType::None
+    }
+
+    /// Golden-vector observability (Fatia 11): the per-wave bonus drop gate
+    /// -- the `ent.fb.*` rows pin the wait countdown and the Bernoulli
+    /// allowance so a capped roll is distinguishable from a silent wave.
+    pub fn bonus_allowed_this_level(&self) -> bool {
+        self.bonus_allowed_this_level
+    }
+
+    pub fn bonus_wait(&self) -> i32 {
+        self.bonus_wait
+    }
+
+    pub fn bonus_spawned_this_level(&self) -> bool {
+        self.bonus_spawned_this_level
     }
 
     pub fn alien_count(&self) -> usize {

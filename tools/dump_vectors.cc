@@ -778,6 +778,14 @@ constexpr int kPtReplayCap = 1500;
 /// (post-fanfare delay, convoy spawn schedule) ride the corpus rows too.
 constexpr int kPtTailFrames = 10;
 
+/// Fatia 11 scenario: the bonus economy with a LIVE score wiring. Hard cap;
+/// the coverage gate (deterministic nuke spawn + capped-roll evidence) ends
+/// the replay long before this.
+constexpr int kFbReplayCap = 10000;
+/// Frames simulated after the capped-roll evidence so the frozen bonus state
+/// rides a few rows too.
+constexpr int kFbTailFrames = 10;
+
 /// Scenario-coverage flags collected during a replay; the seed search accepts
 /// a seed only when every special-entity mechanic fired at least once, so the
 /// corpus can never contain a fleet replay without warp/decay/bonus action.
@@ -1863,6 +1871,267 @@ void DumpEntityPhaseTransition() {
 }
 
 // ---------------------------------------------------------------------------
+// Fatia 11 -- the bonus economy with a LIVE score wiring (production passes
+// ctx_'s Score* to the AliensManager; the Fatia-4 fleet corpus wires nullptr).
+// The mask economy would take ~13 natural waves to fill, so the scenario
+// PRELOADS it through the same public Score API production uses
+// (RecordBonusSpawned): types 1..4 locked, the wave-1 roll becomes
+// deterministic -- only the nuke remains eligible, weight 10, the Lemire draw
+// lands in [0,9], the fixed accumulator always returns extra_nuke. Rebuild
+// KEEPS the mask (it only re-draws wait+Bernoulli and resets the spawned
+// flag), so the count stays at the stage cap (5) across waves and the first
+// capped roll lands in the first post-spawn wave whose Bernoulli gate allows
+// drops -- with NO draw consumed (the cap short-circuits before the
+// distribution call). The rows pin all of it: prelude, per-frame economy
+// state, the spawn event, and the capped-roll evidence frames (allowed +
+// wait exhausted + spawned flag clear + kills + count>=5 + no spawn -- the
+// flag check keeps a wave's own spawn from faking the evidence).
+// ---------------------------------------------------------------------------
+struct FbOutcome {
+  int kills{0};
+  int spawns{0};
+  int spawn_type{0};
+  int rebuilds{0};
+  int destroyed_frames{0};
+  int capped_roll_frames{0};
+  int capped_evidence_frame{-1};
+  int frames{0};
+  int final_level{0};
+  int final_count{0};
+  int final_mask{0};
+};
+
+bool RunFleetBonusReplay(std::uint32_t seed, bool record, const HeadlessTextures& tex,
+                         FbOutcome& out) {
+  const ViewportMetrics m{kEntityWinW, kEntityWinH, 1.0f};
+  // Real catalog from wave 1: the session rebuild (Fatia 10) arms wave 2
+  // from GetConvoyData(2) with no synthetic table anywhere in the scenario.
+  const ConvoyData* const convoys = LevelData::GetConvoyData(1);
+
+  const Config cfg = Config::CreateHeadless();
+  RecordingSink sink;
+  BulletsManager bullets(0xFB0111u);
+  BulletsManager bombs(0xFB0222u);
+  BonusManager bonuses(tex);
+  ExplosionsManager explosions(cfg);
+  explosions.SeedRandom(0xFB0333u);
+  bullets.SetMetrics(m);
+  bombs.SetMetrics(m);
+  bonuses.SetMetrics(m);
+  explosions.SetMetrics(m);
+
+  // The economy under test: a live Score, wired into the manager exactly as
+  // combat_session wires ctx_.score, plus the Fatia-8 per-frame context.
+  Score score;
+  static constexpr int kPreludeTypes[] = {1, 2, 3, 4};  // speed, fire, shield, multi
+  for (const int t : kPreludeTypes) {
+    score.RecordBonusSpawned(t);
+  }
+  AliensManager aliens(&bombs, &bullets, &bonuses, &explosions,
+                       /*score=*/&score, sink, tex, m, 1, convoys,
+                       GameRules::Progression::kWavesPerStage, seed);
+  Player player(&bullets, &bombs, &bonuses, &explosions, &cfg, sink, tex, m);
+  aliens.SetPlayer(&player);
+  const float lethal = static_cast<float>(GameRules::Fleet::FormationGrid::Width()) *
+                       GameRules::Fleet::kKamikazeBlastRadiusMultiplier;
+  RandomStream rng(0xFB1EEDu);
+  const auto score_context = [&](std::uint64_t earned) -> std::uint64_t {
+    if (earned > 0) {
+      score.Add(earned);
+    }
+    const std::uint64_t milestones = score.CheckExtraShieldMilestones();
+    for (std::uint64_t mm = 0; mm < milestones; ++mm) {
+      player.ExtraShield();
+    }
+    return milestones;
+  };
+  // Flat 6.0 s fanfares: the hold formula is already pinned by pt.hold; this
+  // scenario pins the economy, so every hold is exactly 360 frames.
+  float fanfare[GameRules::Progression::kWavesPerStage];
+  for (float& d : fanfare) {
+    d = GameRules::Progression::kStageFanfareDurationSeconds;
+  }
+
+  if (record) {
+    std::printf("ent.fb.setup %u %u %u %u %u %d %d %08x %08x %d %d %d %d\n", seed, 0xFB1EEDu,
+                0xFB0111u, 0xFB0222u, 0xFB0333u, kEntityWinW, kEntityWinH, FloatBits(m.scale),
+                FloatBits(lethal), player.Shield(), score.Level(), kFbReplayCap, kFbTailFrames);
+    for (int i = 0; i < 4; ++i) {
+      std::printf("ent.fb.prelude %d %d %d %u\n", i, kPreludeTypes[i],
+                  score.StageBonusesSpawnedCount(), score.StageBonusMask());
+    }
+  }
+
+  int phase_frames = 0;
+  bool started = false;
+  int prev_count = score.StageBonusesSpawnedCount();
+  std::uint32_t prev_mask = score.StageBonusMask();
+  int f = 0;
+  for (; f < kFbReplayCap; ++f) {
+    const int dir = 0;  // stationary player, same lane discipline as ent.pt
+
+    const BulletCollisionSummary summary = aliens.DoBulletsCollisions();
+    score_context(summary.score_earned);
+    player.DoBombsCollisions();
+    const bool prox = aliens.CheckKamikazeProximity(player.Position(), lethal);
+    (void)prox;  // the frame rows carry it
+    player.DoBonusCollisions(&aliens);
+    score.SetShield(player.Shield());
+    const bool destroyed = player.Shield() < 0;
+    if (destroyed) {
+      ++out.destroyed_frames;
+    }
+
+    bool triggered = false;
+    if (!started && aliens.Finished()) {
+      const int completed_level = score.Level();
+      int slot = GameRules::Progression::WaveInStage(completed_level);
+      if (slot < 0) slot = 0;
+      const float hold = std::max(GameRules::Progression::kStageFanfareDurationSeconds,
+                                  fanfare[slot]);
+      phase_frames =
+          std::max(1, static_cast<int>(std::ceil(hold * GameRules::Simulation::kSimulationFrequencyHz)));
+      started = true;
+      score.IncLevel();
+      constexpr double kHyperspaceWarpDurationSec =
+          static_cast<double>(GameRules::Progression::kStageFanfareDurationSeconds);
+      const int warp_frames = FastRound(kHyperspaceWarpDurationSec *
+                                        static_cast<double>(GameRules::Simulation::kSimulationFrequencyHz));
+      if (record) {
+        std::printf("ent.fb.trigger %d %d %d %d %d\n", f, completed_level, phase_frames,
+                    score.Level(), warp_frames);
+      }
+      triggered = true;
+    }
+
+    bonuses.Move();
+    player.Move(dir);
+    bullets.Move();
+    bombs.Move(player.Position());
+    player.Fire();
+    explosions.Move();
+
+    bool rebuilt = false;
+    bool held = false;
+    if (started) {
+      held = true;
+      if (--phase_frames <= 0) {
+        const int level = score.Level();
+        const std::uint32_t rebuild_seed = rng.NextU32();
+        aliens.Rebuild(level, LevelData::GetConvoyData(static_cast<size_t>(level)),
+                       static_cast<int>(LevelData::GetTotalLevels()), rebuild_seed);
+        aliens.SetPlayer(&player);
+        started = false;
+        rebuilt = true;
+        ++out.rebuilds;
+        if (record) {
+          std::printf("ent.fb.rebuild %d %d %u %zu %d\n", f, level, rebuild_seed,
+                      aliens.AlienCount(), GameRules::StageCatalog::GetProfile(level).convoy_count);
+        }
+      }
+    } else {
+      aliens.Move();
+      aliens.Fire(player.Position());
+    }
+    const int remaining = held ? phase_frames : 0;
+
+    out.kills += summary.total_hits;
+
+    // Spawn detection through the public economy: the count only grows when
+    // CreateBonusMaybe recorded a chosen type, and the mask delta names it.
+    const int count = score.StageBonusesSpawnedCount();
+    const std::uint32_t mask = score.StageBonusMask();
+    bool spawned = false;
+    if (count > prev_count) {
+      spawned = true;
+      ++out.spawns;
+      const std::uint32_t new_bit = mask & ~prev_mask;
+      int type = 0;
+      for (int b = 1; b <= 5; ++b) {
+        if (new_bit & (1u << b)) type = b;
+      }
+      out.spawn_type = type;
+      if (record) {
+        std::printf("ent.fb.spawn %d %d %d %d %u\n", f, score.Level(), type, count, mask);
+      }
+    }
+    prev_count = count;
+    prev_mask = mask;
+
+    // Capped-roll evidence: the drop gate was open and the wait exhausted on
+    // a killing frame with the economy at its cap -- a roll that provably
+    // returned none WITHOUT consuming a draw.
+    const bool capped_roll = aliens.BonusAllowedThisLevel() && aliens.BonusWait() <= 0 &&
+                             !aliens.BonusSpawnedThisLevel() && summary.total_hits > 0 &&
+                             count >= GameRules::Combat::kMaxBonusesPerStage && !spawned;
+    if (capped_roll) {
+      ++out.capped_roll_frames;
+      if (out.capped_evidence_frame < 0) out.capped_evidence_frame = f;
+    }
+
+    if (record) {
+      // Sampled frame rows: every 30th frame plus every event frame (kill,
+      // spawn, trigger, rebuild, capped roll). The Rust twin mirrors the
+      // sampling rule; the simulation itself runs every frame either way.
+      if (f % 60 == 0 || summary.total_hits > 0 || spawned || triggered || rebuilt ||
+          capped_roll) {
+        std::printf("ent.fb.frame %d %d %zu %d %llu %d %d %u %d %d %d %d %d %d %d\n", f,
+                    score.Level(), aliens.AlienCount(), player.Shield(),
+                    static_cast<unsigned long long>(score.Value()), bonuses.Nb(), count, mask,
+                    summary.total_hits, remaining, destroyed ? 1 : 0, triggered ? 1 : 0,
+                    rebuilt ? 1 : 0, aliens.BonusAllowedThisLevel() ? 1 : 0, aliens.BonusWait());
+      }
+      sink.Drain("ent.fb", f);
+    }
+
+    if (out.capped_evidence_frame >= 0 && f - out.capped_evidence_frame >= kFbTailFrames) {
+      ++f;
+      break;
+    }
+  }
+
+  out.frames = f;
+  out.final_level = score.Level();
+  out.final_count = score.StageBonusesSpawnedCount();
+  out.final_mask = static_cast<int>(score.StageBonusMask());
+  if (record) {
+    std::printf("ent.fb.done %d %d %d %d %d %d %d %d %d\n", f, out.kills, out.spawns,
+                out.final_level, out.final_count, out.final_mask, out.destroyed_frames,
+                out.capped_roll_frames, out.rebuilds);
+  }
+  // Coverage gate: the deterministic nuke (mask lockout visible), the stage cap
+  // reached, capped-roll evidence recorded, and at least one completed wave
+  // transition (Rebuild keeps the mask, so the first capped roll lands in the
+  // first post-spawn wave whose Bernoulli gate allows drops) -- all inside budget.
+  return out.spawns == 1 && out.spawn_type == static_cast<int>(Bonus::extra_nuke) &&
+         out.final_count == GameRules::Combat::kMaxBonusesPerStage && out.final_mask == 62 &&
+         out.capped_roll_frames >= 1 && out.rebuilds >= 1 && out.final_level >= 2 &&
+         f < kFbReplayCap;
+}
+
+void DumpEntityFleetBonus() {
+  GameRules::Fleet::FormationGrid::Recompute(1.0f);
+  Pix::SetGlobalScale(1.0f);
+  const HeadlessTextures tex;
+  std::uint32_t chosen = 0;
+  for (std::uint32_t s = 1; s <= 256; ++s) {
+    FbOutcome probe;
+    if (RunFleetBonusReplay(s, false, tex, probe)) {
+      chosen = s;
+      break;
+    }
+  }
+  if (chosen == 0) {
+    std::fprintf(stderr,
+                 "dump_vectors: no fleet-bonus seed completed the economy arc "
+                 "(nuke spawn + cap evidence) within 256 candidates\n");
+    std::exit(1);
+  }
+  FbOutcome recorded;
+  RunFleetBonusReplay(chosen, true, tex, recorded);
+}
+
+// ---------------------------------------------------------------------------
 // Fatia 9 -- level catalog: per-wave convoy tables + arrival splines.
 // C++ identifies paths by POINTER; the rows pin identity by CONTENT instead:
 // a registry of unique arrival pointers in first-encounter order (stage-1
@@ -1989,5 +2258,6 @@ int main() {
   DumpLevelData();
   DumpPhaseTransition();
   DumpEntityPhaseTransition();
+  DumpEntityFleetBonus();
   return 0;
 }

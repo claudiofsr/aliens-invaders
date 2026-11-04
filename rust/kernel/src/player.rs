@@ -16,6 +16,7 @@ use crate::explosions::ExplosionsManager;
 use crate::fleet::Fleet;
 use crate::game_object::GameObject;
 use crate::mathx::{fast_round_f32, Coord};
+use crate::score::Score;
 use crate::sink::EventSink;
 use crate::stage_catalog;
 use crate::textures::{dims, TextureId};
@@ -236,6 +237,7 @@ impl Player {
         explosions: &mut ExplosionsManager,
         sink: &mut EventSink,
         mut fleet: Option<&mut Fleet>,
+        mut score: Option<&mut Score>,
     ) {
         loop {
             let res = bonus.get_bonus_collision(&self.object);
@@ -335,7 +337,7 @@ impl Player {
                         120,
                     );
                     if let Some(f) = fleet.as_deref_mut() {
-                        f.nuke_all(explosions, sink);
+                        f.nuke_all(explosions, sink, score.as_deref_mut());
                     }
                 }
                 BonusType::None => unreachable!(),

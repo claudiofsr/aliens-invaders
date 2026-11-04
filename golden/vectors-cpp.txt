@@ -46109,3 +46109,630 @@ ent.pt.frame 653 0 0 2 0 2 -1 90 0 0 1 0 0
 ent.pt.frame 654 0 0 2 0 2 -1 90 0 0 1 0 0
 ent.pt.frame 655 0 0 2 0 2 -1 90 0 0 1 0 0
 ent.pt.done 656 285 645 5 2 90 221
+ent.fb.setup 1 16457453 16449809 16450082 16450355 1280 720 3f800000 42eb3333 3 1 10000 10
+ent.fb.prelude 0 1 4 30
+ent.fb.prelude 1 2 4 30
+ent.fb.prelude 2 3 4 30
+ent.fb.prelude 3 4 4 30
+ent.fb.frame 0 1 0 3 0 0 4 30 0 0 0 0 0 1 5
+ent.fb.sink 0 sfx 0 00000000
+ent.fb.sink 40 sfx 0 00000000
+ent.fb.frame 60 1 1 3 0 0 4 30 0 0 0 0 0 1 5
+ent.fb.sink 80 sfx 0 00000000
+ent.fb.frame 120 1 4 3 0 0 4 30 0 0 0 0 0 1 5
+ent.fb.sink 120 sfx 0 00000000
+ent.fb.sink 160 sfx 0 00000000
+ent.fb.frame 180 1 6 3 0 0 4 30 0 0 0 0 0 1 5
+ent.fb.sink 200 sfx 0 00000000
+ent.fb.frame 240 1 6 3 0 0 4 30 0 0 0 0 0 1 5
+ent.fb.sink 240 sfx 0 00000000
+ent.fb.sink 280 sfx 0 00000000
+ent.fb.frame 300 1 9 3 0 0 4 30 0 0 0 0 0 1 5
+ent.fb.sink 320 sfx 0 00000000
+ent.fb.frame 360 1 12 3 0 0 4 30 0 0 0 0 0 1 5
+ent.fb.sink 360 sfx 0 00000000
+ent.fb.sink 400 sfx 0 00000000
+ent.fb.frame 420 1 12 3 0 0 4 30 0 0 0 0 0 1 5
+ent.fb.sink 440 sfx 0 00000000
+ent.fb.frame 480 1 15 3 0 0 4 30 0 0 0 0 0 1 5
+ent.fb.sink 480 sfx 0 00000000
+ent.fb.sink 520 sfx 0 00000000
+ent.fb.frame 540 1 18 3 0 0 4 30 0 0 0 0 0 1 5
+ent.fb.frame 542 1 17 3 10 0 4 30 1 0 0 0 0 1 4
+ent.fb.sink 542 sfx 1 bacccccd
+ent.fb.sink 542 text 639 462 255 215 0 41c00000 72 +10
+ent.fb.sink 560 sfx 0 00000000
+ent.fb.frame 592 1 17 3 20 0 4 30 1 0 0 0 0 1 3
+ent.fb.sink 592 sfx 1 bc333333
+ent.fb.sink 592 text 633 380 255 215 0 41c00000 72 +10
+ent.fb.frame 600 1 17 3 20 0 4 30 0 0 0 0 0 1 3
+ent.fb.sink 600 sfx 0 00000000
+ent.fb.frame 622 1 16 3 30 0 4 30 1 0 0 0 0 1 2
+ent.fb.sink 622 sfx 1 3c99999a
+ent.fb.sink 622 text 652 462 255 215 0 41c00000 72 +10
+ent.fb.sink 640 sfx 0 00000000
+ent.fb.frame 660 1 18 3 30 0 4 30 0 0 0 0 0 1 2
+ent.fb.sink 680 sfx 0 00000000
+ent.fb.frame 720 1 21 3 30 0 4 30 0 0 0 0 0 1 2
+ent.fb.sink 720 sfx 0 00000000
+ent.fb.sink 760 sfx 0 00000000
+ent.fb.frame 780 1 22 3 30 0 4 30 0 0 0 0 0 1 2
+ent.fb.sink 800 sfx 0 00000000
+ent.fb.frame 840 1 24 3 30 0 4 30 0 0 0 0 0 1 2
+ent.fb.sink 840 sfx 0 00000000
+ent.fb.sink 880 sfx 0 00000000
+ent.fb.frame 900 1 25 3 30 0 4 30 0 0 0 0 0 1 2
+ent.fb.frame 914 1 24 3 40 0 4 30 1 0 0 0 0 1 1
+ent.fb.sink 914 sfx 1 bbcccccd
+ent.fb.sink 914 text 636 367 255 215 0 41c00000 72 +10
+ent.fb.sink 920 sfx 0 00000000
+ent.fb.frame 960 1 24 3 40 0 4 30 0 0 0 0 0 1 1
+ent.fb.sink 960 sfx 0 00000000
+ent.fb.spawn 975 1 5 5 62
+ent.fb.frame 975 1 23 3 50 1 5 62 1 0 0 0 0 1 0
+ent.fb.sink 975 sfx 1 bacccccd
+ent.fb.sink 975 text 639 197 255 215 0 41c00000 72 +10
+ent.fb.sink 1000 sfx 0 00000000
+ent.fb.frame 1020 1 23 3 50 1 5 62 0 0 0 0 0 1 0
+ent.fb.sink 1040 sfx 0 00000000
+ent.fb.frame 1080 1 23 3 50 1 5 62 0 0 0 0 0 1 0
+ent.fb.sink 1080 sfx 0 00000000
+ent.fb.frame 1083 1 22 3 60 1 5 62 1 0 0 0 0 1 0
+ent.fb.sink 1083 sfx 1 bacccccd
+ent.fb.sink 1083 text 639 618 255 215 0 41c00000 72 +10
+ent.fb.frame 1098 1 21 3 70 1 5 62 1 0 0 0 0 1 0
+ent.fb.sink 1098 sfx 1 bc19999a
+ent.fb.sink 1098 text 634 177 255 215 0 41c00000 72 +10
+ent.fb.sink 1120 sfx 0 00000000
+ent.fb.frame 1140 1 20 3 80 1 5 62 1 0 0 0 0 1 0
+ent.fb.sink 1140 sfx 1 bc333333
+ent.fb.sink 1140 text 633 483 255 215 0 41c00000 72 +10
+ent.fb.sink 1160 sfx 0 00000000
+ent.fb.frame 1200 1 20 3 80 1 5 62 0 0 0 0 0 1 0
+ent.fb.sink 1200 sfx 0 00000000
+ent.fb.frame 1206 1 19 3 90 1 5 62 1 0 0 0 0 1 0
+ent.fb.sink 1206 sfx 1 bb99999a
+ent.fb.sink 1206 text 637 593 255 215 0 41c00000 72 +10
+ent.fb.frame 1229 1 18 3 100 1 5 62 1 0 0 0 0 1 0
+ent.fb.sink 1229 sfx 3 bcc00000
+ent.fb.sink 1229 text 625 82 255 215 0 41c00000 72 +10
+ent.fb.sink 1240 sfx 0 00000000
+ent.fb.frame 1260 1 18 3 100 1 5 62 0 0 0 0 0 1 0
+ent.fb.frame 1277 1 17 3 110 1 5 62 1 0 0 0 0 1 0
+ent.fb.sink 1277 sfx 1 3b4ccccd
+ent.fb.sink 1277 text 642 350 255 215 0 41c00000 72 +10
+ent.fb.sink 1280 sfx 0 00000000
+ent.fb.sink 1296 sfx 4 00000000
+ent.fb.frame 1320 1 17 3 110 1 5 62 0 0 0 0 0 1 0
+ent.fb.sink 1320 sfx 0 00000000
+ent.fb.frame 1326 1 16 3 120 1 5 62 1 0 0 0 0 1 0
+ent.fb.sink 1326 sfx 1 bc8ccccd
+ent.fb.sink 1326 text 629 272 255 215 0 41c00000 72 +10
+ent.fb.sink 1360 sfx 0 00000000
+ent.fb.frame 1380 1 16 3 120 1 5 62 0 0 0 0 0 1 0
+ent.fb.frame 1394 1 15 3 130 1 5 62 1 0 0 0 0 1 0
+ent.fb.sink 1394 sfx 1 3c8ccccd
+ent.fb.sink 1394 text 651 367 255 215 0 41c00000 72 +10
+ent.fb.sink 1400 sfx 0 00000000
+ent.fb.trigger 1416 1 360 2 360
+ent.fb.frame 1416 2 0 3 430 0 5 62 0 359 0 1 0 1 0
+ent.fb.sink 1416 sfx 13 00000000
+ent.fb.sink 1416 flash 255 240 180 16
+ent.fb.sink 1416 trauma 3f733333
+ent.fb.sink 1416 text 640 656 255 220 40 42280000 120 TACTICAL NUKE!
+ent.fb.sink 1416 text 508 623 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 620 142 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 922 626 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 1214 146 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 611 170 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 1166 552 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 893 82 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 812 661 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 694 552 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 240 776 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 1033 367 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 978 371 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 1314 501 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 880 616 255 215 0 41c80000 72 +20
+ent.fb.sink 1416 text 713 248 255 215 0 41c80000 72 +20
+ent.fb.frame 1440 2 0 3 430 0 5 62 0 335 0 0 0 1 0
+ent.fb.sink 1440 sfx 0 00000000
+ent.fb.sink 1480 sfx 0 00000000
+ent.fb.frame 1500 2 0 3 430 0 5 62 0 275 0 0 0 1 0
+ent.fb.sink 1520 sfx 0 00000000
+ent.fb.frame 1560 2 0 3 430 0 5 62 0 215 0 0 0 1 0
+ent.fb.sink 1560 sfx 0 00000000
+ent.fb.sink 1600 sfx 0 00000000
+ent.fb.frame 1620 2 0 3 430 0 5 62 0 155 0 0 0 1 0
+ent.fb.sink 1640 sfx 0 00000000
+ent.fb.frame 1680 2 0 3 430 0 5 62 0 95 0 0 0 1 0
+ent.fb.sink 1680 sfx 0 00000000
+ent.fb.sink 1720 sfx 0 00000000
+ent.fb.frame 1740 2 0 3 430 0 5 62 0 35 0 0 0 1 0
+ent.fb.sink 1760 sfx 0 00000000
+ent.fb.rebuild 1775 2 133652670 0 6
+ent.fb.frame 1775 2 0 3 430 0 5 62 0 0 0 0 1 0 8
+ent.fb.frame 1800 2 0 3 430 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 1800 sfx 0 00000000
+ent.fb.sink 1840 sfx 0 00000000
+ent.fb.frame 1860 2 2 3 430 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 1880 sfx 0 00000000
+ent.fb.frame 1920 2 5 3 430 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 1920 sfx 0 00000000
+ent.fb.sink 1960 sfx 0 00000000
+ent.fb.frame 1980 2 7 3 430 0 5 62 0 0 0 0 0 0 8
+ent.fb.frame 1992 2 6 3 440 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 1992 sfx 1 3ca66667
+ent.fb.sink 1992 text 653 379 255 215 0 41c00000 72 +10
+ent.fb.sink 2000 sfx 0 00000000
+ent.fb.frame 2040 2 6 3 440 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2040 sfx 0 00000000
+ent.fb.sink 2080 sfx 0 00000000
+ent.fb.frame 2100 2 7 3 440 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2120 sfx 0 00000000
+ent.fb.frame 2160 2 10 3 440 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2160 sfx 0 00000000
+ent.fb.sink 2200 sfx 0 00000000
+ent.fb.frame 2220 2 13 3 440 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2240 sfx 0 00000000
+ent.fb.frame 2280 2 13 3 440 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2280 sfx 0 00000000
+ent.fb.sink 2320 sfx 0 00000000
+ent.fb.frame 2340 2 14 3 440 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2351 flash 255 40 40 8
+ent.fb.sink 2351 trauma 3f000000
+ent.fb.sink 2351 sfx 6 00000000
+ent.fb.sink 2360 sfx 0 00000000
+ent.fb.frame 2400 2 17 2 440 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2400 sfx 0 00000000
+ent.fb.sink 2440 sfx 0 00000000
+ent.fb.frame 2450 2 18 2 450 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 2450 sfx 1 3c333333
+ent.fb.sink 2450 text 647 557 255 215 0 41c00000 72 +10
+ent.fb.frame 2460 2 18 2 450 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2480 sfx 0 00000000
+ent.fb.frame 2520 2 18 2 450 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2520 sfx 0 00000000
+ent.fb.sink 2560 sfx 0 00000000
+ent.fb.frame 2580 2 21 2 450 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2600 sfx 0 00000000
+ent.fb.frame 2640 2 24 2 450 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2640 sfx 0 00000000
+ent.fb.sink 2680 sfx 0 00000000
+ent.fb.frame 2690 2 23 2 460 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 2690 sfx 1 bbcccccd
+ent.fb.sink 2690 text 636 557 255 215 0 41c00000 72 +10
+ent.fb.frame 2700 2 23 2 460 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2720 sfx 0 00000000
+ent.fb.frame 2742 2 23 2 470 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 2742 sfx 1 3acccccd
+ent.fb.sink 2742 text 641 462 255 215 0 41c00000 72 +10
+ent.fb.frame 2760 2 24 2 470 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2760 sfx 0 00000000
+ent.fb.sink 2800 sfx 0 00000000
+ent.fb.frame 2820 2 26 2 470 0 5 62 0 0 0 0 0 0 8
+ent.fb.frame 2822 2 25 2 480 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 2822 sfx 1 bc99999a
+ent.fb.sink 2822 text 628 462 255 215 0 41c00000 72 +10
+ent.fb.sink 2840 sfx 0 00000000
+ent.fb.frame 2874 2 24 2 490 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 2874 sfx 1 bc19999a
+ent.fb.sink 2874 text 634 367 255 215 0 41c00000 72 +10
+ent.fb.frame 2880 2 25 2 490 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2880 sfx 0 00000000
+ent.fb.frame 2890 2 24 2 500 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 2890 sfx 1 3c800000
+ent.fb.sink 2890 text 650 557 255 215 0 41c00000 72 +10
+ent.fb.sink 2920 sfx 0 00000000
+ent.fb.frame 2940 2 26 2 500 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 2960 sfx 0 00000000
+ent.fb.frame 2968 2 25 2 510 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 2968 sfx 1 bbcccccd
+ent.fb.sink 2968 text 636 253 255 215 0 41c00000 72 +10
+ent.fb.frame 2970 2 24 2 520 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 2970 sfx 1 bb99999a
+ent.fb.sink 2970 text 637 557 255 215 0 41c00000 72 +10
+ent.fb.frame 3000 2 24 2 520 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3000 sfx 0 00000000
+ent.fb.frame 3022 2 23 2 530 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3022 sfx 1 3b4ccccd
+ent.fb.sink 3022 text 642 462 255 215 0 41c00000 72 +10
+ent.fb.sink 3040 sfx 0 00000000
+ent.fb.frame 3060 2 23 2 530 0 5 62 0 0 0 0 0 0 8
+ent.fb.frame 3074 2 22 2 540 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3074 sfx 1 3c4ccccd
+ent.fb.sink 3074 text 648 367 255 215 0 41c00000 72 +10
+ent.fb.sink 3080 sfx 0 00000000
+ent.fb.frame 3120 2 22 2 540 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3120 sfx 0 00000000
+ent.fb.frame 3125 2 21 2 550 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3125 sfx 1 3b4ccccd
+ent.fb.sink 3125 text 642 281 255 215 0 41c00000 72 +10
+ent.fb.frame 3158 2 20 2 560 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3158 sfx 1 bc000000
+ent.fb.sink 3158 text 635 337 255 215 0 41c00000 72 +10
+ent.fb.sink 3158 sfx 4 00000000
+ent.fb.sink 3160 sfx 0 00000000
+ent.fb.frame 3180 2 20 2 560 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3200 sfx 0 00000000
+ent.fb.frame 3201 2 19 2 610 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3201 sfx 5 bb99999a
+ent.fb.sink 3201 trauma 3e800000
+ent.fb.sink 3201 text 637 636 255 140 40 41c00000 72 +50 KAMIKAZE
+ent.fb.frame 3203 2 18 2 620 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3203 sfx 1 bc99999a
+ent.fb.sink 3203 text 628 310 255 215 0 41c00000 72 +10
+ent.fb.frame 3240 2 18 2 620 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3240 sfx 0 00000000
+ent.fb.sink 3280 sfx 0 00000000
+ent.fb.frame 3293 2 17 2 630 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3293 sfx 1 3ca66667
+ent.fb.sink 3293 text 653 557 255 215 0 41c00000 72 +10
+ent.fb.frame 3300 2 17 2 630 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3320 sfx 0 00000000
+ent.fb.frame 3360 2 17 2 630 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3360 sfx 0 00000000
+ent.fb.frame 3394 2 16 2 640 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3394 sfx 1 3c000000
+ent.fb.sink 3394 text 645 367 255 215 0 41c00000 72 +10
+ent.fb.sink 3400 sfx 0 00000000
+ent.fb.frame 3407 2 15 2 650 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3407 sfx 1 3c800000
+ent.fb.sink 3407 text 650 -53 255 215 0 41c00000 72 +10
+ent.fb.frame 3420 2 15 2 650 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3440 sfx 0 00000000
+ent.fb.frame 3480 2 15 2 650 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3480 sfx 0 00000000
+ent.fb.sink 3520 sfx 0 00000000
+ent.fb.frame 3540 2 15 2 650 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3552 text 688 31 0 240 255 41b00000 65 RELATIVISTIC WARP EVASION!
+ent.fb.sink 3552 flash 0 200 255 6
+ent.fb.sink 3552 sfx 10 00000000
+ent.fb.sink 3560 sfx 0 00000000
+ent.fb.frame 3574 2 14 2 660 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3574 sfx 1 bc8ccccd
+ent.fb.sink 3574 text 629 533 255 215 0 41c00000 72 +10
+ent.fb.frame 3577 2 13 2 670 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3577 sfx 3 3c4ccccd
+ent.fb.sink 3577 text 648 177 255 215 0 41c00000 72 +10
+ent.fb.frame 3600 2 13 2 670 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3600 sfx 0 00000000
+ent.fb.sink 3640 sfx 0 00000000
+ent.fb.frame 3660 2 13 2 670 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3680 sfx 0 00000000
+ent.fb.frame 3720 2 13 2 670 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3720 sfx 0 00000000
+ent.fb.frame 3748 2 12 2 680 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3748 sfx 1 bc000000
+ent.fb.sink 3748 text 635 415 255 215 0 41c00000 72 +10
+ent.fb.sink 3760 sfx 0 00000000
+ent.fb.frame 3780 2 12 2 680 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3800 sfx 0 00000000
+ent.fb.frame 3840 2 12 2 680 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3840 sfx 0 00000000
+ent.fb.frame 3849 2 11 2 690 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3849 sfx 1 bacccccd
+ent.fb.sink 3849 text 639 569 255 215 0 41c00000 72 +10
+ent.fb.frame 3879 2 10 2 700 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3879 sfx 1 3c8ccccd
+ent.fb.sink 3879 text 651 7 255 215 0 41c00000 72 +10
+ent.fb.sink 3880 sfx 0 00000000
+ent.fb.frame 3900 2 10 2 700 0 5 62 0 0 0 0 0 0 8
+ent.fb.frame 3914 2 9 2 710 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3914 sfx 1 bacccccd
+ent.fb.sink 3914 text 639 367 255 215 0 41c00000 72 +10
+ent.fb.sink 3920 sfx 0 00000000
+ent.fb.frame 3960 2 9 2 710 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 3960 sfx 0 00000000
+ent.fb.frame 3966 2 8 2 720 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 3966 sfx 1 3bcccccd
+ent.fb.sink 3966 text 644 272 255 215 0 41c00000 72 +10
+ent.fb.sink 4000 sfx 0 00000000
+ent.fb.frame 4020 2 8 2 720 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4040 sfx 0 00000000
+ent.fb.frame 4080 2 8 2 720 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4080 sfx 0 00000000
+ent.fb.frame 4097 2 7 2 730 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 4097 sfx 3 bbcccccd
+ent.fb.sink 4097 text 636 177 255 215 0 41c00000 72 +10
+ent.fb.sink 4120 sfx 0 00000000
+ent.fb.frame 4140 2 7 2 730 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4160 sfx 0 00000000
+ent.fb.frame 4200 2 7 2 730 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4200 sfx 0 00000000
+ent.fb.sink 4218 flash 255 40 40 8
+ent.fb.sink 4218 trauma 3f000000
+ent.fb.sink 4218 sfx 6 00000000
+ent.fb.sink 4240 sfx 0 00000000
+ent.fb.frame 4258 2 6 1 740 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 4258 sfx 3 3b99999a
+ent.fb.sink 4258 text 643 169 255 215 0 41c00000 72 +10
+ent.fb.frame 4260 2 6 1 740 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4280 sfx 0 00000000
+ent.fb.sink 4295 text 653 147 0 240 255 41b00000 65 RELATIVISTIC WARP EVASION!
+ent.fb.sink 4295 flash 0 200 255 6
+ent.fb.sink 4295 sfx 10 00000000
+ent.fb.frame 4311 2 5 1 750 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 4311 sfx 3 bcb33333
+ent.fb.sink 4311 text 626 68 255 215 0 41c00000 72 +10
+ent.fb.frame 4320 2 5 1 750 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4320 sfx 0 00000000
+ent.fb.sink 4360 sfx 0 00000000
+ent.fb.frame 4380 2 5 1 750 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4400 sfx 0 00000000
+ent.fb.frame 4440 2 5 1 750 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4440 sfx 0 00000000
+ent.fb.sink 4480 sfx 0 00000000
+ent.fb.frame 4500 2 5 1 750 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4520 sfx 0 00000000
+ent.fb.frame 4560 2 5 1 750 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4560 sfx 0 00000000
+ent.fb.sink 4600 sfx 0 00000000
+ent.fb.frame 4620 2 5 1 750 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4640 sfx 0 00000000
+ent.fb.frame 4669 2 4 1 760 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 4669 sfx 3 bb99999a
+ent.fb.sink 4669 text 637 82 255 215 0 41c00000 72 +10
+ent.fb.frame 4680 2 4 1 760 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4680 sfx 0 00000000
+ent.fb.sink 4720 sfx 0 00000000
+ent.fb.frame 4740 2 4 1 760 0 5 62 0 0 0 0 0 0 8
+ent.fb.frame 4746 2 3 1 770 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 4746 sfx 1 bc99999a
+ent.fb.sink 4746 text 628 128 255 215 0 41c00000 72 +10
+ent.fb.sink 4760 sfx 0 00000000
+ent.fb.frame 4800 2 3 1 770 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4800 sfx 0 00000000
+ent.fb.sink 4840 sfx 0 00000000
+ent.fb.frame 4846 2 2 1 780 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 4846 sfx 3 3c19999a
+ent.fb.sink 4846 text 646 272 255 215 0 41c00000 72 +10
+ent.fb.frame 4860 2 2 1 780 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4880 sfx 0 00000000
+ent.fb.frame 4920 2 2 1 780 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 4920 sfx 0 00000000
+ent.fb.sink 4960 sfx 0 00000000
+ent.fb.frame 4980 2 2 1 780 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5000 sfx 0 00000000
+ent.fb.frame 5040 2 2 1 780 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5040 sfx 0 00000000
+ent.fb.sink 5080 sfx 0 00000000
+ent.fb.frame 5100 2 2 1 780 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5120 sfx 0 00000000
+ent.fb.frame 5137 2 1 1 790 0 5 62 1 0 0 0 0 0 8
+ent.fb.sink 5137 sfx 3 3acccccd
+ent.fb.sink 5137 text 641 177 255 215 0 41c00000 72 +10
+ent.fb.frame 5160 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5160 sfx 0 00000000
+ent.fb.sink 5200 sfx 0 00000000
+ent.fb.frame 5220 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5240 sfx 0 00000000
+ent.fb.frame 5280 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5280 sfx 0 00000000
+ent.fb.sink 5320 sfx 0 00000000
+ent.fb.frame 5340 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5360 sfx 0 00000000
+ent.fb.frame 5400 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5400 sfx 0 00000000
+ent.fb.sink 5440 sfx 0 00000000
+ent.fb.frame 5460 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5480 sfx 0 00000000
+ent.fb.frame 5520 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5520 sfx 0 00000000
+ent.fb.sink 5560 sfx 0 00000000
+ent.fb.frame 5580 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5600 sfx 0 00000000
+ent.fb.frame 5640 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5640 sfx 0 00000000
+ent.fb.sink 5680 sfx 0 00000000
+ent.fb.frame 5700 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5720 sfx 0 00000000
+ent.fb.frame 5760 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5760 sfx 0 00000000
+ent.fb.sink 5800 sfx 0 00000000
+ent.fb.frame 5820 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5840 sfx 0 00000000
+ent.fb.frame 5880 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5880 sfx 0 00000000
+ent.fb.sink 5920 sfx 0 00000000
+ent.fb.frame 5940 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 5960 sfx 0 00000000
+ent.fb.frame 6000 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6000 sfx 0 00000000
+ent.fb.sink 6040 sfx 0 00000000
+ent.fb.frame 6060 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6080 sfx 0 00000000
+ent.fb.frame 6120 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6120 sfx 0 00000000
+ent.fb.sink 6160 sfx 0 00000000
+ent.fb.frame 6180 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6200 sfx 0 00000000
+ent.fb.frame 6240 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6240 sfx 0 00000000
+ent.fb.sink 6280 sfx 0 00000000
+ent.fb.frame 6300 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6320 sfx 0 00000000
+ent.fb.frame 6360 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6360 sfx 0 00000000
+ent.fb.sink 6400 sfx 0 00000000
+ent.fb.frame 6420 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6440 sfx 0 00000000
+ent.fb.frame 6480 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6480 sfx 0 00000000
+ent.fb.sink 6520 sfx 0 00000000
+ent.fb.frame 6540 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6560 sfx 0 00000000
+ent.fb.frame 6600 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6600 sfx 0 00000000
+ent.fb.sink 6640 sfx 0 00000000
+ent.fb.frame 6660 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6680 sfx 0 00000000
+ent.fb.frame 6720 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6720 sfx 0 00000000
+ent.fb.sink 6760 sfx 0 00000000
+ent.fb.frame 6780 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6800 sfx 0 00000000
+ent.fb.frame 6840 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6840 sfx 0 00000000
+ent.fb.sink 6880 sfx 0 00000000
+ent.fb.frame 6900 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6920 sfx 0 00000000
+ent.fb.frame 6960 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 6960 sfx 0 00000000
+ent.fb.sink 7000 sfx 0 00000000
+ent.fb.frame 7020 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7040 sfx 0 00000000
+ent.fb.frame 7080 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7080 sfx 0 00000000
+ent.fb.sink 7120 sfx 0 00000000
+ent.fb.frame 7140 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7160 sfx 0 00000000
+ent.fb.frame 7200 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7200 sfx 0 00000000
+ent.fb.sink 7240 sfx 0 00000000
+ent.fb.frame 7260 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7280 sfx 0 00000000
+ent.fb.frame 7320 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7320 sfx 0 00000000
+ent.fb.sink 7360 sfx 0 00000000
+ent.fb.frame 7380 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7400 sfx 0 00000000
+ent.fb.frame 7440 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7440 sfx 0 00000000
+ent.fb.sink 7480 sfx 0 00000000
+ent.fb.frame 7500 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7520 sfx 0 00000000
+ent.fb.frame 7560 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7560 sfx 0 00000000
+ent.fb.sink 7600 sfx 0 00000000
+ent.fb.frame 7620 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7640 sfx 0 00000000
+ent.fb.frame 7680 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7680 sfx 0 00000000
+ent.fb.sink 7720 sfx 0 00000000
+ent.fb.frame 7740 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7760 sfx 0 00000000
+ent.fb.frame 7800 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7800 sfx 0 00000000
+ent.fb.sink 7840 sfx 0 00000000
+ent.fb.frame 7860 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7880 sfx 0 00000000
+ent.fb.frame 7920 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 7920 sfx 0 00000000
+ent.fb.sink 7960 sfx 0 00000000
+ent.fb.frame 7980 2 1 1 790 0 5 62 0 0 0 0 0 0 8
+ent.fb.sink 8000 sfx 0 00000000
+ent.fb.trigger 8021 2 360 3 360
+ent.fb.frame 8021 3 0 1 800 0 5 62 1 359 0 1 0 0 8
+ent.fb.sink 8021 sfx 1 bc99999a
+ent.fb.sink 8021 text 628 147 255 215 0 41c00000 72 +10
+ent.fb.frame 8040 3 0 1 800 0 5 62 0 340 0 0 0 0 8
+ent.fb.sink 8040 sfx 0 00000000
+ent.fb.sink 8080 sfx 0 00000000
+ent.fb.frame 8100 3 0 1 800 0 5 62 0 280 0 0 0 0 8
+ent.fb.sink 8120 sfx 0 00000000
+ent.fb.frame 8160 3 0 1 800 0 5 62 0 220 0 0 0 0 8
+ent.fb.sink 8160 sfx 0 00000000
+ent.fb.sink 8200 sfx 0 00000000
+ent.fb.frame 8220 3 0 1 800 0 5 62 0 160 0 0 0 0 8
+ent.fb.sink 8240 sfx 0 00000000
+ent.fb.frame 8280 3 0 1 800 0 5 62 0 100 0 0 0 0 8
+ent.fb.sink 8280 sfx 0 00000000
+ent.fb.sink 8320 sfx 0 00000000
+ent.fb.frame 8340 3 0 1 800 0 5 62 0 40 0 0 0 0 8
+ent.fb.sink 8360 sfx 0 00000000
+ent.fb.rebuild 8380 3 2549775502 0 4
+ent.fb.frame 8380 3 0 1 800 0 5 62 0 0 0 0 1 1 9
+ent.fb.frame 8400 3 0 1 800 0 5 62 0 0 0 0 0 1 9
+ent.fb.sink 8400 sfx 0 00000000
+ent.fb.sink 8440 sfx 0 00000000
+ent.fb.frame 8460 3 2 1 800 0 5 62 0 0 0 0 0 1 9
+ent.fb.sink 8480 sfx 0 00000000
+ent.fb.frame 8520 3 5 1 800 0 5 62 0 0 0 0 0 1 9
+ent.fb.sink 8520 sfx 0 00000000
+ent.fb.sink 8560 sfx 0 00000000
+ent.fb.frame 8580 3 7 1 800 0 5 62 0 0 0 0 0 1 9
+ent.fb.sink 8600 sfx 0 00000000
+ent.fb.frame 8640 3 7 1 800 0 5 62 0 0 0 0 0 1 9
+ent.fb.sink 8640 sfx 0 00000000
+ent.fb.sink 8680 sfx 0 00000000
+ent.fb.frame 8700 3 7 1 800 0 5 62 0 0 0 0 0 1 9
+ent.fb.sink 8720 sfx 0 00000000
+ent.fb.frame 8760 3 9 1 800 0 5 62 0 0 0 0 0 1 9
+ent.fb.sink 8760 sfx 0 00000000
+ent.fb.sink 8800 sfx 0 00000000
+ent.fb.frame 8820 3 12 1 800 0 5 62 0 0 0 0 0 1 9
+ent.fb.sink 8840 sfx 0 00000000
+ent.fb.frame 8877 3 13 1 810 0 5 62 1 0 0 0 0 1 8
+ent.fb.sink 8877 sfx 1 bc4ccccd
+ent.fb.sink 8877 text 632 338 255 215 0 41c00000 72 +10
+ent.fb.frame 8880 3 13 1 810 0 5 62 0 0 0 0 0 1 8
+ent.fb.sink 8880 sfx 0 00000000
+ent.fb.sink 8920 sfx 0 00000000
+ent.fb.frame 8922 3 12 1 820 0 5 62 1 0 0 0 0 1 7
+ent.fb.sink 8922 sfx 1 3c666667
+ent.fb.sink 8922 text 649 306 255 215 0 41c00000 72 +10
+ent.fb.frame 8940 3 12 1 820 0 5 62 0 0 0 0 0 1 7
+ent.fb.sink 8960 sfx 0 00000000
+ent.fb.frame 9000 3 13 1 820 0 5 62 0 0 0 0 0 1 7
+ent.fb.sink 9000 sfx 0 00000000
+ent.fb.sink 9040 sfx 0 00000000
+ent.fb.frame 9060 3 16 1 820 0 5 62 0 0 0 0 0 1 7
+ent.fb.frame 9074 3 16 1 830 0 5 62 1 0 0 0 0 1 6
+ent.fb.sink 9074 sfx 1 bc99999a
+ent.fb.sink 9074 text 628 367 255 215 0 41c00000 72 +10
+ent.fb.sink 9080 sfx 0 00000000
+ent.fb.frame 9120 3 17 1 830 0 5 62 0 0 0 0 0 1 6
+ent.fb.sink 9120 sfx 0 00000000
+ent.fb.frame 9154 3 16 1 840 0 5 62 1 0 0 0 0 1 5
+ent.fb.sink 9154 sfx 1 3acccccd
+ent.fb.sink 9154 text 641 367 255 215 0 41c00000 72 +10
+ent.fb.sink 9160 sfx 0 00000000
+ent.fb.frame 9180 3 16 1 840 0 5 62 0 0 0 0 0 1 5
+ent.fb.sink 9200 sfx 0 00000000
+ent.fb.frame 9240 3 18 1 840 0 5 62 0 0 0 0 0 1 5
+ent.fb.sink 9240 sfx 0 00000000
+ent.fb.sink 9280 sfx 0 00000000
+ent.fb.frame 9300 3 21 1 840 0 5 62 0 0 0 0 0 1 5
+ent.fb.sink 9320 sfx 0 00000000
+ent.fb.sink 9331 flash 255 40 40 8
+ent.fb.sink 9331 trauma 3f000000
+ent.fb.sink 9331 sfx 6 00000000
+ent.fb.frame 9360 3 22 0 840 0 5 62 0 0 0 0 0 1 5
+ent.fb.sink 9360 sfx 0 00000000
+ent.fb.sink 9400 sfx 0 00000000
+ent.fb.sink 9414 flash 255 40 40 8
+ent.fb.sink 9414 trauma 3f000000
+ent.fb.sink 9414 sfx 6 00000000
+ent.fb.frame 9420 3 22 -1 840 0 5 62 0 0 1 0 0 1 5
+ent.fb.sink 9440 sfx 0 00000000
+ent.fb.frame 9464 3 21 -1 850 0 5 62 1 0 1 0 0 1 4
+ent.fb.sink 9464 sfx 1 3b4ccccd
+ent.fb.sink 9464 text 642 130 255 215 0 41c00000 72 +10
+ent.fb.frame 9480 3 21 -1 850 0 5 62 0 0 1 0 0 1 4
+ent.fb.sink 9480 sfx 0 00000000
+ent.fb.frame 9498 3 20 -1 860 0 5 62 1 0 1 0 0 1 3
+ent.fb.sink 9498 sfx 1 3ca66667
+ent.fb.sink 9498 text 653 177 255 215 0 41c00000 72 +10
+ent.fb.frame 9500 3 19 -1 870 0 5 62 1 0 1 0 0 1 2
+ent.fb.sink 9500 sfx 1 3b99999a
+ent.fb.sink 9500 text 643 480 255 215 0 41c00000 72 +10
+ent.fb.sink 9520 sfx 0 00000000
+ent.fb.frame 9540 3 19 -1 870 0 5 62 0 0 1 0 0 1 2
+ent.fb.sink 9560 sfx 0 00000000
+ent.fb.sink 9586 flash 255 40 40 8
+ent.fb.sink 9586 trauma 3f000000
+ent.fb.sink 9586 sfx 6 00000000
+ent.fb.frame 9600 3 19 -2 870 0 5 62 0 0 1 0 0 1 2
+ent.fb.sink 9600 sfx 0 00000000
+ent.fb.frame 9630 3 18 -2 880 0 5 62 1 0 1 0 0 1 1
+ent.fb.sink 9630 sfx 2 3c000000
+ent.fb.sink 9630 text 645 82 255 215 0 41c00000 72 +10
+ent.fb.sink 9640 sfx 0 00000000
+ent.fb.frame 9660 3 18 -2 880 0 5 62 0 0 1 0 0 1 1
+ent.fb.sink 9680 sfx 0 00000000
+ent.fb.frame 9683 3 17 -2 890 0 5 62 1 0 1 0 0 1 0
+ent.fb.sink 9683 sfx 1 3b4ccccd
+ent.fb.sink 9683 text 642 617 255 215 0 41c00000 72 +10
+ent.fb.sink 9683 sfx 4 00000000
+ent.fb.done 9694 55 1 3 5 62 280 1 2

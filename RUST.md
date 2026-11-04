@@ -45,15 +45,16 @@
 | `-Wconversion` discipline | `clippy::as_conversion`, `#[deny(warnings)]` | CI Rust |
 | CMake/Make | Cargo workspace + `cargo-zigbuild` (Win/mac) | FreeBSD tier-2 nativo |
 
-## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6/7/8/9/10)
+## Estado do scaffold (Fases 1 + 2a/2b + 3 — completas; Fatias 4/4b/5/6/7/8/9/10/11)
 
 - `tools/dump_vectors.cc` — dumper do kernel puro + camada de entidades (sem
   SDL): rng, math, unit_grid, slots (3 scales), slot_edge, profile (waves
   1–75), fleet/player, pacing, score_hash, serialize, splines, trajetórias,
   os replays seedados `ent.*` (Fatia 4; starfield na Fatia 6), o replay
   roteirizado `score.*` (Fatia 7), o contexto de score da sessão
-  `ent.fs.*` (Fatia 8), o catálogo de níveis `level.*` (Fatia 9) e a
-  transição de fase `pt.*`/`ent.pt.*` (Fatia 10). Floats como **bits IEEE hex**
+  `ent.fs.*` (Fatia 8), o catálogo de níveis `level.*` (Fatia 9), a
+  transição de fase `pt.*`/`ent.pt.*` (Fatia 10) e a economia de bônus
+  `ent.fb.*` (Fatia 11). Floats como **bits IEEE hex**
   (`%08x`).
 - `golden/vectors-cpp.txt` — corpus (gerado localmente; ver golden/README.md).
 - `rust/kernel` — ports de RandomStream, mathx, formation (tabela em runtime),
@@ -63,14 +64,16 @@
   de entidades (Fatia 4b): dist (uid Lemire do libstdc++), textures/sink
   headless, game_object, bullets (seeker/relativístico/exaustão), bonus,
   explosions, alien (warp/decay/kamikaze/spin), player, fleet (AliensManager:
-  comboios, ocupação lazy, criação, drift, fire, wanderers) e session (Fatia 5:
+  comboios, ocupação lazy, criação, drift, fire, wanderers e a economia de
+  bônus com score vivo — Fatia 11) e session (Fatia 5:
   `EntitySession` — pipeline de tick da física fixa, a ordem canônica de
   produção atrás de um único `tick(dir, fire)` com `TickReport` por quadro;
   Fatia 8: dona do contexto de score — crédito por quadro, drenagem de
   milestones de escudo extra e `ExtraShield` no jogador, com
   `extra_shields` no `TickReport`; Fatia 10: dona da transição de fase —
   gatilho na armada finalizada, hold do fanfare, countdown que congela a
-  armada e rebuild pelo catálogo com um draw de RNG por wave) e
+  armada e rebuild pelo catálogo com um draw de RNG por wave; Fatia 11:
+  fia o `Score` vivo na kill chain e no pickup do nuke — `score_mut()`) e
   stars (Fatia 6: `StarsFields` — starfield de parallax com os transcendentais
   congelados como dados gravados) e score (Fatia 7: `Score` — economia de
   pontos: Add saturante, ledger fracionário de milestones de escudo extra,
@@ -264,6 +267,49 @@
   Rust: `session` (5 campos novos + `phase_transition_frames` pub),
   `stage_catalog` (a constante do fanfare) e `phase_transition_parity`
   (21º teste da suíte).
+- **Fatia 11 (fix31)**: economia de bônus na dinâmica viva da frota. O
+  `RollSmartBonusType` de produção com o `Score*` vivo — cap de estágio
+  (5 tipos gravados → `none` SEM consumir draw) e a máscara de ciclo
+  (`can(t)` zera o peso dos tipos já sorteados na wave) — e os gates por
+  kill do `CreateBonusMaybe` (`bonus_allowed_this_level` && !spawned &&
+  `--bonus_wait > 0`; o tipo escolhido é gravado ANTES do pod cair) entram
+  na kill chain do Rust: `do_bullets_collisions(…, score: Option<&mut
+  Score>)` threada até `create_bonus_maybe` → `roll_smart_bonus_type`, e o
+  `EntitySession::tick` passa o membro de produção (`Some(&mut
+  self.score)`) com `score_mut()` exposto (prelúdio golden). O harness do
+  `ent.fleet.*` mantém o `nullptr`: as 900 linhas commitadas não são
+  tocadas pela fiação — `fleet_parity` verde pós-fiação é a prova
+  executável. O C++ recebe só accessors de observabilidade read-only no
+  `managers.h` (`BonusAllowedThisLevel`/`BonusWait`/`BonusSpawnedThisLevel`,
+  precedente do `score.h` na Fatia 7) para as linhas distinguirem rolls
+  capped (economia no cap, sem draw) de waves que nunca rolaram. O cenário
+  também pegou um bug real de port: o `NukeAll` credita
+  `kScorePerAlienNuked` por alien via `score_` e o `nuke_all` do Rust não
+  conhecia score (nunca exercitado em paridade antes) — corrigido com o
+  mesmo threading (`player.do_bonus_collisions(…, score)`), inerte nas
+  seções anteriores (o banner `+20` do nuke só existe no `ent.fb.*`). O
+  corpus cresce 627 linhas `ent.fb.*` (total: 46.738): cenário de
+  catálogo REAL (cd1 → cd2 → cd3, nenhuma tabela sintética), Score vivo,
+  prelúdio pontuado (4 tipos gravados → o nuke é o único sorteável — spawn
+  determinístico sem gating de jogador), jogador estacionário na coluna das
+  balas, fanfares planos de 6,0 s (holds de exatos 360). Arco da seed 1
+  (busca 1..256, budget de 10k quadros): spawn do nuke no f975 (máscara
+  30→62, count 5) → pickup → `NukeAll` (+300, 15 aliens) → trigger f1416 →
+  rebuild f1775 (cd2 real, seed 133652670 do draw) → wave 2 com Bernoulli
+  false (nenhum drop; grind com mortes do jogador — destruição report-only,
+  o harness nunca responde ao flag) → trigger f8021 → rebuild f8380 (cd3
+  real, seed 2549775502) → wave 3 com Bernoulli true, wait=8 esgotado
+  pelos kills → roll capped no f9683 (sem draw, sem spawn) → done f9694
+  (55 kills, 1 spawn, máscara 62 preservada pelos rebuilds). Linhas: setup
+  (13 cols), 4× prelude, 219 frame (amostragem: cada 60 quadros + quadros
+  de evento; 15 cols com count/mask/allowed/wait), 397 sink (dreno TODO
+  quadro — linhas de sink caem em quadros sem frame row; a variante
+  `drain_sink_fb` do Rust só recusa carimbo velho), spawn, 2× trigger, 2×
+  rebuild, done. Gate duro: exatamente 1 spawn (nuke), count 5, máscara 62,
+  ≥1 roll capped, ≥1 rebuild, nível final ≥2. **Tolerância zero em todas as
+  colunas** (inteiros + constantes IEEE — nenhum ângulo chega às linhas).
+  Rust: `fleet`, `player`, `session` + `fleet_bonus_parity` (22º teste da
+  suíte).
 
 ## Comandos
 

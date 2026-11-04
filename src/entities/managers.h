@@ -312,6 +312,14 @@ class AliensManager {
     return *aliens_[i];
   }
 
+  // Golden-vector observability (RUST.md Fatia 11): the per-wave bonus drop
+  // gate. Read-only; the ent.fb.* corpus rows pin the wait countdown and the
+  // Bernoulli allowance so a capped roll (mask economy at its stage cap) is
+  // provably distinguished from a wave that simply never rolled.
+  [[nodiscard]] bool BonusAllowedThisLevel() const noexcept { return bonus_allowed_this_level_; }
+  [[nodiscard]] int BonusWait() const noexcept { return bonus_wait_; }
+  [[nodiscard]] bool BonusSpawnedThisLevel() const noexcept { return bonus_spawned_this_level_; }
+
  private:
   [[nodiscard]] int GetMaxConvoySize() const;
   void Creation();

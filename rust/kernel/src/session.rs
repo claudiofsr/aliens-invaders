@@ -175,12 +175,17 @@ impl EntitySession {
     pub fn tick(&mut self, dir: i32, fire: bool) -> TickReport {
         // Every call touches disjoint members, so the borrow checker sees
         // the same sequence the C++ method runs on its member objects.
+        // Fatia 11 wires the score economy into the kill chain: the smart
+        // bonus roll reads the stage cap and the cycle mask, and a chosen
+        // type is recorded before the pod drops -- the production `Score*`
+        // member, threaded per call.
         let collisions = self.fleet.do_bullets_collisions(
             &mut self.bullets,
             &mut self.explosions,
             &mut self.bonuses,
             &mut self.sink,
             Some(&self.player),
+            Some(&mut self.score),
         );
         // The production score-context block (TickFixedPhysics): credit the
         // frame's earnings, drain the extra-shield milestones and apply each
@@ -198,6 +203,7 @@ impl EntitySession {
             &mut self.explosions,
             &mut self.sink,
             Some(&mut self.fleet),
+            Some(&mut self.score),
         );
         // Production syncs the score's shield mirror here (the bonus-mask
         // economy reads it) and ends the frame with the destruction cinematic
@@ -337,6 +343,13 @@ impl EntitySession {
     /// mask): the kernel twin of the shell's `ctx_.score`.
     pub fn score(&self) -> &Score {
         &self.score
+    }
+
+    /// Mutable access to the economy: the save/continue wiring point (a
+    /// resumed session restores level, mask and ledger) and the golden
+    /// harness's prelude entry (`ent.fb.prelude` rows drive it).
+    pub fn score_mut(&mut self) -> &mut Score {
+        &mut self.score
     }
 
     /// Lifetime alien kills (regular + kamikaze).

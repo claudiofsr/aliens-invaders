@@ -29,6 +29,7 @@ use kernel::{
     fleet::{ConvoySpec, Fleet},
     formation,
     game_object::GameObject,
+    level_data,
     mathx::Coord,
     path::{self, Vec2f},
     player::Player,
@@ -195,6 +196,28 @@ fn drain_sink(sink: &mut EventSink, sec: &mut Rows, tag: &str, frame: i32) {
         !sec.peek_is(tag),
         "{tag}: corpus rows remain for f{frame} but the sink drained empty"
     );
+}
+
+/// `drain_sink` variant for the sampled ent.fb frame rows: the fleet-bonus
+/// corpus carries sink rows on frames that have NO frame row (the 40-frame
+/// shot heartbeat between sampled frames), so a sink row queued for a FUTURE
+/// frame is legitimate. Only a row stamped at or before the current frame is
+/// a divergence (a missed event); an extra event fails through the stamp and
+/// value asserts of the row it consumes out of turn.
+fn drain_sink_fb(sink: &mut EventSink, sec: &mut Rows, frame: i32) {
+    for ev in sink.drain() {
+        let row = sec.next("ent.fb.sink");
+        assert_eq!(i(&row, 1), frame, "ent.fb.sink: frame stamp");
+        assert_eq!(parse_sink(&row), ev, "ent.fb.sink f{frame}: event mismatch");
+    }
+    if let Some(head) = sec.q.front() {
+        if head[0] == "ent.fb.sink" {
+            assert!(
+                i(head, 1) > frame,
+                "ent.fb.sink: stale corpus rows at f{frame} (sink drained empty)"
+            );
+        }
+    }
 }
 
 // ---- ent.pix: headless dimension table -------------------------------------
@@ -635,7 +658,7 @@ fn player_tick(
     sink: &mut EventSink,
 ) {
     player.do_bombs_collisions(bombs, explosions, sink);
-    player.do_bonus_collisions(bonuses, explosions, sink, None);
+    player.do_bonus_collisions(bonuses, explosions, sink, None, None);
     bonuses.advance();
     player.move_player(dir);
     bullets.advance(Coord::new(-1, -1));
@@ -1805,4 +1828,326 @@ fn stars_parity() {
     assert!(expanded, "viewport growth never expanded the pool to 225");
     assert!(shrunk, "details drop never shrank the pool to 90");
     assert_eq!(sf.active_stars(), 90, "final density misfit");
+}
+
+// ---- Fleet bonus economy replay (Fatia 11) -----------------------------------
+
+const FB_LEVEL: i32 = 1;
+/// `GameRules::Progression::kWavesPerStage` -- the ctor-side max_level of the
+/// dumper scenario; `level_data::get_total_levels()` is the same 15 and feeds
+/// the session's internal rebuilds.
+const FB_MAX_LEVEL: i32 = 15;
+const FB_RNG_SEED: u32 = 0xFB1EED;
+const FB_BULLETS_SEED: u32 = 0xFB0111;
+const FB_BOMBS_SEED: u32 = 0xFB0222;
+const FB_EXPLOSIONS_SEED: u32 = 0xFB0333;
+const FB_CAP: i32 = 10000;
+const FB_TAIL: i32 = 10;
+/// The scored prelude: four mask bits recorded before wave 1, which leaves
+/// the nuke (bit 5) as the only type the weighted draw can still choose --
+/// spawn determinism without any player-side gating.
+const FB_PRELUDE_TYPES: [i32; 4] = [1, 2, 3, 4];
+
+/// Scenario-coverage flags; the seed search accepts a seed only when the full
+/// economy arc fired -- the dumper's RunFleetBonusReplay gate, mirrored.
+#[derive(Default)]
+struct FbOutcome {
+    kills: i32,
+    spawns: i32,
+    spawn_type: i32,
+    rebuilds: i32,
+    destroyed_frames: i32,
+    capped_roll_frames: i32,
+    capped_evidence_frame: i32,
+    frames: i32,
+    final_level: i32,
+    final_count: i32,
+    final_mask: i32,
+}
+
+impl FbOutcome {
+    fn covered(&self) -> bool {
+        self.spawns == 1
+            && self.spawn_type == BonusType::ExtraNuke as i32
+            && self.final_count == score::MAX_BONUSES_PER_STAGE
+            && self.final_mask == 62
+            && self.capped_roll_frames >= 1
+            && self.rebuilds >= 1
+            && self.final_level >= 2
+            && self.frames < FB_CAP
+    }
+}
+
+fn fb_replay(seed: u32, mut rec: Option<&mut Rows>) -> FbOutcome {
+    let grid = formation::recompute(METRICS.scale);
+
+    let mut bullets = BulletsManager::new(FB_BULLETS_SEED);
+    let mut bombs = BulletsManager::new(FB_BOMBS_SEED);
+    let mut bonuses = BonusManager::new();
+    let mut explosions = ExplosionsManager::new(2, grid.width);
+    explosions.seed_random(FB_EXPLOSIONS_SEED);
+    bullets.set_metrics(METRICS);
+    bombs.set_metrics(METRICS);
+    bonuses.set_metrics(METRICS);
+    explosions.set_metrics(METRICS.scale);
+    let sink = EventSink::default();
+
+    // The REAL level-1 catalog: the session arms every later wave from
+    // level_data internally, so no synthetic table exists anywhere in this
+    // scenario -- the economy rides the production wave pipeline end to end.
+    let fleet = Fleet::new(
+        FB_LEVEL,
+        level_data::get_convoy_data(1).to_vec(),
+        level_data::paths().to_vec(),
+        METRICS,
+        FB_MAX_LEVEL,
+        seed,
+    );
+    let player = Player::new(METRICS);
+    let lethal = grid.width as f32 * 1.4;
+
+    // Flat 6.0 s fanfares: the hold formula is pinned by pt.hold; this
+    // scenario pins the economy, so every hold is exactly 360 frames.
+    let mut session = EntitySession::new(
+        fleet,
+        player,
+        bullets,
+        bombs,
+        bonuses,
+        explosions,
+        sink,
+        lethal,
+        METRICS,
+        FB_RNG_SEED,
+        [6.0; 15],
+    );
+
+    // The scored prelude -- the dumper records the four types on the live
+    // Score before the first frame.
+    for t in FB_PRELUDE_TYPES {
+        session.score_mut().record_bonus_spawned(t);
+    }
+
+    if let Some(sec) = rec.as_deref_mut() {
+        let row = sec.next("ent.fb.setup");
+        assert_eq!(u(&row, 1) as u32, seed, "setup fleet seed");
+        assert_eq!(u(&row, 2) as u32, FB_RNG_SEED, "setup rng seed");
+        assert_eq!(u(&row, 3) as u32, FB_BULLETS_SEED, "setup bullets seed");
+        assert_eq!(u(&row, 4) as u32, FB_BOMBS_SEED, "setup bombs seed");
+        assert_eq!(u(&row, 5) as u32, FB_EXPLOSIONS_SEED, "setup explosions seed");
+        assert_eq!(i(&row, 6), METRICS.win_w, "setup win_w");
+        assert_eq!(i(&row, 7), METRICS.win_h, "setup win_h");
+        assert_eq!(hex32(&row[8]), METRICS.scale.to_bits(), "setup scale");
+        assert_eq!(hex32(&row[9]), lethal.to_bits(), "setup lethal radius");
+        assert_eq!(i(&row, 10), session.player().shield(), "setup initial shield");
+        assert_eq!(i(&row, 11), session.score().level(), "setup level");
+        assert_eq!(i(&row, 12), FB_CAP, "setup cap");
+        assert_eq!(i(&row, 13), FB_TAIL, "setup tail");
+        for (k, t) in FB_PRELUDE_TYPES.iter().enumerate() {
+            let row = sec.next("ent.fb.prelude");
+            assert_eq!(sz(&row, 1), k, "prelude idx");
+            assert_eq!(i(&row, 2), *t, "prelude {k} type");
+            assert_eq!(
+                i(&row, 3),
+                session.score().stage_bonuses_spawned_count(),
+                "prelude {k} count"
+            );
+            assert_eq!(
+                u(&row, 4) as u32,
+                session.score().stage_bonus_mask(),
+                "prelude {k} mask"
+            );
+        }
+    }
+
+    let mut out = FbOutcome { capped_evidence_frame: -1, ..FbOutcome::default() };
+    let mut prev_count = session.score().stage_bonuses_spawned_count();
+    let mut prev_mask = session.score().stage_bonus_mask();
+
+    let mut f = 0i32;
+    while f < FB_CAP {
+        let level_before = session.score().level();
+        // The stationary player shares one lane with the bullet column (same
+        // discipline as ent.pt); destruction is report-only on both sides --
+        // the harness never acts on the flag, the dead man keeps firing.
+        let report = session.tick(0, true);
+        out.kills += report.collisions.total_hits;
+        if report.player_destroyed {
+            out.destroyed_frames += 1;
+        }
+
+        // File order inside one frame: trigger, rebuild, spawn, frame, sink.
+        if let Some(sec) = rec.as_deref_mut() {
+            if report.transition_started {
+                let row = sec.next("ent.fb.trigger");
+                assert_eq!(i(&row, 1), f, "trigger frame");
+                assert_eq!(i(&row, 2), level_before, "completed level");
+                assert_eq!(i(&row, 3), report.transition_frames, "f{f} hold frames");
+                assert_eq!(i(&row, 4), session.score().level(), "f{f} new level");
+                assert_eq!(i(&row, 5), WARP_DURATION_FRAMES, "f{f} warp frames");
+            }
+        }
+        if report.rebuilt {
+            out.rebuilds += 1;
+            if let Some(sec) = rec.as_deref_mut() {
+                let row = sec.next("ent.fb.rebuild");
+                assert_eq!(i(&row, 1), f, "rebuild frame");
+                assert_eq!(i(&row, 2), report.rebuild_level, "f{f} rebuild level");
+                assert_eq!(u(&row, 3) as u32, report.rebuild_seed, "f{f} rebuild seed");
+                assert_eq!(
+                    sz(&row, 4),
+                    session.fleet().alien_count(),
+                    "f{f} alive right after rebuild"
+                );
+                assert_eq!(
+                    i(&row, 5),
+                    stage_catalog::get_profile(report.rebuild_level, FB_MAX_LEVEL).convoy_count,
+                    "f{f} rebuilt profile convoy_count"
+                );
+            }
+        }
+
+        // Spawn detection through the public economy: the count only grows
+        // when the kill chain recorded a chosen type, and the mask delta
+        // names it (highest new bit, mirroring the dumper's loop).
+        let count = session.score().stage_bonuses_spawned_count();
+        let mask = session.score().stage_bonus_mask();
+        let mut spawned = false;
+        if count > prev_count {
+            spawned = true;
+            out.spawns += 1;
+            let new_bit = mask & !prev_mask;
+            let mut kind = 0i32;
+            for b in 1..=score::MAX_BONUSES_PER_STAGE {
+                if new_bit & (1u32 << b) != 0 {
+                    kind = b;
+                }
+            }
+            out.spawn_type = kind;
+            if let Some(sec) = rec.as_deref_mut() {
+                let row = sec.next("ent.fb.spawn");
+                assert_eq!(i(&row, 1), f, "spawn frame");
+                assert_eq!(i(&row, 2), session.score().level(), "f{f} spawn wave");
+                assert_eq!(i(&row, 3), kind, "f{f} spawn type");
+                assert_eq!(i(&row, 4), count, "f{f} count after spawn");
+                assert_eq!(u(&row, 5) as u32, mask, "f{f} mask after spawn");
+            }
+        }
+        prev_count = count;
+        prev_mask = mask;
+
+        // Capped-roll evidence: the drop gate was open and the wait exhausted
+        // on a killing frame with the economy at its cap -- a roll that
+        // provably returned none WITHOUT consuming a draw.
+        let capped_roll = session.fleet().bonus_allowed_this_level()
+            && session.fleet().bonus_wait() <= 0
+            && !session.fleet().bonus_spawned_this_level()
+            && report.collisions.total_hits > 0
+            && count >= score::MAX_BONUSES_PER_STAGE
+            && !spawned;
+        if capped_roll {
+            out.capped_roll_frames += 1;
+            if out.capped_evidence_frame < 0 {
+                out.capped_evidence_frame = f;
+            }
+        }
+
+        if let Some(sec) = rec.as_deref_mut() {
+            // The dumper's sampling rule: every 60th frame plus every event
+            // frame (kill, spawn, trigger, rebuild, capped roll).
+            if f % 60 == 0
+                || report.collisions.total_hits > 0
+                || spawned
+                || report.transition_started
+                || report.rebuilt
+                || capped_roll
+            {
+                let row = sec.next("ent.fb.frame");
+                assert_eq!(i(&row, 1), f, "frame idx");
+                assert_eq!(i(&row, 2), session.score().level(), "f{f} level");
+                assert_eq!(sz(&row, 3), session.fleet().alien_count(), "f{f} alive");
+                assert_eq!(i(&row, 4), session.player().shield(), "f{f} shield");
+                assert_eq!(u(&row, 5), session.score().value(), "f{f} score");
+                assert_eq!(i(&row, 6), session.bonuses().nb(), "f{f} pods");
+                assert_eq!(i(&row, 7), count, "f{f} spawned count");
+                assert_eq!(u(&row, 8) as u32, mask, "f{f} mask");
+                assert_eq!(i(&row, 9), report.collisions.total_hits, "f{f} hits");
+                assert_eq!(i(&row, 10), report.transition_remaining, "f{f} remaining");
+                assert_eq!(
+                    i(&row, 11),
+                    i32::from(report.player_destroyed),
+                    "f{f} destroyed"
+                );
+                assert_eq!(
+                    i(&row, 12),
+                    i32::from(report.transition_started),
+                    "f{f} triggered"
+                );
+                assert_eq!(i(&row, 13), i32::from(report.rebuilt), "f{f} rebuilt");
+                assert_eq!(
+                    i(&row, 14),
+                    i32::from(session.fleet().bonus_allowed_this_level()),
+                    "f{f} allowed"
+                );
+                assert_eq!(i(&row, 15), session.fleet().bonus_wait(), "f{f} wait");
+            }
+            drain_sink_fb(session.sink_mut(), sec, f);
+        } else {
+            session.sink_mut().drain();
+        }
+
+        if out.capped_evidence_frame >= 0 && f - out.capped_evidence_frame >= FB_TAIL {
+            f += 1;
+            break;
+        }
+        f += 1;
+    }
+
+    out.frames = f;
+    out.final_level = session.score().level();
+    out.final_count = session.score().stage_bonuses_spawned_count();
+    out.final_mask = session.score().stage_bonus_mask() as i32;
+    if let Some(sec) = rec.as_deref_mut() {
+        let row = sec.next("ent.fb.done");
+        assert_eq!(i(&row, 1), out.frames, "done frames");
+        assert_eq!(i(&row, 2), out.kills, "done kills");
+        assert_eq!(i(&row, 3), out.spawns, "done spawns");
+        assert_eq!(i(&row, 4), out.final_level, "done final level");
+        assert_eq!(i(&row, 5), out.final_count, "done final count");
+        assert_eq!(i(&row, 6), out.final_mask, "done final mask");
+        assert_eq!(i(&row, 7), out.destroyed_frames, "done destroyed frames");
+        assert_eq!(i(&row, 8), out.capped_roll_frames, "done capped frames");
+        assert_eq!(i(&row, 9), out.rebuilds, "done rebuilds");
+        sec.done("ent.fb");
+    }
+    out
+}
+
+/// The bonus-economy contract (RUST.md Fatia 11): with a live Score wired
+/// into the kill chain, `RollSmartBonusType` honors the stage cap (no draw
+/// consumed at 5 recorded types) and the cycle mask (recorded types are
+/// zero-weight, so the prelude makes the wave-1 spawn deterministically the
+/// nuke), `RecordBonusSpawned` lands before the pod drops, and `Rebuild`
+/// keeps the mask while re-drawing wait+Bernoulli -- so the first capped roll
+/// fires in the first post-spawn wave whose gate allows drops. The full arc
+/// rides the REAL catalog (cd1 -> cd2 -> cd3) through two wave transitions,
+/// a nuke pickup, and player destruction (report-only, no shell response).
+#[test]
+fn fleet_bonus_parity() {
+    let rows = load_rows();
+
+    // Deterministic seed search: the first seed whose economy arc completes
+    // inside the budget -- the exact loop of DumpEntityFleetBonus.
+    let mut chosen = 0u32;
+    for s in 1u32..=256 {
+        if fb_replay(s, None).covered() {
+            chosen = s;
+            break;
+        }
+    }
+    assert_ne!(chosen, 0, "no fleet-bonus seed satisfied the coverage gate");
+
+    let mut sec = section(&rows, "ent.fb.");
+    let recorded = fb_replay(chosen, Some(&mut sec));
+    assert!(recorded.covered(), "recorded replay lost coverage");
 }

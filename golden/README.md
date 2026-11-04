@@ -5,7 +5,8 @@ cada linha é um fato determinístico do núcleo puro e da camada de entidades
 (RNG, math, super-tabela honeycomb, catálogo de stages, pacing, hash de
 scores, serialização do ledger, splines/trajetórias, a economia de score
 `score.*`, replays seedados `ent.*` gravados na ordem de tick de produção, o
-catálogo de comboios `level.*` e a transição de fase `pt.*`/`ent.pt.*`).
+catálogo de comboios `level.*`, a transição de fase `pt.*`/`ent.pt.*` e a
+economia de bônus `ent.fb.*`).
 
 ## Regenerar (após QUALQUER mudança no kernel puro C++)
 
@@ -41,7 +42,11 @@ Revise o `git diff` do arquivo antes de commitar: os vetores SÃO a especificaç
   fórmula do hold da transição — max/ceil em f32 sobre as bordas de bake do
   fanfare — e o warp de 360 quadros) e `ent.pt.*` (o arco vivo: trigger,
   hold de 361 quadros, countdown com a armada congelada, rebuild no
-  catálogo real de nível 2 e os quadros de cauda).
+  catálogo real de nível 2 e os quadros de cauda), `ent.fb.*` (Fatia 11: a
+  economia de bônus no replay multi-wave do catálogo real cd1→cd2→cd3 —
+  prelúdio pontuado, spawn determinístico do nuke pela máscara, pickup +
+  `NukeAll` pontuado, duas transições de wave e o roll capped sem draw com
+  a economia no cap).
 - Ordem de emissão é fixa (ver `tools/dump_vectors.cc`); streams RNG são
   sequenciais — a ordem dos draws faz parte do contrato.
 
@@ -80,5 +85,13 @@ consome é a mesma já coberta pela política da Fase 3. As durações de
 fanfare são INPUTS roteirizados (o WAV baked é dependente do dispositivo em
 ±1 sample): o corpus fixa a tabela do cenário e a fórmula que a transforma
 em quadros de countdown.
+`ent.fb.*` (Fatia 11) idem — tolerância zero: as colunas são inteiras
+(contagens, máscaras, carimbos de quadro) + constantes IEEE; nenhum ângulo
+chega às linhas. O dreno do sink respeita a amostragem de frames: como as
+frame rows saem só a cada 60 quadros (+ eventos), linhas de sink de quadros
+futuros (o heartbeat de tiro a cada 40) ficam legitimamente na fila — a
+variante `drain_sink_fb` do teste só falha em carimbo velho (≤ quadro
+corrente); evento a mais falha no carimbo/valor da linha consumida fora de
+turno.
 O gate estrutural
 `entity_corpus_present` foi removido: a paridade completa o substitui.
