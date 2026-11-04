@@ -358,6 +358,16 @@ impl Trajectory {
         self.base_cruise = base_cruise;
     }
 
+    /// Twin of the C++ `Trajectory::metrics_` POINTER ALIAS: the trajectory
+    /// reads the manager's live snapshot, so `AliensManager::SetMetrics`
+    /// reaches every trajectory without a per-alien call. The Rust copy must
+    /// be re-pushed explicitly -- the fleet does it from `set_metrics`, the
+    /// same instant the shell distributes the snapshot (before every resize
+    /// cascade).
+    pub fn set_metrics(&mut self, metrics: ViewportMetrics) {
+        self.metrics = metrics;
+    }
+
     pub fn base_cruise(&self) -> (i32, i32) {
         self.base_cruise
     }

@@ -137,6 +137,12 @@ class Alien {
   /// Warp-transit flag: while set, the physical colliders are deactivated
   /// (bullets fly through) and the starship cannot be destroyed.
   [[nodiscard]] bool IsWarping() const noexcept { return is_warping_; }
+  /// Read-only render-transform and warp-destination state (golden-vector
+  /// recording, Fatia 13): OnResize rescales the float transform separately
+  /// from the int simulation position and re-points a mid-warp Alien14 at
+  /// the rescaled destination -- the ent.rz.alien rows pin both.
+  [[nodiscard]] const Vec2f& TransformPosition() const noexcept { return transform_.position; }
+  [[nodiscard]] Coord WarpDest() const noexcept { return warp_dest_; }
   [[nodiscard]] float GetGreatestRadius() const noexcept {
     const float hw = static_cast<float>(Width()) * 0.5f;
     const float hh = static_cast<float>(Height()) * 0.5f;

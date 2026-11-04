@@ -50,6 +50,7 @@ use crate::bonus::BonusManager;
 use crate::bullets::BulletsManager;
 use crate::explosions::ExplosionsManager;
 use crate::fleet::{CollisionSummary, Fleet};
+use crate::formation;
 use crate::highscore::HighScores;
 use crate::level_data;
 use crate::mathx::Coord;
@@ -77,6 +78,9 @@ pub const DETAILS_OSD_SECONDS: f64 = 1.5;
 pub const NOVA_SKIP_DIVISOR: i32 = 6;
 /// The destruction cinematic becomes skippable after 1/4 of its frames.
 pub const DESTRUCTION_SKIP_DIVISOR: i32 = 4;
+/// GameRules::Fleet::kKamikazeBlastRadiusMultiplier (golden-vector policed
+/// copy): the lethal proximity radius is the formation grid width times this.
+pub const KAMIKAZE_BLAST_RADIUS_MULTIPLIER: f32 = 1.4;
 
 // The transition-overlay alpha knees (CombatSession::Run): ramp in over the
 // first 18% of the hold, full between the knees, ramp out over the last 22%.
@@ -194,6 +198,26 @@ pub struct TickReport {
 /// builds the managers (seeds and metrics are scenario inputs), hands them
 /// over once, and then only drives `tick` and reads state back through the
 /// accessors.
+/// Outcome of `apply_resolution_change` -- the four exits of the production
+/// guard chain (CombatSession::ApplyResolutionChange). The parity test
+/// rebuilds the ent.rz.resize rows from this plus the post-cascade state.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ResizeOutcome {
+    /// Non-positive size: production returns without touching anything.
+    Invalid,
+    /// First call: the window size is latched WITHOUT scaling (lazy init).
+    Latched,
+    /// Same size as the applied one: early return, zero state change.
+    NoOp,
+    /// Full cascade applied; carries the cumulative float ratios computed
+    /// from the previously applied size, and that previous size.
+    Applied {
+        rx: f32,
+        ry: f32,
+        prev_applied: (i32, i32),
+    },
+}
+
 pub struct EntitySession {
     fleet: Fleet,
     player: Player,
@@ -214,6 +238,12 @@ pub struct EntitySession {
     /// Viewport metrics for catalog rebuilds (Fatia 10): `Fleet::new` needs
     /// them and the session outlives any single wave.
     metrics: ViewportMetrics,
+    /// The resolution the entities currently live in (Fatia 13): the
+    /// production `applied_width_/applied_height_` pair. Starts at 0 so the
+    /// first `apply_resolution_change` latches without scaling, and every
+    /// later cascade divides by it (cumulative ratios).
+    applied_w: i32,
+    applied_h: i32,
     /// The production `ctx_.rng` role: one `next_u32` per rebuild seeds the
     /// new wave.
     rng: RandomStream,
@@ -278,6 +308,8 @@ impl EntitySession {
             score: Score::new(),
             kills: 0,
             metrics,
+            applied_w: 0,
+            applied_h: 0,
             rng: RandomStream::new(rebuild_seed),
             fanfare_durations,
             phase_frames: 0,
@@ -499,6 +531,65 @@ impl EntitySession {
     /// three upgrades. Production has NO re-apply guard -- a second cheat
     /// stacks the upgrades up to the player caps (the ent.mf.cheat rows pin
     /// both passes). The flash and floating text are shell-side.
+    /// Twin of CombatSession::ApplyResolutionChange (combat_session.cc),
+    /// minus the shell tail (refresh-rate query, pacer reconfigure, pause
+    /// flag -- device-dependent, out of kernel scope) and minus the starfield
+    /// step: stars are a consumer-owned subsystem whose resize path is pinned
+    /// separately (ent.stars rows, Fatia 9). The order IS the contract:
+    /// guard chain, cumulative FLOAT ratios from the applied size, metrics
+    /// distribution FIRST (the cascade's clamps must see the new viewport),
+    /// then the per-entity cascade in canonical order, the lethal-proximity
+    /// refresh and the per-axis max-session-size ratchet.
+    pub fn apply_resolution_change(&mut self, nw: i32, nh: i32) -> ResizeOutcome {
+        if nw <= 0 || nh <= 0 {
+            return ResizeOutcome::Invalid;
+        }
+        if self.applied_w <= 0 || self.applied_h <= 0 {
+            self.applied_w = nw;
+            self.applied_h = nh;
+            return ResizeOutcome::Latched;
+        }
+        if nw == self.applied_w && nh == self.applied_h {
+            return ResizeOutcome::NoOp;
+        }
+        let prev = (self.applied_w, self.applied_h);
+        let rx = nw as f32 / prev.0 as f32;
+        let ry = nh as f32 / prev.1 as f32;
+        let m = ViewportMetrics {
+            win_w: nw,
+            win_h: nh,
+            scale: self.metrics.scale,
+        };
+        self.bullets.set_metrics(m);
+        self.bombs.set_metrics(m);
+        self.bonuses.set_metrics(m);
+        self.explosions.set_metrics(m.scale);
+        self.player.set_metrics(m);
+        self.fleet.set_metrics(m);
+        self.player.on_resize(rx, ry);
+        self.fleet.on_resize(rx, ry);
+        self.bullets.on_resize(rx, ry);
+        self.bombs.on_resize(rx, ry);
+        self.bonuses.on_resize(rx, ry);
+        self.explosions.on_resize(rx, ry);
+        // UpdateLethalProximity: the formation grid is NOT recomputed by a
+        // resize (that belongs to the graphics-shell scale path), so the
+        // refreshed radius reads the same static grid width at the unchanged
+        // scale -- the ent.rz.resize rows pin that invariant.
+        self.lethal_radius =
+            formation::recompute(m.scale).width as f32 * KAMIKAZE_BLAST_RADIUS_MULTIPLIER;
+        self.max_session_size.x = self.max_session_size.x.max(nw);
+        self.max_session_size.y = self.max_session_size.y.max(nh);
+        self.metrics = m;
+        self.applied_w = nw;
+        self.applied_h = nh;
+        ResizeOutcome::Applied {
+            rx,
+            ry,
+            prev_applied: prev,
+        }
+    }
+
     pub fn apply_cheat(&mut self) {
         self.cheated = true;
         self.score.set_cheated(true);
@@ -688,6 +779,38 @@ impl EntitySession {
     /// the golden harness's script entry (`hs.*` rows drive it).
     pub fn highscores_mut(&mut self) -> &mut HighScores {
         &mut self.highscores
+    }
+
+    /// The resolution the entities currently live in (Fatia 13 observability).
+    pub fn applied_size(&self) -> (i32, i32) {
+        (self.applied_w, self.applied_h)
+    }
+
+    /// Kamikaze lethal proximity radius in design pixels (Fatia 13: the
+    /// resize cascade refreshes it; the ent.rz.resize rows pin the value).
+    pub fn lethal_radius(&self) -> f32 {
+        self.lethal_radius
+    }
+
+    // Scenario injectors (Fatia 13): the resize corpus scripts turning bombs,
+    // a relativistic oscillator, a supply pod and debris bursts at fixed
+    // frames -- the same role the dumper's direct manager calls play on the
+    // C++ side. Mutable access limited to the entity managers, mirroring the
+    // score_mut/highscores_mut harness precedent.
+    pub fn bullets_mut(&mut self) -> &mut BulletsManager {
+        &mut self.bullets
+    }
+
+    pub fn bombs_mut(&mut self) -> &mut BulletsManager {
+        &mut self.bombs
+    }
+
+    pub fn bonuses_mut(&mut self) -> &mut BonusManager {
+        &mut self.bonuses
+    }
+
+    pub fn explosions_mut(&mut self) -> &mut ExplosionsManager {
+        &mut self.explosions
     }
 
     pub fn max_session_size(&self) -> Coord {

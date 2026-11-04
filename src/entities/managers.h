@@ -320,6 +320,15 @@ class AliensManager {
   [[nodiscard]] int BonusWait() const noexcept { return bonus_wait_; }
   [[nodiscard]] bool BonusSpawnedThisLevel() const noexcept { return bonus_spawned_this_level_; }
 
+  /// Read-only fleet internals (golden-vector recording, Fatia 13): the
+  /// resize cascade recomputes the convoy metrics and re-clamps the cruise
+  /// base, and the ent.rz.fleet rows pin every step of that update.
+  [[nodiscard]] Coord BaseCruise() const noexcept { return base_cruise_; }
+  [[nodiscard]] int MaxConvoySize() const noexcept { return max_convoy_size_; }
+  [[nodiscard]] int OriginalMaxConvoySize() const noexcept { return original_max_convoy_size_; }
+  [[nodiscard]] int MinCruiseX() const noexcept { return min_cruise_x_; }
+  [[nodiscard]] int MaxCruiseX() const noexcept { return max_cruise_x_; }
+
  private:
   [[nodiscard]] int GetMaxConvoySize() const;
   void Creation();
@@ -373,6 +382,10 @@ class Player {
   void DrawInterpolated(float alpha, float angle = 0.0f) const;
 
   [[nodiscard]] int Shield() const noexcept { return shield_; }
+  /// Read-only subpixel carry (golden-vector recording, Fatia 13): the
+  /// resize cascade rescales fx_ directly, and the ent.rz.player rows pin
+  /// the fractional state that drives the post-resize movement math.
+  [[nodiscard]] float Fx() const noexcept { return fx_; }
   /// Read-only upgrade levels (golden-vector recording and headless tests).
   [[nodiscard]] int FireLevel() const noexcept { return fire_level_; }
   [[nodiscard]] int MultiFire() const noexcept { return multi_fire_; }

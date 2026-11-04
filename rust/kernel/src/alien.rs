@@ -15,11 +15,11 @@
 
 use crate::formation::{self, MAX_GRID_ROWS};
 use crate::game_object::{advance_toward, advance_turn_deg, clamp_step_to_budget, GameObject};
-use crate::mathx::{fast_round_f32, Coord};
+use crate::mathx::{fast_round_f32, fast_round_f64, Coord};
 use crate::path::Vec2f;
 use crate::sink::EventSink;
 use crate::textures::{dims, TextureId};
-use crate::trajectory::{Stage, Trajectory};
+use crate::trajectory::{Stage, Trajectory, ViewportMetrics};
 use std::sync::OnceLock;
 
 // GameRules constants (golden-vector policed copies of src/core/constants.h).
@@ -215,6 +215,54 @@ impl Alien {
     /// alien moves -- reproducing the pointer's read-at-use semantics exactly.
     pub fn set_base_cruise(&mut self, base_cruise: (i32, i32)) {
         self.trajectory.set_base_cruise(base_cruise);
+    }
+
+    /// Pushes a viewport snapshot into the aliased trajectory copy (the C++
+    /// twin reads the manager's `metrics_` through a pointer -- see
+    /// `Trajectory::set_metrics`).
+    pub fn set_metrics(&mut self, m: ViewportMetrics) {
+        self.trajectory.set_metrics(m);
+    }
+
+    /// Twin of Alien::OnResize (actors.cc). Three coordinate spaces, three
+    /// rounding disciplines, all pinned by the ent.rz.alien rows: the float
+    /// render transform scales by plain products; the warp destination goes
+    /// through float FastRound; the int simulation position goes through the
+    /// DOUBLE product + FastRound. Cruising (non-warping) aliens re-dock onto
+    /// their cruise station immediately -- the fleet pushes the rescaled
+    /// base_cruise into the trajectory before this runs, mirroring the C++
+    /// pointer alias that `CruiseTarget` reads through -- while a mid-warp
+    /// Alien14 keeps interpolating toward its rescaled destination. The C++
+    /// warp-ghost loop has no twin here: ghosts are presentation-side state
+    /// this kernel omits (module header note).
+    pub fn on_resize(&mut self, rx: f32, ry: f32) {
+        self.transform_pos.x *= rx;
+        self.transform_pos.y *= ry;
+        self.transform_prev.x *= rx;
+        self.transform_prev.y *= ry;
+        self.warp_dest.x = fast_round_f32(self.warp_dest.x as f32 * rx);
+        self.warp_dest.y = fast_round_f32(self.warp_dest.y as f32 * ry);
+        let p = self.object.pos;
+        self.object.pos = Coord::new(
+            fast_round_f64(p.x as f64 * rx as f64),
+            fast_round_f64(p.y as f64 * ry as f64),
+        );
+        if self.trajectory.stage() == Stage::Cruising && !self.is_warping {
+            let (tx, ty) = self.trajectory.cruise_target();
+            self.transform_pos = Vec2f { x: tx as f32, y: ty as f32 };
+            self.transform_prev = self.transform_pos;
+            self.object.pos = Coord::new(tx, ty);
+        }
+    }
+
+    /// Read-only observability for the ent.rz.alien rows (Fatia 13): the
+    /// float render transform and the pixel-space warp destination.
+    pub fn transform_pos(&self) -> Vec2f {
+        self.transform_pos
+    }
+
+    pub fn warp_dest(&self) -> Coord {
+        self.warp_dest
     }
 
     pub fn trajectory(&self) -> &Trajectory {

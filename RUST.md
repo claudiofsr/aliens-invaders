@@ -22,7 +22,7 @@
 | **2a** | Kernel Rust: RandomStream, math, formação, pacing (**este scaffold**) | `cargo test` verde contra os vetores | ✅ |
 | **2b** | StageCatalog, ScoreHash, HighScoreTable, bonus masks em Rust | seções `profile`/`score_hash`/`serialize` dos vetores | ✅ |
 | **3** | Trajectory + splines + entidades/simulação (replay dump por frame) | replays longos bit-idênticos | ✅ (Fatias 4/4b: replay de 900 quadros bit-exato) |
-| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5–12: pré-requisitos do kernel prontos — `EntitySession` (tick + contexto de score + transição de fase + match flow), starfield, economia `Score`, catálogo de comboios, ledger `HighScores`; casca SDL não iniciada) |
+| **4** | Casca SDL (wrapper seguro sobre `sdl3-sys`), renderer/placas, input, hitch monitor | sessão jogável com `-log` equivalente | 🚧 (Fatias 5–13: pré-requisitos do kernel prontos — `EntitySession` (tick + contexto de score + transição de fase + match flow + cascata de resize), starfield, economia `Score`, catálogo de comboios, ledger `HighScores`; casca SDL não iniciada) |
 | **5** | Áudio: synth procedural + transpilador das 15 partituras + tsf via bindgen | WAV export **bit-idêntico** (KATs já existem) | ⬜ |
 | **6** | UI/menu/layout/telemetria/starfield | paridade visual | ⬜ |
 | **7** | Paridade total + CI Rust (5 plataformas — cross mais fácil que C++) + depots Steam idênticos | 100% dos gates | ⬜ |
@@ -54,8 +54,8 @@
   roteirizado `score.*` (Fatia 7), o contexto de score da sessão
   `ent.fs.*` (Fatia 8), o catálogo de níveis `level.*` (Fatia 9), a
   transição de fase `pt.*`/`ent.pt.*` (Fatia 10), a economia de bônus
-  `ent.fb.*` (Fatia 11) e o match flow `mf.*`/`hs.*`/`ent.mf.*` (Fatia 12).
-  Floats como **bits IEEE hex**
+  `ent.fb.*` (Fatia 11), o match flow `mf.*`/`hs.*`/`ent.mf.*` (Fatia 12) e a
+  cascata de resize `ent.rz.*` (Fatia 13). Floats como **bits IEEE hex**
   (`%08x`).
 - `golden/vectors-cpp.txt` — corpus (gerado localmente; ver golden/README.md).
 - `rust/kernel` — ports de RandomStream, mathx, formation (tabela em runtime),
@@ -67,7 +67,8 @@
   headless, game_object, bullets (seeker/relativístico/exaustão), bonus,
   explosions, alien (warp/decay/kamikaze/spin), player, fleet (AliensManager:
   comboios, ocupação lazy, criação, drift, fire, wanderers e a economia de
-  bônus com score vivo — Fatia 11) e session (Fatia 5:
+  bônus com score vivo — Fatia 11; `set_metrics`/`on_resize` da cascata e o
+  campo `original_max_convoy_size` — Fatia 13) e session (Fatia 5:
   `EntitySession` — pipeline de tick da física fixa, a ordem canônica de
   produção atrás de um único `tick(dir, fire)` com `TickReport` por quadro;
   Fatia 8: dona do contexto de score — crédito por quadro, drenagem de
@@ -79,7 +80,10 @@
   Fatia 12: o match flow — o tick divide nas duas metades de produção
   (`tick_collisions` com o early return do kamikaze / `tick_motion`), as
   respostas de supernova e destruição, o commit final guardado, o cheat
-  que empilha, os cinematic ticks e a matemática de duração/alpha) e
+  que empilha, os cinematic ticks e a matemática de duração/alpha; Fatia 13:
+  `apply_resolution_change` — a cascata de resize cumulativa com latch lazy,
+  guard de no-op, ratios float, métricas distribuídas antes dos clamps, os
+  sete `on_resize` e o ratchet de `max_session_size`) e
   stars (Fatia 6: `StarsFields` — starfield de parallax com os transcendentais
   congelados como dados gravados) e score (Fatia 7: `Score` — economia de
   pontos: Add saturante, ledger fracionário de milestones de escudo extra,
@@ -365,6 +369,69 @@
   roteirizados; o −50 do construtor é placeholder), `drain_sink_fb`
   generalizado com tag (streams esparsos) + `match_flow_parity` (23º teste
   da suíte).
+
+- **Fatia 13 (fix33)**: a cascata de resize — o núcleo de simulação do
+  `CombatSession::ApplyResolutionChange`, o último órgão da sessão que só
+  existia na casca. O dumper replica o corpo de produção verbatim (sem
+  Gfx/SDL): guard chain (tamanho inválido, latch lazy da primeira chamada
+  SEM escalamento, no-op com tamanho igual), ratios cumulativos em divisão
+  FLOAT a partir do tamanho aplicado, `SetMetrics` distribuído ANTES da
+  cascata (os clamps precisam ver o viewport novo), a ordem canônica
+  player → aliens → bullets → bombs → bonuses → explosions, o refresh da
+  proximidade letal (a grade de formação é estática — resize não a
+  recomputa; as linhas pinam o invariante) e o ratchet por eixo do
+  `max_session_size`. O starfield fica FORA: subsistema consumer-owned com
+  o caminho de resize já pinado (Fatia 9, `ent.stars.resize_at`), e os
+  warp ghosts idem (estado de apresentação que o kernel omite). Cenário
+  (seed 1, nível 3, mundo 1280×720, escala 1.0): warmup de 600 quadros com
+  armada mista na borda do gate (6 arriving + 5 cruising), injeções em
+  f480 — quatro turning bombs cronometradas para as janelas de turno de 20
+  quadros atravessarem r0/r1 (E), r3 (B) e r4 (D) com `turn_trigger_y` e
+  velocidade reescalados MID-TURN; uma quinta (A') vira no warmup e cruza
+  os resizes em voo; um bomb relativístico cuja velocidade de queda o
+  shrink do r4 arredonda para 0 (slot congelado porém reescalado — o
+  oscilador senoidal continua acumulando em `fx`); um pod extra_fire numa
+  coluna que o jogador nunca coleta — e dois bursts de detritos (um único
+  `Add` é uma nova completa: ~1,9k partículas). Agenda de sete resizes:
+  latch + no-op (f600), 1920×1080 ×1.5 exato (f630 — métrica de comboio
+  7→10), 1366×768 fracionário (f660 — o jogador cola na borda direita e o
+  clamp dispara: FastRound(1895×0.71146)=1348 > 1341), 400×300 (f690 —
+  clamp de novo (393→375) e bounds de cruzeiro rederivados [56,205]),
+  3840×2160 (f720 — a métrica infla até o teto `kMaxGridCols`=16 e a base
+  de cruzeiro rebate no mínimo colapsado pousando em 691) e round-trip
+  1280×720 (f735 — atravessa o turno em voo de dois bombs; drift
+  cumulativo dos ratios). O jogador empurra a borda direita desde f320;
+  autofire desde f0 mantém balas vivas em todo snapshot. O corpus cresce
+  299 linhas (total: 47.349): setup/script/burst/plan (o cenário é INPUT
+  auto-descrito — o Rust consome as linhas, nenhuma constante duplicada),
+  7 resize (bits de rx/ry, applied anterior, máximos pós-ratchet, lethal),
+  7 blocos de snapshot (player com o carry subpixel, fleet, 97 aliens nos
+  DOIS espaços de coordenadas, 61 projéteis, 48 exaustões, bônus e as 6
+  primeiras partículas), 18 frame e done. As três disciplinas de
+  arredondamento pinadas: produtos float puros (transform de render,
+  exaustões, partículas), FastRound(float) (pos/vel de projétil, trigger,
+  base de cruzeiro, bônus, x do player) e FastRound(produto DOUBLE) na
+  posição inteira do alien. Assimetrias documentadas pelas linhas: o y do
+  player é RE-BASELINADO pelo PosY() (não escalado), a velocidade do bônus
+  NÃO é reescalada (só a posição), `speed_magnitude` toma o produto de ry
+  sem round e `fx/fy` lideram com `pos` re-arredondado a partir deles. O
+  C++ ganha 8 accessors read-only (precedente das Fatias 7/11/12):
+  `AliensManager::{BaseCruise,MaxConvoySize,OriginalMaxConvoySize,MinCruiseX,
+  MaxCruiseX}`, `Alien::{TransformPosition,WarpDest}` e `Player::Fx`. O
+  alias de ponteiro do C++ (`Trajectory::metrics_`/`base_cruise_` leem os
+  do manager) vira re-push explícito no Rust: `set_metrics` em
+  fleet/alien/trajectory e `set_base_cruise` antes do re-dock, no mesmo
+  instante — observacionalmente idêntico porque nada lê entre o push e a
+  cascata. Rust: `EntitySession::apply_resolution_change` (`ResizeOutcome`
+  de quatro variantes, campos `applied_w/h`, injetores `*_mut` para o
+  cenário roteirizado, accessors `applied_size`/`lethal_radius`), sete
+  `on_resize` (player, alien, fleet, slot+manager de projéteis, bônus,
+  explosões), `Trajectory::set_metrics`, o campo
+  `Fleet::original_max_convoy_size` (que a nota de escopo do módulo já
+  antecipava) e `rz_parity` (24º teste da suíte). Gates duros do cenário:
+  sem prox/morte/fim-de-wave até f780, escudo mínimo ≥1 e cobertura total
+  (turning mid-resize, exaustão de bombas, relativístico, todos os pools).
+  **Tolerância zero em todas as colunas** (nenhum ângulo chega às linhas).
 
 ## Comandos
 

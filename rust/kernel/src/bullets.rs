@@ -146,6 +146,33 @@ impl Default for ProjectileSlot {
 }
 
 impl ProjectileSlot {
+    /// Twin of ProjectileSlot::OnResize (managers.cc): the subpixel carry
+    /// leads (plain float products) and the integer position re-rounds FROM
+    /// it, so pos stays the FastRound view of fx/fy exactly like every move
+    /// tick keeps it. Velocity and the turn-trigger row go through FastRound
+    /// products; speed_magnitude takes the raw y-ratio product with NO
+    /// rounding (the ent.rz.proj speedmag column pins that asymmetry). The
+    /// hitbox recompute reads the scale-invariant texture dims -- numerically
+    /// a no-op across resizes, kept literal for the twin contract.
+    pub fn on_resize(&mut self, rx: f32, ry: f32) {
+        if !self.active {
+            return;
+        }
+        self.fx *= rx;
+        self.fy *= ry;
+        self.prev_fx = self.fx;
+        self.prev_fy = self.fy;
+        self.pos.x = fast_round_f32(self.fx);
+        self.pos.y = fast_round_f32(self.fy);
+        self.speed.x = fast_round_f32(self.speed.x as f32 * rx);
+        self.speed.y = fast_round_f32(self.speed.y as f32 * ry);
+        self.speed_magnitude *= ry;
+        self.turn_trigger_y = fast_round_f32(self.turn_trigger_y as f32 * ry);
+        let (w, h) = dims(self.tex);
+        self.hitbox_w = (w as f32 * COLLISION_HITBOX_SCALE) as i32;
+        self.hitbox_h = (h as f32 * COLLISION_HITBOX_SCALE) as i32;
+    }
+
     /// Twin of ProjectileSlot::Move. Exhaust bookkeeping flows through the
     /// manager-owned pool/count (C++ passes them by reference).
     fn step(
@@ -310,6 +337,26 @@ impl BulletsManager {
 
     pub fn set_metrics(&mut self, m: ViewportMetrics) {
         self.metrics = m;
+    }
+
+    /// Twin of BulletsManager::OnResize (managers.cc): every active slot goes
+    /// through the per-slot rescale, then every active exhaust mote. Exhaust
+    /// VELOCITY shares the pixel space of position, so both rescale by plain
+    /// float products -- surviving motes keep jetting along their visual
+    /// direction in the new resolution instead of a stale one.
+    pub fn on_resize(&mut self, rx: f32, ry: f32) {
+        for i in 0..self.active_count {
+            let idx = self.active_ids[i as usize] as usize;
+            self.pool[idx].on_resize(rx, ry);
+        }
+        for i in 0..self.active_exhaust_count {
+            let idx = self.active_exhaust_ids[i as usize] as usize;
+            let ep = &mut self.exhaust_pool[idx];
+            ep.pos.x *= rx;
+            ep.pos.y *= ry;
+            ep.vel.x *= rx;
+            ep.vel.y *= ry;
+        }
     }
 
     /// Twin of BulletsManager::Add. The wave_phase draw (uniform_int over the

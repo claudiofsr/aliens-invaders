@@ -82,6 +82,34 @@ impl Player {
         self.metrics = m;
     }
 
+    /// Read-only subpixel carry for the ent.rz.player rows (Fatia 13).
+    pub fn fx(&self) -> f32 {
+        self.fx
+    }
+
+    /// Twin of Player::OnResize (managers.cc): only the x axis rescales (by
+    /// float FastRound) and re-clamps against the NEW viewport -- the metrics
+    /// snapshot is already distributed when the cascade runs. The y axis is
+    /// RE-BASELINED through PosY() instead of scaled: the bottom-margin anchor
+    /// is resolution-relative, so the player always lands on the fresh floor
+    /// row (the ent.rz.player rows pin y != old_y * ry). fx_/prev_fx_ collapse
+    /// onto the integer position, restarting the subpixel carry clean.
+    pub fn on_resize(&mut self, rx: f32, _ry: f32) {
+        let mut p = self.object.pos;
+        p.x = fast_round_f32(p.x as f32 * rx);
+        let max_right = self.metrics.win_w - self.width() / 2 - 1;
+        if p.x > max_right {
+            p.x = max_right;
+        }
+        if p.x < self.width() / 2 {
+            p.x = self.width() / 2;
+        }
+        p.y = self.pos_y();
+        self.object.pos = p;
+        self.fx = p.x as f32;
+        self.prev_fx = self.fx;
+    }
+
     pub fn position(&self) -> Coord {
         self.object.pos
     }

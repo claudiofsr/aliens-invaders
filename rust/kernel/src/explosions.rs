@@ -311,6 +311,21 @@ impl ExplosionsManager {
         self.active_count
     }
 
+    /// Twin of ExplosionsManager::OnResize (explosion.cc): active debris are
+    /// pure float pixel-space state -- position AND velocity scale by plain
+    /// products (no FastRound anywhere; the C++ pool stores floats and the
+    /// ent.rz.particle rows pin the exact bits).
+    pub fn on_resize(&mut self, rx: f32, ry: f32) {
+        for i in 0..self.active_count {
+            let idx = self.active_indices[i] as usize;
+            let p = &mut self.pool[idx];
+            p.pos.x *= rx;
+            p.pos.y *= ry;
+            p.vel.x *= rx;
+            p.vel.y *= ry;
+        }
+    }
+
     pub fn get_active_particle(&self, i: usize) -> &Particle {
         &self.pool[self.active_indices[i] as usize]
     }

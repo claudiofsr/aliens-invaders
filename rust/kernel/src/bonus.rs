@@ -4,7 +4,7 @@
 //! observation-load-bearing for the golden vectors, exactly like bullets.rs.
 
 use crate::game_object::GameObject;
-use crate::mathx::Coord;
+use crate::mathx::{fast_round_f32, Coord};
 use crate::textures::{dims, TextureId};
 use crate::trajectory::ViewportMetrics;
 
@@ -168,6 +168,21 @@ impl BonusManager {
 
     pub fn nb(&self) -> i32 {
         self.active_count
+    }
+
+    /// Twin of BonusManager::OnResize (managers.cc): active pod positions go
+    /// through FastRound products. The ent.rz.bonus rows pin the deliberate
+    /// asymmetry -- slot SPEED is NOT rescaled, so after an upscale a pod
+    /// falls at its original pixel rate through a stretched world.
+    pub fn on_resize(&mut self, rx: f32, ry: f32) {
+        for i in 0..self.active_count {
+            let idx = self.active_ids[i as usize] as usize;
+            let s = &mut self.pool[idx];
+            if s.active {
+                s.pos.x = fast_round_f32(s.pos.x as f32 * rx);
+                s.pos.y = fast_round_f32(s.pos.y as f32 * ry);
+            }
+        }
     }
 
     pub fn get_active(&self, i: usize) -> &BonusSlot {

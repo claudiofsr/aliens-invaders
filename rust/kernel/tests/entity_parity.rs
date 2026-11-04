@@ -37,8 +37,9 @@ use kernel::{
     score,
     session::{
         cinematic_frames, details_osd_frames, overlay_alpha_at, phase_transition_frames,
-        EntitySession, DESTRUCTION_CINEMATIC_SECONDS, DESTRUCTION_SKIP_DIVISOR,
-        GAME_OVER_SECONDS, NOVA_CINEMATIC_SECONDS, NOVA_SKIP_DIVISOR,
+        EntitySession, ResizeOutcome, DESTRUCTION_CINEMATIC_SECONDS, DESTRUCTION_SKIP_DIVISOR,
+        GAME_OVER_SECONDS, KAMIKAZE_BLAST_RADIUS_MULTIPLIER, NOVA_CINEMATIC_SECONDS,
+        NOVA_SKIP_DIVISOR,
     },
     sink::{EventSink, PresentationEvent},
     stage_catalog,
@@ -2689,4 +2690,315 @@ fn match_flow_parity() {
         "done pending"
     );
     sec.done("ent.mf.death");
+}
+
+/// Fatia 13 snapshot helper: asserts the full ent.rz entity block recorded
+/// right after resize `rz_idx` -- player, fleet metrics, every alien (both
+/// coordinate spaces), both projectile managers (slots + exhaust), bonuses
+/// and the first six debris particles. Every float column is bit-exact.
+fn rz_snapshot(session: &EntitySession, sec: &mut Rows, rz_idx: i32) {
+    let row = sec.next("ent.rz.player");
+    assert_eq!(i(&row, 1), rz_idx, "player idx");
+    let p = session.player();
+    assert_eq!(i(&row, 2), p.position().x, "player x");
+    assert_eq!(i(&row, 3), p.position().y, "player y");
+    assert_eq!(hex32(&row[4]), p.fx().to_bits(), "player fx");
+
+    let row = sec.next("ent.rz.fleet");
+    assert_eq!(i(&row, 1), rz_idx, "fleet idx");
+    let fleet = session.fleet();
+    assert_eq!(i(&row, 2), fleet.original_max_convoy_size(), "orig max convoy");
+    assert_eq!(i(&row, 3), fleet.max_convoy_size(), "max convoy");
+    let bc = fleet.base_cruise();
+    assert_eq!(i(&row, 4), bc.x, "base cruise x");
+    assert_eq!(i(&row, 5), bc.y, "base cruise y");
+    assert_eq!(i(&row, 6), fleet.min_cruise_x(), "min cruise x");
+    assert_eq!(i(&row, 7), fleet.max_cruise_x(), "max cruise x");
+
+    for a in 0..fleet.alien_count() {
+        let alien = fleet.get_alien(a);
+        let row = sec.next("ent.rz.alien");
+        assert_eq!(i(&row, 1), rz_idx, "alien idx");
+        assert_eq!(sz(&row, 2), a, "alien i");
+        assert_eq!(i(&row, 3), alien.position().x, "alien x");
+        assert_eq!(i(&row, 4), alien.position().y, "alien y");
+        let tp = alien.transform_pos();
+        assert_eq!(hex32(&row[5]), tp.x.to_bits(), "alien transform x");
+        assert_eq!(hex32(&row[6]), tp.y.to_bits(), "alien transform y");
+        assert_eq!(i(&row, 7), alien.stage() as i32, "alien stage");
+        assert_eq!(i(&row, 8), i32::from(alien.is_warping()), "alien warping");
+        let wd = alien.warp_dest();
+        assert_eq!(i(&row, 9), wd.x, "alien warp dest x");
+        assert_eq!(i(&row, 10), wd.y, "alien warp dest y");
+    }
+
+    for mgr in 0..2i32 {
+        let pm = if mgr == 0 {
+            session.bullets()
+        } else {
+            session.bombs()
+        };
+        for k in 0..pm.nb() as usize {
+            let b = pm.get_active(k);
+            let row = sec.next("ent.rz.proj");
+            assert_eq!(i(&row, 1), rz_idx, "proj idx");
+            assert_eq!(i(&row, 2), mgr, "proj mgr");
+            assert_eq!(i(&row, 3), k as i32, "proj i");
+            assert_eq!(i(&row, 4), b.pos.x, "proj x");
+            assert_eq!(i(&row, 5), b.pos.y, "proj y");
+            assert_eq!(hex32(&row[6]), b.fx.to_bits(), "proj fx");
+            assert_eq!(hex32(&row[7]), b.fy.to_bits(), "proj fy");
+            assert_eq!(i(&row, 8), b.speed.x, "proj speed x");
+            assert_eq!(i(&row, 9), b.speed.y, "proj speed y");
+            assert_eq!(i(&row, 10), i32::from(b.relativistic), "proj relativistic");
+            assert_eq!(i(&row, 11), i32::from(b.is_turning_bomb), "proj turning");
+            assert_eq!(i(&row, 12), b.turn_trigger_y, "proj trigger y");
+            assert_eq!(hex32(&row[13]), b.speed_magnitude.to_bits(), "proj speed mag");
+        }
+        let ne = pm.active_exhaust_count().min(8);
+        for k in 0..ne as usize {
+            let e = pm.get_active_exhaust(k);
+            let row = sec.next("ent.rz.exhaust");
+            assert_eq!(i(&row, 1), rz_idx, "exhaust idx");
+            assert_eq!(i(&row, 2), mgr, "exhaust mgr");
+            assert_eq!(i(&row, 3), k as i32, "exhaust i");
+            assert_eq!(hex32(&row[4]), e.pos.x.to_bits(), "exhaust pos x");
+            assert_eq!(hex32(&row[5]), e.pos.y.to_bits(), "exhaust pos y");
+            assert_eq!(hex32(&row[6]), e.vel.x.to_bits(), "exhaust vel x");
+            assert_eq!(hex32(&row[7]), e.vel.y.to_bits(), "exhaust vel y");
+            assert_eq!(i(&row, 8), e.life, "exhaust life");
+        }
+    }
+
+    for k in 0..session.bonuses().nb() as usize {
+        let b = session.bonuses().get_active(k);
+        let row = sec.next("ent.rz.bonus");
+        assert_eq!(i(&row, 1), rz_idx, "bonus idx");
+        assert_eq!(i(&row, 2), k as i32, "bonus i");
+        assert_eq!(i(&row, 3), b.pos.x, "bonus x");
+        assert_eq!(i(&row, 4), b.pos.y, "bonus y");
+        assert_eq!(i(&row, 5), b.bonus_type as i32, "bonus type");
+    }
+
+    let np = session.explosions().active_count().min(6);
+    for k in 0..np {
+        let p = session.explosions().get_active_particle(k);
+        let row = sec.next("ent.rz.particle");
+        assert_eq!(i(&row, 1), rz_idx, "particle idx");
+        assert_eq!(sz(&row, 2), k, "particle i");
+        assert_eq!(hex32(&row[3]), p.pos.x.to_bits(), "particle pos x");
+        assert_eq!(hex32(&row[4]), p.pos.y.to_bits(), "particle pos y");
+        assert_eq!(hex32(&row[5]), p.vel.x.to_bits(), "particle vel x");
+        assert_eq!(hex32(&row[6]), p.vel.y.to_bits(), "particle vel y");
+    }
+}
+
+/// Fatia 13: the resize cascade (ent.rz.*). Replays the dumper scenario --
+/// level 3 armada, 600-frame warmup, scripted turning/relativistic bombs,
+/// supply pod and debris bursts, then the seven-call resize schedule (lazy
+/// latch, no-op guard, exact 1.5x, fractional, shrink with player clamp and
+/// collapsed cruise bounds, extreme upscale, round-trip) -- through the
+/// production `EntitySession::apply_resolution_change` and `tick`. Every
+/// column is bit-exact: the rx/ry float divisions, all three rounding
+/// disciplines (float transform products, FastRound int positions, the
+/// double-precision alien position product), the speed/trigger rescales, the
+/// exhaust pos+vel scaling, the bonus speed asymmetry and the re-docked
+/// cruise stations.
+#[test]
+fn rz_parity() {
+    let rows = load_rows();
+    let mut sec = section(&rows, "ent.rz.");
+
+    let row = sec.next("ent.rz.setup");
+    let seed = u(&row, 1) as u32;
+    let level = i(&row, 2);
+    let warmup = i(&row, 3);
+    let end = i(&row, 4);
+    let win_w = i(&row, 5);
+    let win_h = i(&row, 6);
+    assert_eq!(hex32(&row[7]), 1.0f32.to_bits(), "scale bits");
+    let lethal_bits = hex32(&row[8]);
+    let bullets_seed = u(&row, 9) as u32;
+    let bombs_seed = u(&row, 10) as u32;
+    let explosions_seed = u(&row, 11) as u32;
+    let inject_frame = i(&row, 12);
+    let push_frame = i(&row, 13);
+
+    let mut spawns = Vec::new();
+    while sec.peek_is("ent.rz.script") {
+        spawns.push(sec.next("ent.rz.script"));
+    }
+    let mut bursts = Vec::new();
+    while sec.peek_is("ent.rz.burst") {
+        bursts.push(sec.next("ent.rz.burst"));
+    }
+    let mut plan = Vec::new();
+    while sec.peek_is("ent.rz.plan") {
+        plan.push(sec.next("ent.rz.plan"));
+    }
+
+    // The world: mf_session shape with the rz scenario's level and seeds.
+    let metrics = ViewportMetrics {
+        win_w,
+        win_h,
+        scale: 1.0,
+    };
+    let grid = formation::recompute(metrics.scale);
+    let lethal = grid.width as f32 * KAMIKAZE_BLAST_RADIUS_MULTIPLIER;
+    assert_eq!(lethal.to_bits(), lethal_bits, "setup lethal");
+    let mut bullets = BulletsManager::new(bullets_seed);
+    let mut bombs = BulletsManager::new(bombs_seed);
+    let mut bonuses = BonusManager::new();
+    let mut explosions = ExplosionsManager::new(2, grid.width);
+    explosions.seed_random(explosions_seed);
+    bullets.set_metrics(metrics);
+    bombs.set_metrics(metrics);
+    bonuses.set_metrics(metrics);
+    explosions.set_metrics(metrics.scale);
+    let fleet = Fleet::new(
+        level,
+        level_data::get_convoy_data(level as usize).to_vec(),
+        level_data::paths().to_vec(),
+        metrics,
+        15, // GameRules::Progression::kWavesPerStage -- the dumper's argument
+        seed,
+    );
+    let player = Player::new(metrics);
+    let sink = EventSink::default();
+    let mut session = EntitySession::new(
+        fleet, player, bullets, bombs, bonuses, explosions, sink, lethal, metrics, 0, [6.0; 15],
+    );
+
+    let mut next_resize = 0usize;
+    let mut rz_idx = -1i32;
+    let mut applied = (0i32, 0i32);
+
+    for f in 0..end {
+        // Production handles window events BEFORE the fixed-physics step.
+        while next_resize < plan.len() && i(&plan[next_resize], 2) == f {
+            let nw = i(&plan[next_resize], 3);
+            let nh = i(&plan[next_resize], 4);
+            let outcome = session.apply_resolution_change(nw, nh);
+            rz_idx += 1;
+            let row = sec.next("ent.rz.resize");
+            assert_eq!(i(&row, 1), rz_idx, "resize idx");
+            assert_eq!(i(&row, 2), nw, "resize nw");
+            assert_eq!(i(&row, 3), nh, "resize nh");
+            match outcome {
+                ResizeOutcome::Invalid => panic!("plan carries a non-positive size"),
+                ResizeOutcome::Latched => {
+                    assert_eq!(hex32(&row[4]), 1.0f32.to_bits(), "latched rx");
+                    assert_eq!(hex32(&row[5]), 1.0f32.to_bits(), "latched ry");
+                    assert_eq!(i(&row, 6), 0, "prev applied w");
+                    assert_eq!(i(&row, 7), 0, "prev applied h");
+                    applied = (nw, nh);
+                }
+                ResizeOutcome::NoOp => {
+                    assert_eq!(hex32(&row[4]), 1.0f32.to_bits(), "noop rx");
+                    assert_eq!(hex32(&row[5]), 1.0f32.to_bits(), "noop ry");
+                    assert_eq!(i(&row, 6), applied.0, "prev applied w");
+                    assert_eq!(i(&row, 7), applied.1, "prev applied h");
+                }
+                ResizeOutcome::Applied {
+                    rx,
+                    ry,
+                    prev_applied,
+                } => {
+                    assert_eq!(hex32(&row[4]), rx.to_bits(), "rx bits");
+                    assert_eq!(hex32(&row[5]), ry.to_bits(), "ry bits");
+                    assert_eq!(i(&row, 6), prev_applied.0, "prev applied w");
+                    assert_eq!(i(&row, 7), prev_applied.1, "prev applied h");
+                    assert_eq!(prev_applied, applied, "applied tracker sync");
+                    applied = (nw, nh);
+                }
+            }
+            let maxs = session.max_session_size();
+            assert_eq!(i(&row, 8), maxs.x, "max session w");
+            assert_eq!(i(&row, 9), maxs.y, "max session h");
+            assert_eq!(hex32(&row[10]), session.lethal_radius().to_bits(), "lethal");
+            rz_snapshot(&session, &mut sec, rz_idx);
+            next_resize += 1;
+        }
+
+        if f == inject_frame {
+            for s in &spawns {
+                let pos = Coord::new(i(s, 3), i(s, 4));
+                if i(s, 2) == 0 {
+                    session.bombs_mut().add(
+                        TextureId::Bomb,
+                        pos,
+                        Coord::new(i(s, 5), i(s, 6)),
+                        i(s, 7) != 0,
+                        i(s, 8) != 0,
+                        i(s, 9),
+                        f32::from_bits(hex32(&s[10])),
+                        false,
+                        SEEKER_ENGINE_COLOR,
+                    );
+                } else {
+                    let bt = match i(s, 11) {
+                        1 => BonusType::ExtraSpeed,
+                        2 => BonusType::ExtraFire,
+                        3 => BonusType::ExtraShield,
+                        4 => BonusType::ExtraMulti,
+                        5 => BonusType::ExtraNuke,
+                        _ => BonusType::None,
+                    };
+                    session.bonuses_mut().add(pos, bt);
+                }
+            }
+        }
+
+        for b in &bursts {
+            if i(b, 1) == f {
+                let (x, y, count) = (i(b, 2), i(b, 3), i(b, 4));
+                for k in 0..count {
+                    session.explosions_mut().add(
+                        Coord::new(x, y),
+                        Coord::new((k % 5) - 2, (k / 5) - 2),
+                        255,
+                        (190 - k * 8) as u8,
+                        (60 + k * 12) as u8,
+                        60 - (k % 3) * 10,
+                    );
+                }
+            }
+        }
+
+        let dir = if f >= push_frame { 1 } else { 0 };
+        session.tick(dir, true);
+
+        if f >= warmup && f % 10 == 0 {
+            let row = sec.next("ent.rz.frame");
+            assert_eq!(i(&row, 1), rz_idx, "frame phase");
+            assert_eq!(i(&row, 2), f, "frame f");
+            assert_eq!(sz(&row, 3), session.fleet().alien_count(), "frame aliens");
+            assert_eq!(i(&row, 4), session.player().shield(), "frame shield");
+            assert_eq!(u(&row, 5), session.score().value(), "frame score");
+            assert_eq!(i(&row, 6), session.bullets().nb(), "frame bullets");
+            assert_eq!(i(&row, 7), session.bombs().nb(), "frame bombs");
+            assert_eq!(i(&row, 8), session.bonuses().nb(), "frame bonuses");
+            assert_eq!(
+                sz(&row, 9),
+                session.explosions().active_count(),
+                "frame particles"
+            );
+        }
+    }
+
+    let row = sec.next("ent.rz.done");
+    assert_eq!(i(&row, 1), plan.len() as i32, "done resizes");
+    assert_eq!(i(&row, 2), end, "done frames");
+    let maxs = session.max_session_size();
+    assert_eq!(i(&row, 3), maxs.x, "done max w");
+    assert_eq!(i(&row, 4), maxs.y, "done max h");
+    assert_eq!(hex32(&row[5]), session.lethal_radius().to_bits(), "done lethal");
+    assert_eq!(i(&row, 6), session.player().shield(), "done shield");
+    assert_eq!(u(&row, 7), session.score().value(), "done score");
+    // The warmup-edge census is dumper-side gate data; the stage split itself
+    // is pinned by the per-snapshot alien rows right after the latch.
+    assert!(i(&row, 8) >= 1, "census arriving");
+    assert!(i(&row, 9) >= 1, "census cruising");
+    assert_eq!(i(&row, 10), session.kills(), "done kills");
+    sec.done("rz");
 }

@@ -2786,6 +2786,437 @@ void DumpMatchFlow() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Fatia 13 -- the resize cascade. CombatSession::ApplyResolutionChange lives
+// in the shell layer (it reads the live Gfx singleton), so this replay is a
+// HAND-ROLLED replica of its exact body: lazy first-call latch, no-op guard,
+// cumulative float ratios from the APPLIED size, DistributeMetrics first (the
+// clamps below must see the new viewport), then the canonical cascade
+// player -> aliens -> bullets -> bombs -> bonuses -> explosions, then
+// UpdateLethalProximity and the per-axis max-session-size ratchet. Stars are
+// deliberately absent: the starfield is a consumer-owned subsystem whose
+// resize path is already pinned by the ent.stars rows (Fatia 9). The shell
+// tail of the production body (refresh-rate query, pacer, pause flag) is
+// device-dependent and out of kernel scope.
+//
+// The schedule is scenario INPUT, fully described by the setup/script/burst/
+// plan rows so the Rust twin replays the same injections without duplicating
+// constants:
+//   r0 lazy latch + r1 no-op  -- pin the two guard branches
+//   r2 exact 1.5x             -- clean ratios
+//   r3 fractional 1366x768    -- float-division rounding through FastRound
+//   r4 shrink to 400x300      -- player right-edge clamp + cruise bounds
+//                                collapsing below the formation margin
+//   r5 extreme 3840x2160      -- convoy cap / metric explosion
+//   r6 round-trip to 1280x720 -- cumulative drift, straddling a mid-turn bomb
+// Scripted turning bombs are timed so at least one turn window (20 frames,
+// kTurningBombTurnTimerFrames) straddles r0/r1 and two straddle r5/r6 -- the
+// ent.rz.proj rows then pin turn_trigger_y/speed rescaling MID-turn, and the
+// ent.rz.exhaust rows pin the exhaust pool rescale (pos AND vel share pixel
+// space). The player rides the right edge from the push frame so r3/r4 fire
+// the Player::OnResize clamp branch.
+//
+// Row layouts:
+//   ent.rz.setup    <seed> <level> <warmup> <end> <win_w> <win_h> <scale_bits>
+//                   <lethal_bits> <bullets_seed> <bombs_seed> <explosions_seed>
+//                   <inject_frame> <push_frame>
+//   ent.rz.script   <i> <kind 0bomb|1bonus> <x> <y> <spx> <spy> <rel>
+//                   <turning> <trigger_y> <defl_bits> <bonus_type>
+//   ent.rz.burst    <frame> <x> <y> <count>
+//   ent.rz.plan     <idx> <frame> <nw> <nh>
+//   ent.rz.resize   <idx> <nw> <nh> <rx_bits> <ry_bits> <prev_applied_w>
+//                   <prev_applied_h> <max_w> <max_h> <lethal_bits>
+//   ent.rz.player   <idx> <x> <y> <fx_bits>
+//   ent.rz.fleet    <idx> <orig_max> <max_convoy> <base_x> <base_y> <min_x> <max_x>
+//   ent.rz.alien    <idx> <i> <x> <y> <tpx_bits> <tpy_bits> <stage> <warping> <wdx> <wdy>
+//   ent.rz.proj     <idx> <mgr 0bullets|1bombs> <i> <x> <y> <fx_bits> <fy_bits>
+//                   <spx> <spy> <rel> <turning> <trigger_y> <speedmag_bits>
+//   ent.rz.exhaust  <idx> <mgr> <i> <posx_bits> <posy_bits> <velx_bits> <vely_bits> <life>
+//   ent.rz.bonus    <idx> <i> <x> <y> <type>
+//   ent.rz.particle <idx> <i> <posx_bits> <posy_bits> <velx_bits> <vely_bits>
+//   ent.rz.frame    <phase> <f> <aliens> <shield> <score> <bullets> <bombs>
+//                   <bonuses> <particles>
+//   ent.rz.done     <resizes> <frames> <max_w> <max_h> <lethal_bits> <shield>
+//                   <score> <arriving> <cruising> <kills>
+// ---------------------------------------------------------------------------
+constexpr int kRzLevel = 3;
+constexpr int kRzWarmup = 600;
+constexpr int kRzEnd = 780;
+constexpr int kRzInjectFrame = 480;
+constexpr int kRzPushFrame = 320;
+constexpr std::uint32_t kRzBulletsSeed = 0x22130001u;
+constexpr std::uint32_t kRzBombsSeed = 0x22130002u;
+constexpr std::uint32_t kRzExplosionsSeed = 0x22130003u;
+
+struct RzSpawn {
+  int kind;  // 0 = bomb, 1 = bonus
+  int x, y, spx, spy;
+  int rel, turning, trigger_y;
+  float defl;
+  int btype;
+};
+
+// Timed against the plan below (level-3 docks its first convoy around f580,
+// so the warmup edge carries a mixed arriving/cruising armada): E reaches
+// trigger_y mid-f595 and its 20-frame turn straddles r0/r1 (exhaust alive at
+// the warmup gate); B turns across r3 after the 1.5x upscale stretched its
+// trigger; D turns across r4 after the shrink compressed it; A' turns early
+// and rides the resizes mid-flight. C is the relativistic oscillator -- the
+// r4 shrink rounds its fall speed to 0, pinning a frozen-but-rescaled slot.
+// The bonus falls on the fixed (0,1) slot speed in a lane the right-edge
+// player never collects from (BonusSlot::OnResize scales pos but NOT speed --
+// the rows pin that asymmetry).
+const RzSpawn kRzSpawns[] = {
+    {0, 500, 200, 0, 4, 0, 1, 440, 17.5f, 0},
+    {0, 1000, 100, 0, 3, 0, 1, 600, -20.0f, 0},
+    {0, 820, 100, 0, 2, 0, 1, 480, 12.0f, 0},
+    {0, 300, 100, 0, 2, 0, 1, 330, -15.0f, 0},
+    {0, 200, 300, 1, 1, 1, 0, 0, 0.0f, 0},
+    {1, 200, 120, 0, 0, 0, 0, 0, 0.0f, static_cast<int>(Bonus::extra_fire)},
+};
+
+struct RzBurst {
+  int frame, x, y, count;
+};
+const RzBurst kRzBursts[] = {
+    {580, 320, 300, 2},   // one Add is a full debris nova: alive r0..r3
+    {695, 150, 120, 2},   // post-shrink burst: alive at r5/r6 and the done row
+};
+
+struct RzCall {
+  int frame, nw, nh;
+};
+const RzCall kRzSchedule[] = {
+    {600, 1280, 720},
+    {600, 1280, 720},
+    {630, 1920, 1080},
+    {660, 1366, 768},
+    {690, 400, 300},
+    {720, 3840, 2160},
+    {735, 1280, 720},
+};
+constexpr int kRzResizes = static_cast<int>(sizeof(kRzSchedule) / sizeof(kRzSchedule[0]));
+
+struct RzOutcome {
+  int resizes{0};
+  int arriving{0};
+  int cruising{0};
+  int kills{0};
+  int prox_frames{0};
+  int destroyed_frames{0};
+  int min_shield{3};
+  bool finished{false};
+  bool turn_seen{false};
+  bool rel_seen{false};
+  bool exhaust_seen{false};
+  bool bombs_exhaust_seen{false};
+  bool bullets_seen{false};
+  bool bonus_seen{false};
+  bool particle_seen{false};
+};
+
+bool RunResizeReplay(std::uint32_t seed, bool record, const HeadlessTextures& tex,
+                     RzOutcome& out) {
+  const ViewportMetrics m{kEntityWinW, kEntityWinH, 1.0f};
+  const ConvoyData* const convoys = LevelData::GetConvoyData(kRzLevel);
+
+  const Config cfg = Config::CreateHeadless();
+  RecordingSink sink;
+  BulletsManager bullets(kRzBulletsSeed);
+  BulletsManager bombs(kRzBombsSeed);
+  BonusManager bonuses(tex);
+  ExplosionsManager explosions(cfg);
+  explosions.SeedRandom(kRzExplosionsSeed);
+  bullets.SetMetrics(m);
+  bombs.SetMetrics(m);
+  bonuses.SetMetrics(m);
+  explosions.SetMetrics(m);
+  Score score;
+  AliensManager aliens(&bombs, &bullets, &bonuses, &explosions,
+                       /*score=*/&score, sink, tex, m, kRzLevel, convoys,
+                       GameRules::Progression::kWavesPerStage, seed);
+  Player player(&bullets, &bombs, &bonuses, &explosions, &cfg, sink, tex, m);
+  aliens.SetPlayer(&player);
+  float lethal = static_cast<float>(GameRules::Fleet::FormationGrid::Width()) *
+                 GameRules::Fleet::kKamikazeBlastRadiusMultiplier;
+  const auto score_context = [&](std::uint64_t earned) -> std::uint64_t {
+    if (earned > 0) {
+      score.Add(earned);
+    }
+    const std::uint64_t milestones = score.CheckExtraShieldMilestones();
+    for (std::uint64_t mm = 0; mm < milestones; ++mm) {
+      player.ExtraShield();
+    }
+    return milestones;
+  };
+
+  // Replica of the CombatSession resize state.
+  int applied_w = 0;
+  int applied_h = 0;
+  int max_w = kEntityWinW;
+  int max_h = kEntityWinH;
+  int rz_idx = -1;
+
+  auto apply_resize = [&](int nw, int nh) {
+    ++rz_idx;
+    if (nw <= 0 || nh <= 0) return;
+    const int prev_aw = applied_w;
+    const int prev_ah = applied_h;
+    if (applied_w <= 0 || applied_h <= 0) {
+      // First call latches the current window WITHOUT scaling.
+      applied_w = nw;
+      applied_h = nh;
+      if (record) {
+        std::printf("ent.rz.resize %d %d %d %08x %08x %d %d %d %d %08x\n", rz_idx, nw, nh,
+                    FloatBits(1.0f), FloatBits(1.0f), prev_aw, prev_ah, max_w, max_h,
+                    FloatBits(lethal));
+      }
+      ++out.resizes;
+      return;
+    }
+    if (nw == applied_w && nh == applied_h) {
+      if (record) {
+        std::printf("ent.rz.resize %d %d %d %08x %08x %d %d %d %d %08x\n", rz_idx, nw, nh,
+                    FloatBits(1.0f), FloatBits(1.0f), prev_aw, prev_ah, max_w, max_h,
+                    FloatBits(lethal));
+      }
+      ++out.resizes;
+      return;
+    }
+    const float rx = static_cast<float>(nw) / static_cast<float>(applied_w);
+    const float ry = static_cast<float>(nh) / static_cast<float>(applied_h);
+    // DistributeMetrics FIRST (production order), then the cascade.
+    const ViewportMetrics nm{nw, nh, m.scale};
+    bullets.SetMetrics(nm);
+    bombs.SetMetrics(nm);
+    bonuses.SetMetrics(nm);
+    explosions.SetMetrics(nm);
+    player.SetMetrics(nm);
+    aliens.SetMetrics(nm);
+    player.OnResize(rx, ry);
+    aliens.OnResize(rx, ry);
+    bullets.OnResize(rx, ry);
+    bombs.OnResize(rx, ry);
+    bonuses.OnResize(rx, ry);
+    explosions.OnResize(rx, ry);
+    lethal = static_cast<float>(GameRules::Fleet::FormationGrid::Width()) *
+             GameRules::Fleet::kKamikazeBlastRadiusMultiplier;
+    max_w = std::max(max_w, nw);
+    max_h = std::max(max_h, nh);
+    applied_w = nw;
+    applied_h = nh;
+    if (record) {
+      std::printf("ent.rz.resize %d %d %d %08x %08x %d %d %d %d %08x\n", rz_idx, nw, nh,
+                  FloatBits(rx), FloatBits(ry), prev_aw, prev_ah, max_w, max_h,
+                  FloatBits(lethal));
+    }
+    ++out.resizes;
+  };
+
+  auto snapshot = [&]() {
+    const Coord pp = player.Position();
+    if (record) {
+      std::printf("ent.rz.player %d %d %d %08x\n", rz_idx, pp.x, pp.y, FloatBits(player.Fx()));
+    }
+    const Coord bc = aliens.BaseCruise();
+    if (record) {
+      std::printf("ent.rz.fleet %d %d %d %d %d %d %d\n", rz_idx, aliens.OriginalMaxConvoySize(),
+                  aliens.MaxConvoySize(), bc.x, bc.y, aliens.MinCruiseX(), aliens.MaxCruiseX());
+    }
+    for (std::size_t i = 0; i < aliens.AlienCount(); ++i) {
+      const Alien& a = aliens.GetAlien(i);
+      const Coord ap = a.Position();
+      const Vec2f& tp = a.TransformPosition();
+      const Coord wd = a.WarpDest();
+      if (record) {
+        std::printf("ent.rz.alien %d %zu %d %d %08x %08x %d %d %d %d\n", rz_idx, i, ap.x, ap.y,
+                    FloatBits(tp.x), FloatBits(tp.y), static_cast<int>(a.Stage()),
+                    a.IsWarping() ? 1 : 0, wd.x, wd.y);
+      }
+    }
+    for (int mgr = 0; mgr < 2; ++mgr) {
+      const BulletsManager& pm = (mgr == 0) ? bullets : bombs;
+      for (int i = 0; i < pm.Nb(); ++i) {
+        const ProjectileSlot& b = pm.GetActive(i);
+        if (mgr == 0) out.bullets_seen = true;
+        if (b.is_turning_bomb) out.turn_seen = true;
+        if (b.relativistic) out.rel_seen = true;
+        if (record) {
+          std::printf("ent.rz.proj %d %d %d %d %d %08x %08x %d %d %d %d %d %08x\n", rz_idx, mgr,
+                      i, b.pos.x, b.pos.y, FloatBits(b.fx), FloatBits(b.fy), b.speed.x, b.speed.y,
+                      b.relativistic ? 1 : 0, b.is_turning_bomb ? 1 : 0, b.turn_trigger_y,
+                      FloatBits(b.speed_magnitude));
+        }
+      }
+      const int ne = pm.ActiveExhaustCount();
+      for (int i = 0; i < ne && i < 8; ++i) {
+        const ExhaustParticle& e = pm.GetActiveExhaust(i);
+        out.exhaust_seen = true;
+        if (mgr == 1) out.bombs_exhaust_seen = true;
+        if (record) {
+          std::printf("ent.rz.exhaust %d %d %d %08x %08x %08x %08x %d\n", rz_idx, mgr, i,
+                      FloatBits(e.pos.x), FloatBits(e.pos.y), FloatBits(e.vel.x),
+                      FloatBits(e.vel.y), e.life);
+        }
+      }
+    }
+    for (int i = 0; i < bonuses.Nb(); ++i) {
+      const BonusSlot& b = bonuses.GetActive(i);
+      out.bonus_seen = true;
+      if (record) {
+        std::printf("ent.rz.bonus %d %d %d %d %d\n", rz_idx, i, b.pos.x, b.pos.y,
+                    static_cast<int>(b.type));
+      }
+    }
+    const std::size_t npart = explosions.ActiveCount();
+    for (std::size_t i = 0; i < npart && i < 6; ++i) {
+      const Particle& p = explosions.GetActiveParticle(i);
+      out.particle_seen = true;
+      if (record) {
+        std::printf("ent.rz.particle %d %zu %08x %08x %08x %08x\n", rz_idx, i, FloatBits(p.pos.x),
+                    FloatBits(p.pos.y), FloatBits(p.vel.x), FloatBits(p.vel.y));
+      }
+    }
+  };
+
+  auto burst = [&](int x, int y, int count) {
+    for (int k = 0; k < count; ++k) {
+      const int dur = 60 - (k % 3) * 10;
+      explosions.Add(Coord(x, y), Coord((k % 5) - 2, (k / 5) - 2),
+                     static_cast<std::uint8_t>(255), static_cast<std::uint8_t>(190 - k * 8),
+                     static_cast<std::uint8_t>(60 + k * 12), dur);
+    }
+  };
+
+  if (record) {
+    std::printf("ent.rz.setup %u %d %d %d %d %d %08x %08x %u %u %u %d %d\n", seed, kRzLevel,
+                kRzWarmup, kRzEnd, kEntityWinW, kEntityWinH, FloatBits(m.scale),
+                FloatBits(lethal), kRzBulletsSeed, kRzBombsSeed, kRzExplosionsSeed,
+                kRzInjectFrame, kRzPushFrame);
+    for (std::size_t i = 0; i < sizeof(kRzSpawns) / sizeof(kRzSpawns[0]); ++i) {
+      const RzSpawn& s = kRzSpawns[i];
+      std::printf("ent.rz.script %zu %d %d %d %d %d %d %d %d %08x %d\n", i, s.kind, s.x, s.y,
+                  s.spx, s.spy, s.rel, s.turning, s.trigger_y, FloatBits(s.defl), s.btype);
+    }
+    for (const RzBurst& b : kRzBursts) {
+      std::printf("ent.rz.burst %d %d %d %d\n", b.frame, b.x, b.y, b.count);
+    }
+    for (int i = 0; i < kRzResizes; ++i) {
+      std::printf("ent.rz.plan %d %d %d %d\n", i, kRzSchedule[i].frame, kRzSchedule[i].nw,
+                  kRzSchedule[i].nh);
+    }
+  }
+
+  int next_resize = 0;
+  for (int f = 0; f < kRzEnd; ++f) {
+    // Coverage census at the warmup edge, BEFORE the first resize touches
+    // anything: the gates demand a mixed-stage armada and live entities in
+    // every pool, so the cascade has something to scale.
+    if (f == kRzWarmup) {
+      for (std::size_t i = 0; i < aliens.AlienCount(); ++i) {
+        const Trajectory::stage_t st = aliens.GetAlien(i).Stage();
+        if (st == Trajectory::cruising) {
+          ++out.cruising;
+        } else if (st == Trajectory::arriving || st == Trajectory::joining) {
+          ++out.arriving;
+        }
+      }
+      if (out.arriving < 1 || out.cruising < 1) return false;
+      if (bullets.Nb() < 1 || bombs.Nb() < 3 || bonuses.Nb() < 1) return false;
+      if (explosions.ActiveCount() < 1) return false;
+      if (bullets.ActiveExhaustCount() + bombs.ActiveExhaustCount() < 1) return false;
+    }
+
+    // Production handles window events BEFORE the fixed-physics step.
+    while (next_resize < kRzResizes && kRzSchedule[next_resize].frame == f) {
+      apply_resize(kRzSchedule[next_resize].nw, kRzSchedule[next_resize].nh);
+      snapshot();
+      ++next_resize;
+    }
+
+    if (f == kRzInjectFrame) {
+      for (const RzSpawn& s : kRzSpawns) {
+        if (s.kind == 0) {
+          bombs.Add(tex.Get(TextureId::Bomb), Coord(s.x, s.y), Coord(s.spx, s.spy),
+                    s.rel != 0, s.turning != 0, s.trigger_y, s.defl);
+        } else {
+          bonuses.Add(Coord(s.x, s.y), static_cast<Bonus::bonus_t>(s.btype));
+        }
+      }
+    }
+    for (const RzBurst& b : kRzBursts) {
+      if (f == b.frame) burst(b.x, b.y, b.count);
+    }
+
+    const int dir = (f >= kRzPushFrame) ? 1 : 0;
+    const BulletCollisionSummary summary = aliens.DoBulletsCollisions();
+    score_context(summary.score_earned);
+    player.DoBombsCollisions();
+    const bool prox = aliens.CheckKamikazeProximity(player.Position(), lethal);
+    player.DoBonusCollisions(&aliens);
+    score.SetShield(player.Shield());
+    out.kills += summary.total_hits;
+    if (prox) ++out.prox_frames;
+    if (player.Shield() < 0) ++out.destroyed_frames;
+    out.min_shield = std::min(out.min_shield, player.Shield());
+    if (aliens.Finished()) out.finished = true;
+    if (prox || player.Shield() < 0 || out.finished) return false;
+
+    bonuses.Move();
+    player.Move(dir);
+    bullets.Move();
+    bombs.Move(player.Position());
+    player.Fire();
+    explosions.Move();
+    aliens.Move();
+    aliens.Fire(player.Position());
+
+    if (record && f >= kRzWarmup && f % 10 == 0) {
+      std::printf("ent.rz.frame %d %d %zu %d %llu %d %d %d %zu\n", rz_idx, f,
+                  aliens.AlienCount(), player.Shield(),
+                  static_cast<unsigned long long>(score.Value()), bullets.Nb(), bombs.Nb(),
+                  bonuses.Nb(), explosions.ActiveCount());
+    }
+  }
+
+  if (record) {
+    std::printf("ent.rz.done %d %d %d %d %08x %d %llu %d %d %d\n", out.resizes, kRzEnd, max_w,
+                max_h, FloatBits(lethal), player.Shield(),
+                static_cast<unsigned long long>(score.Value()), out.arriving, out.cruising,
+                out.kills);
+  }
+  // Coverage gates: the full schedule applied, every pool observed scaling at
+  // least once (including the bombs-side exhaust and a mid-turn bomb), a
+  // mixed-stage armada at the warmup edge, the player alive with shield
+  // headroom, and no kamikaze proximity / wave completion inside the window.
+  return out.resizes == kRzResizes && out.prox_frames == 0 && out.destroyed_frames == 0 &&
+         !out.finished && out.min_shield >= 1 && out.turn_seen && out.rel_seen &&
+         out.exhaust_seen && out.bombs_exhaust_seen && out.bullets_seen && out.bonus_seen &&
+         out.particle_seen;
+}
+
+void DumpEntityResize() {
+  GameRules::Fleet::FormationGrid::Recompute(1.0f);
+  Pix::SetGlobalScale(1.0f);
+  const HeadlessTextures tex;
+  std::uint32_t chosen = 0;
+  for (std::uint32_t s = 1; s <= 64; ++s) {
+    RzOutcome probe;
+    if (RunResizeReplay(s, false, tex, probe)) {
+      chosen = s;
+      break;
+    }
+  }
+  if (chosen == 0) {
+    std::fprintf(stderr,
+                 "dump_vectors: no resize seed satisfied the coverage gates "
+                 "within 64 candidates\n");
+    std::exit(1);
+  }
+  RzOutcome recorded;
+  RunResizeReplay(chosen, true, tex, recorded);
+}
+
 int main() {
   std::printf("# aliens-invaders golden vectors v1 -- pure kernel contract (RUST.md)\n");
   std::printf("# regenerate: cmake --build build --target dump_vectors && ./build/dump_vectors > golden/vectors-cpp.txt\n");
@@ -2806,5 +3237,6 @@ int main() {
   DumpEntityPhaseTransition();
   DumpEntityFleetBonus();
   DumpMatchFlow();
+  DumpEntityResize();
   return 0;
 }

@@ -8,9 +8,10 @@
 //! - The C++ twin holds manager pointers as const members; the Rust twin
 //!   takes them per call so the harness destructures its world (no shared
 //!   ownership, borrow-checker enforced tick order).
-//! - The recycle bin is omitted (Respawn == fresh construction, see alien.rs)
-//!   and `original_max_convoy_size_` with it: both exist only to serve the
-//!   resize cascade, which the headless corpus never exercises.
+//! - The recycle bin is omitted (Respawn == fresh construction, see alien.rs).
+//!   `original_max_convoy_size_` -- which the C++ rebuild path also writes but
+//!   only the resize cascade reads -- became a real field in Fatia 13, when
+//!   the corpus started exercising `on_resize` (ent.rz.fleet rows).
 //! - Score rides per call (`Option<&mut Score>` on the collision entry):
 //!   the production `AliensManager` holds a `Score*` member, wired live in
 //!   the game and null in the Fatia-4 fleet corpus. Fatia 11 pins the wired
@@ -155,6 +156,10 @@ pub struct Fleet {
     paths: Vec<Vec<Vec2f>>,
     nconvoys: i32,
     max_convoy_size: i32,
+    /// Un-capped convoy metric snapshot: the resize cascade recomputes it
+    /// from the fresh viewport, then derives the capped `max_convoy_size`
+    /// from it (the C++ `original_max_convoy_size_`).
+    original_max_convoy_size: i32,
     convoy_idx: i32,
     convoy_alien_idx: i32,
     speed: f32,
@@ -210,6 +215,7 @@ impl Fleet {
             paths,
             nconvoys,
             max_convoy_size: 0,
+            original_max_convoy_size: 0,
             convoy_idx: 0,
             convoy_alien_idx: 0,
             speed,
@@ -232,6 +238,10 @@ impl Fleet {
         };
 
         fleet.max_convoy_size = fleet.get_max_convoy_size();
+        // The C++ ctor/Rebuild pair keeps the un-capped metric alongside the
+        // capped one (original_max_convoy_size_ = max_convoy_size_ BEFORE the
+        // wanderer inflation); the resize cascade reads it back.
+        fleet.original_max_convoy_size = fleet.max_convoy_size;
         if fleet.wanderers_allowed_cycle {
             // The four wanderer flank columns must also fit the fixed
             // super-table width: one clamp keeps every downstream col_idx a
@@ -1184,6 +1194,59 @@ impl Fleet {
 
     pub fn base_cruise(&self) -> Coord {
         self.base_cruise
+    }
+
+    /// Read-only fleet internals for the ent.rz.fleet rows (Fatia 13).
+    pub fn max_convoy_size(&self) -> i32 {
+        self.max_convoy_size
+    }
+
+    pub fn original_max_convoy_size(&self) -> i32 {
+        self.original_max_convoy_size
+    }
+
+    pub fn min_cruise_x(&self) -> i32 {
+        self.min_cruise_x
+    }
+
+    pub fn max_cruise_x(&self) -> i32 {
+        self.max_cruise_x
+    }
+
+    /// Twin of the C++ `AliensManager::SetMetrics` POINTER ALIAS: the shell
+    /// pushes one snapshot before every resize cascade and each trajectory
+    /// reads it live. The Rust copies are re-pushed here, the same instant.
+    pub fn set_metrics(&mut self, m: ViewportMetrics) {
+        self.metrics = m;
+        for alien in &mut self.aliens {
+            alien.set_metrics(m);
+        }
+    }
+
+    /// Twin of AliensManager::OnResize (managers.cc): recompute the convoy
+    /// metrics against the NEW viewport (already distributed via
+    /// `set_metrics`), cap by the fixed grid capacity for extreme aspects,
+    /// rescale the cruise base x by float FastRound and re-anchor y on the
+    /// static grid table, re-derive the cruise bounds, clamp, then cascade
+    /// into every alien. The base-cruise push before each alien mirrors the
+    /// C++ alias `Trajectory::CruiseTarget` reads through during the re-dock.
+    pub fn on_resize(&mut self, rx: f32, ry: f32) {
+        self.original_max_convoy_size = self.get_max_convoy_size();
+        self.max_convoy_size = (if self.wanderers_allowed_cycle {
+            self.original_max_convoy_size + RANDOM_WANDERERS_COUNT
+        } else {
+            self.original_max_convoy_size
+        })
+        .min(MAX_GRID_COLS as i32);
+        self.base_cruise.x = fast_round_f32(self.base_cruise.x as f32 * rx);
+        self.base_cruise.y = self.grid.base_cruise_y;
+        self.update_cruise_bounds();
+        self.base_cruise.x = self.base_cruise.x.clamp(self.min_cruise_x, self.max_cruise_x);
+        let bc = (self.base_cruise.x, self.base_cruise.y);
+        for alien in &mut self.aliens {
+            alien.set_base_cruise(bc);
+            alien.on_resize(rx, ry);
+        }
     }
 
     /// Finished twin: the armada transitioned to combat and every ship fell.
